@@ -76,7 +76,7 @@ async function fetchNewNotifications() {
     )
   }
 
-  let registrationResult = await supabase
+  const registrationResult = await supabase
     .from("course_registrations")
     .select(
       "id, first_name, last_name, email, message, status, created_at, registration_type, course_title"
@@ -85,8 +85,11 @@ async function fetchNewNotifications() {
     .order("created_at", { ascending: false })
     .limit(20)
 
+  let registrationRows: Parameters<typeof mapRegistrationToNotification>[0][] =
+    []
+
   if (registrationResult.error) {
-    registrationResult = await supabase
+    const fallbackResult = await supabase
       .from("course_registrations")
       .select(
         "id, first_name, last_name, email, message, status, created_at, course_title"
@@ -94,18 +97,20 @@ async function fetchNewNotifications() {
       .eq("status", "new")
       .order("created_at", { ascending: false })
       .limit(20)
+
+    if (fallbackResult.error) {
+      console.warn(
+        "Registration notifications unavailable:",
+        fallbackResult.error.message
+      )
+    } else {
+      registrationRows = fallbackResult.data ?? []
+    }
+  } else {
+    registrationRows = registrationResult.data ?? []
   }
 
-  if (registrationResult.error) {
-    console.warn(
-      "Registration notifications unavailable:",
-      registrationResult.error.message
-    )
-  } else {
-    notifications.push(
-      ...(registrationResult.data ?? []).map(mapRegistrationToNotification)
-    )
-  }
+  notifications.push(...registrationRows.map(mapRegistrationToNotification))
 
   return sortNotifications(notifications).slice(0, 20)
 }

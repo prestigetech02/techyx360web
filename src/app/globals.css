@@ -169,4 +169,149 @@
     background-color: var(--popover);
     color: var(--popover-foreground);
   }
+
+  .tiptap-editor .tiptap > * + * {
+    margin-top: 0.75rem;
+  }
+
+  .tiptap-editor .tiptap h2 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--foreground);
+  }
+
+  .tiptap-editor .tiptap h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: var(--foreground);
+  }
+
+  .tiptap-editor .tiptap p,
+  .tiptap-editor .tiptap li {
+    color: var(--muted-foreground);
+    line-height: 1.75;
+  }
+
+  .tiptap-editor .tiptap ul,
+  .tiptap-editor .tiptap ol {
+    padding-left: 1.25rem;
+  }
+
+  .tiptap-editor .tiptap ul {
+    list-style: disc;
+  }
+
+  .tiptap-editor .tiptap ol {
+    list-style: decimal;
+  }
+
+  .tiptap-editor .tiptap blockquote {
+    border-left: 3px solid var(--brand);
+    padding-left: 1rem;
+    color: var(--muted-foreground);
+    font-style: italic;
+  }
+
+  .tiptap-editor .tiptap a {
+    color: var(--brand);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .tiptap-editor .tiptap p.is-editor-empty:first-child::before {
+    color: var(--muted-foreground);
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+
+  .blog-content-html > * + * {
+    margin-top: 1.5rem;
+  }
+
+  .blog-content-html h2 {
+    scroll-margin-top: 7rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--foreground);
+  }
+
+  @media (min-width: 640px) {
+    .blog-content-html h2 {
+      font-size: 1.5rem;
+    }
+  }
+
+  .blog-content-html h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: var(--foreground);
+  }
+
+  .blog-content-html p,
+  .blog-content-html li {
+    font-size: 1rem;
+    line-height: 1.85;
+    color: var(--muted-foreground);
+  }
+
+  @media (min-width: 640px) {
+    .blog-content-html p,
+    .blog-content-html li {
+      font-size: 1.05rem;
+    }
+  }
+
+  .blog-content-html strong {
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  .blog-content-html ul {
+    display: grid;
+    gap: 0.5rem;
+    padding-left: 0.25rem;
+    list-style: none;
+  }
+
+  .blog-content-html ul > li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .blog-content-html ul > li::before {
+    content: "";
+    margin-top: 0.5rem;
+    height: 0.375rem;
+    width: 0.375rem;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    background-color: var(--brand);
+  }
+
+  .blog-content-html ol {
+    display: grid;
+    gap: 0.5rem;
+    padding-left: 1.25rem;
+    list-style: decimal;
+  }
+
+  .blog-content-html blockquote {
+    border-left: 3px solid var(--brand);
+    padding-left: 1rem;
+    color: var(--muted-foreground);
+    font-style: italic;
+  }
+
+  .blog-content-html a {
+    color: var(--brand);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
 }

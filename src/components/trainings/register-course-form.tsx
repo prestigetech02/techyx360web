@@ -1,11 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { FormEvent } from "react"
+import { FormEvent, useState } from "react"
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { getCourseKey } from "@/config/training-schools"
+import { submitCourseRegistration } from "@/lib/registrations"
+import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 const fieldClassName =
@@ -30,10 +32,50 @@ export function RegisterCourseForm({
   showSelectedCourse = true,
 }: RegisterCourseFormProps) {
   const courseValue = getCourseKey(schoolId, courseSlug)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    onSuccess?.()
+    setError(null)
+
+    const form = event.currentTarget
+    const formData = new FormData(form)
+
+    const payload = {
+      firstName: String(formData.get("firstName") ?? ""),
+      lastName: String(formData.get("lastName") ?? ""),
+      email: String(formData.get("email") ?? ""),
+      phone: String(formData.get("phone") ?? ""),
+      schoolId,
+      schoolName,
+      courseSlug,
+      courseTitle,
+      courseKey: courseValue,
+      message: String(formData.get("message") ?? ""),
+      registrationType: "course" as const,
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      await submitCourseRegistration(payload)
+
+      form.reset()
+      notify.success(
+        "Registration submitted. Our team will contact you shortly."
+      )
+      onSuccess?.()
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to submit your registration right now. Please try again."
+      setError(message)
+      notify.error(message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -148,14 +190,17 @@ export function RegisterCourseForm({
         </span>
       </label>
 
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
       <Button
         type="submit"
+        disabled={isSubmitting}
         className={cn(
           buttonVariants(),
-          "h-11 w-full rounded-xl bg-brand text-base text-brand-foreground transition-all duration-300 hover:scale-[1.02] hover:bg-[#eaaa33] hover:text-[#1a1408] active:scale-[0.98]"
+          "h-11 w-full rounded-xl bg-brand text-base text-brand-foreground transition-all duration-300 hover:scale-[1.02] hover:bg-[#eaaa33] hover:text-[#1a1408] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
         )}
       >
-        Submit Registration
+        {isSubmitting ? "Submitting..." : "Submit Registration"}
       </Button>
     </form>
   )

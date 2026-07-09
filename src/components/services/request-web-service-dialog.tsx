@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 const fieldClassName =
@@ -45,6 +46,7 @@ function useRequestWebServiceDialog() {
 function RequestWebServiceForm({ onSuccess }: { onSuccess: () => void }) {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    notify.success("Request submitted. Our team will review your project details shortly.")
     onSuccess()
   }
 

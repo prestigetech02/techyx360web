@@ -13,8 +13,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { DropdownField } from "@/components/ui/dropdown"
+import { Input } from "@/components/ui/input"
+import {
+  buildCorporateRegistrationPayload,
+  submitCourseRegistration,
+} from "@/lib/registrations"
+import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 const fieldClassName =
@@ -32,9 +37,46 @@ const trainingAreas = [
 ]
 
 function RequestTrainingForm({ onSuccess }: { onSuccess: () => void }) {
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    onSuccess()
+    setError(null)
+
+    const form = event.currentTarget
+    const formData = new FormData(form)
+
+    const payload = buildCorporateRegistrationPayload({
+      firstName: String(formData.get("firstName") ?? ""),
+      lastName: String(formData.get("lastName") ?? ""),
+      email: String(formData.get("email") ?? ""),
+      phone: String(formData.get("phone") ?? ""),
+      company: String(formData.get("company") ?? ""),
+      trainingArea: String(formData.get("trainingArea") ?? ""),
+      participants: String(formData.get("participants") ?? ""),
+      details: String(formData.get("details") ?? ""),
+    })
+
+    setIsSubmitting(true)
+
+    try {
+      await submitCourseRegistration(payload)
+      form.reset()
+      notify.success(
+        "Training request submitted. We'll get back to you within one business day."
+      )
+      onSuccess()
+    } catch (submitError) {
+      const message =
+        submitError instanceof Error
+          ? submitError.message
+          : "Unable to submit your request right now. Please try again."
+      setError(message)
+      notify.error(message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -182,11 +224,14 @@ function RequestTrainingForm({ onSuccess }: { onSuccess: () => void }) {
         </span>
       </label>
 
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
       <Button
         type="submit"
-        className="h-11 w-full rounded-xl bg-brand text-base text-brand-foreground transition-all hover:bg-brand/90"
+        disabled={isSubmitting}
+        className="h-11 w-full rounded-xl bg-brand text-base text-brand-foreground transition-all hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        Submit Request
+        {isSubmitting ? "Submitting..." : "Submit Request"}
       </Button>
     </form>
   )

@@ -22,6 +22,11 @@ import {
 import { DropdownField } from "@/components/ui/dropdown"
 import { Input } from "@/components/ui/input"
 import { trainingSchools } from "@/config/training-schools"
+import {
+  buildSiwesRegistrationPayload,
+  submitCourseRegistration,
+} from "@/lib/registrations"
+import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 const fieldClassName =
@@ -61,10 +66,52 @@ function ApplySiwesForm({ onSuccess }: { onSuccess: () => void }) {
       ),
     []
   )
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    onSuccess()
+    setError(null)
+
+    const form = event.currentTarget
+    const formData = new FormData(form)
+
+    const payload = buildSiwesRegistrationPayload({
+      firstName: String(formData.get("firstName") ?? ""),
+      lastName: String(formData.get("lastName") ?? ""),
+      email: String(formData.get("email") ?? ""),
+      phone: String(formData.get("phone") ?? ""),
+      location: String(formData.get("location") ?? ""),
+      courseSlug: String(formData.get("course") ?? ""),
+      duration: String(formData.get("duration") ?? ""),
+      otherInfo: String(formData.get("otherInfo") ?? ""),
+    })
+
+    if ("error" in payload) {
+      setError(payload.error)
+      notify.error(payload.error)
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      await submitCourseRegistration(payload)
+      form.reset()
+      notify.success(
+        "Application submitted. Our team will review your details shortly."
+      )
+      onSuccess()
+    } catch (submitError) {
+      const message =
+        submitError instanceof Error
+          ? submitError.message
+          : "Unable to submit your application right now. Please try again."
+      setError(message)
+      notify.error(message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -207,11 +254,14 @@ function ApplySiwesForm({ onSuccess }: { onSuccess: () => void }) {
         </span>
       </label>
 
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
       <Button
         type="submit"
-        className="h-11 w-full rounded-xl bg-brand text-base text-brand-foreground transition-all duration-300 hover:scale-[1.02] hover:bg-[#eaaa33] hover:text-[#1a1408] active:scale-[0.98]"
+        disabled={isSubmitting}
+        className="h-11 w-full rounded-xl bg-brand text-base text-brand-foreground transition-all duration-300 hover:scale-[1.02] hover:bg-[#eaaa33] hover:text-[#1a1408] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
       >
-        Submit Application
+        {isSubmitting ? "Submitting..." : "Submit Application"}
       </Button>
     </form>
   )

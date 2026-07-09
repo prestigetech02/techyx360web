@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 const fieldClassName =
@@ -47,14 +48,19 @@ export function ContactForm({ className }: { className?: string }) {
       }
 
       if (!response.ok) {
-        setError(result.error ?? "Unable to send your message right now.")
+        const message = result.error ?? "Unable to send your message right now."
+        setError(message)
+        notify.error(message)
         return
       }
 
       form.reset()
       setSubmitted(true)
+      notify.success("Message sent. We'll get back to you within one business day.")
     } catch {
-      setError("Unable to send your message right now. Please try again.")
+      const message = "Unable to send your message right now. Please try again."
+      setError(message)
+      notify.error(message)
     } finally {
       setIsSubmitting(false)
     }

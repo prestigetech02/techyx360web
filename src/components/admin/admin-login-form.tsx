@@ -12,6 +12,7 @@ import { brand } from "@/config/brand"
 import { testimonials } from "@/config/testimonials"
 import { createClient } from "@/lib/supabase/client"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
+import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 const fieldClassName =
@@ -35,9 +36,10 @@ export function AdminLoginForm() {
     setMessage(null)
 
     if (!isSupabaseConfigured()) {
-      setError(
+      const message =
         "Supabase is not configured yet. Add your project keys to .env.local."
-      )
+      setError(message)
+      notify.error(message)
       return
     }
 
@@ -52,13 +54,17 @@ export function AdminLoginForm() {
 
       if (signInError) {
         setError(signInError.message)
+        notify.error(signInError.message)
         return
       }
 
+      notify.success("Signed in successfully.")
       router.push("/admin")
       router.refresh()
     } catch {
-      setError("Unable to sign in right now. Please try again.")
+      const message = "Unable to sign in right now. Please try again."
+      setError(message)
+      notify.error(message)
     } finally {
       setIsSubmitting(false)
     }
@@ -69,14 +75,17 @@ export function AdminLoginForm() {
     setMessage(null)
 
     if (!email) {
-      setError("Enter your email address first, then click Forgot password.")
+      const message = "Enter your email address first, then click Forgot password."
+      setError(message)
+      notify.error(message)
       return
     }
 
     if (!isSupabaseConfigured()) {
-      setError(
+      const message =
         "Supabase is not configured yet. Add your project keys to .env.local."
-      )
+      setError(message)
+      notify.error(message)
       return
     }
 
@@ -93,12 +102,17 @@ export function AdminLoginForm() {
 
       if (resetError) {
         setError(resetError.message)
+        notify.error(resetError.message)
         return
       }
 
-      setMessage("Password reset link sent. Check your inbox.")
+      const message = "Password reset link sent. Check your inbox."
+      setMessage(message)
+      notify.success(message)
     } catch {
-      setError("Unable to send reset email right now. Please try again.")
+      const message = "Unable to send reset email right now. Please try again."
+      setError(message)
+      notify.error(message)
     } finally {
       setIsSubmitting(false)
     }

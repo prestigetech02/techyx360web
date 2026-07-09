@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ConditionalSiteShell } from "@/components/layout/conditional-site-shell";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SiteSchemas } from "@/components/seo/site-schemas";
+import { Toaster } from "@/components/ui/sonner";
 import { siteMetadata } from "@/config/brand";
 import { siteUrl, siteFavicon, socialShareImage } from "@/config/site";
 import { createPageMetadata } from "@/lib/seo";
@@ -59,6 +60,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ConditionalSiteShell>{children}</ConditionalSiteShell>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

@@ -2,10 +2,10 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 
-import { blogPosts } from "@/config/blog"
 import { BlogCard } from "@/components/blog/blog-card"
 import { BlogSidebar } from "@/components/blog/blog-sidebar"
 import { brand, siteMetadata } from "@/config/brand"
+import { getPublishedBlogPosts } from "@/lib/blog/posts"
 import { createPageMetadata } from "@/lib/seo"
 
 const bgImage = "/mobile.jpg"
@@ -23,7 +23,9 @@ export const metadata: Metadata = createPageMetadata({
   ],
 })
 
-export default function BlogPage() {
+export default async function BlogPage() {
+  const blogPosts = await getPublishedBlogPosts()
+
   return (
     <main className="flex flex-1 flex-col">
       <section className="relative overflow-hidden">

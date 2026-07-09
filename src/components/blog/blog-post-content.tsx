@@ -1,3 +1,4 @@
+import { isHtmlContent } from "@/lib/blog/content"
 import { cn } from "@/lib/utils"
 
 function renderInline(text: string) {
@@ -16,11 +17,11 @@ function renderInline(text: string) {
   })
 }
 
-export function BlogPostContent({ content }: { content: string }) {
+function MarkdownBlogContent({ content }: { content: string }) {
   const blocks = content.split("\n\n").filter(Boolean)
 
   return (
-    <div className="blog-content space-y-6">
+    <>
       {blocks.map((block, index) => {
         const trimmed = block.trim()
 
@@ -79,6 +80,23 @@ export function BlogPostContent({ content }: { content: string }) {
           </p>
         )
       })}
+    </>
+  )
+}
+
+export function BlogPostContent({ content }: { content: string }) {
+  if (isHtmlContent(content)) {
+    return (
+      <div
+        className="blog-content blog-content-html"
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    )
+  }
+
+  return (
+    <div className="blog-content space-y-6">
+      <MarkdownBlogContent content={content} />
     </div>
   )
 }

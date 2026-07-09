@@ -9,13 +9,20 @@ import { BlogPostSidebar } from "@/components/blog/blog-post-sidebar"
 import { BlogRelatedPosts } from "@/components/blog/blog-related-posts"
 import { JsonLd } from "@/components/seo/json-ld"
 import { Badge } from "@/components/ui/badge"
-import { blogPosts } from "@/config/blog"
+import type { BlogPost } from "@/config/blog"
 import { brand, siteMetadata } from "@/config/brand"
 import { organization } from "@/config/site"
+import {
+  getBlogPostBySlug,
+  getPublishedBlogPosts,
+} from "@/lib/blog/posts"
 import { absoluteUrl, createPageMetadata } from "@/lib/seo"
 
-export function generateStaticParams() {
-  return blogPosts.map((post) => ({ slug: post.slug }))
+export const dynamicParams = true
+
+export async function generateStaticParams() {
+  const posts = await getPublishedBlogPosts()
+  return posts.map((post) => ({ slug: post.slug }))
 }
 
 export async function generateMetadata({
@@ -24,8 +31,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const post = blogPosts.find((p) => p.slug === slug)
-  if (!post) {
+  const post = await getBlogPostBySlug(slug)
+  if (!post || post.status !== "published") {
     return createPageMetadata({
       title: `Blog | ${brand.name}`,
       description: siteMetadata.description,
@@ -44,7 +51,7 @@ export async function generateMetadata({
   })
 }
 
-function getArticleSchema(post: (typeof blogPosts)[number]) {
+function getArticleSchema(post: BlogPost) {
   return {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -79,8 +86,10 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const post = blogPosts.find((p) => p.slug === slug)
-  if (!post) notFound()
+  const post = await getBlogPostBySlug(slug)
+  if (!post || post.status !== "published") notFound()
+
+  const blogPosts = await getPublishedBlogPosts()
 
   return (
     <main className="flex flex-1 flex-col">

@@ -60,6 +60,17 @@ function findCourseInSchool(school: TrainingSchool, courseRef: string) {
   )
 }
 
+export function findCourseBySlug(slug: string) {
+  for (const school of trainingSchools) {
+    const course = school.courses.find((item) => item.slug === slug)
+    if (course) {
+      return { school, course }
+    }
+  }
+
+  return null
+}
+
 export function findCourseByKey(key: string) {
   if (key.includes(":")) {
     const [schoolId, courseRef] = key.split(":")

@@ -1,0 +1,162 @@
+"use client"
+
+import Link from "next/link"
+import { FormEvent } from "react"
+
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { getCourseKey } from "@/config/training-schools"
+import { cn } from "@/lib/utils"
+
+const fieldClassName =
+  "h-11 w-full rounded-xl border-border bg-background px-3.5 text-sm md:text-sm"
+const labelClassName = "mb-2 block text-sm font-medium text-foreground"
+
+type RegisterCourseFormProps = {
+  schoolId: string
+  courseSlug: string
+  courseTitle: string
+  schoolName: string
+  onSuccess?: () => void
+  showSelectedCourse?: boolean
+}
+
+export function RegisterCourseForm({
+  schoolId,
+  courseSlug,
+  courseTitle,
+  schoolName,
+  onSuccess,
+  showSelectedCourse = true,
+}: RegisterCourseFormProps) {
+  const courseValue = getCourseKey(schoolId, courseSlug)
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    onSuccess?.()
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <input type="hidden" name="school" value={schoolId} />
+      <input type="hidden" name="course" value={courseValue} />
+
+      {showSelectedCourse && (
+        <div className="rounded-xl border border-brand/20 bg-brand/5 px-4 py-3">
+          <p className="text-xs font-semibold tracking-[0.16em] text-brand uppercase">
+            Selected program
+          </p>
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            {courseTitle}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{schoolName}</p>
+        </div>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="register-firstName" className={labelClassName}>
+            First Name
+          </label>
+          <Input
+            id="register-firstName"
+            name="firstName"
+            type="text"
+            required
+            placeholder="Your name"
+            className={fieldClassName}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="register-lastName" className={labelClassName}>
+            Last Name
+          </label>
+          <Input
+            id="register-lastName"
+            name="lastName"
+            type="text"
+            required
+            placeholder="Last name"
+            className={fieldClassName}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="register-email" className={labelClassName}>
+            Email
+          </label>
+          <Input
+            id="register-email"
+            name="email"
+            type="email"
+            required
+            placeholder="example@gmail.com"
+            className={fieldClassName}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="register-phone" className={labelClassName}>
+            Phone
+          </label>
+          <Input
+            id="register-phone"
+            name="phone"
+            type="tel"
+            required
+            placeholder="e.g. +234 900 000 0000"
+            className={fieldClassName}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="register-message" className={labelClassName}>
+          Additional Notes{" "}
+          <span className="font-normal text-muted-foreground">(optional)</span>
+        </label>
+        <textarea
+          id="register-message"
+          name="message"
+          rows={4}
+          placeholder="Tell us about your goals, preferred start date, or any questions you have..."
+          className={cn(
+            fieldClassName,
+            "min-h-[120px] resize-y py-3 leading-relaxed"
+          )}
+        />
+      </div>
+
+      <label className="flex items-start gap-3 text-sm text-muted-foreground">
+        <input
+          type="checkbox"
+          name="privacy"
+          required
+          className="mt-0.5 size-4 rounded border-border text-brand focus:ring-brand/30"
+        />
+        <span>
+          You agree to our friendly{" "}
+          <Link
+            href="/privacy-policy"
+            className="font-medium text-brand transition-colors hover:text-[#eaaa33]"
+          >
+            privacy policy
+          </Link>
+        </span>
+      </label>
+
+      <Button
+        type="submit"
+        className={cn(
+          buttonVariants(),
+          "h-11 w-full rounded-xl bg-brand text-base text-brand-foreground transition-all duration-300 hover:scale-[1.02] hover:bg-[#eaaa33] hover:text-[#1a1408] active:scale-[0.98]"
+        )}
+      >
+        Submit Registration
+      </Button>
+    </form>
+  )
+}

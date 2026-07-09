@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import { BackToTop } from "@/components/layout/back-to-top";
-import { CookieNotice } from "@/components/layout/cookie-notice";
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
-import { TopBar } from "@/components/layout/top-bar";
-import { CursorFollower } from "@/components/layout/cursor-follower";
+import { ConditionalSiteShell } from "@/components/layout/conditional-site-shell";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SiteSchemas } from "@/components/seo/site-schemas";
 import { siteMetadata } from "@/config/brand";
@@ -63,13 +58,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <TopBar />
-          <Header />
-          {children}
-          <Footer />
-          <BackToTop />
-          <CookieNotice />
-          <CursorFollower />
+          <ConditionalSiteShell>{children}</ConditionalSiteShell>
         </ThemeProvider>
       </body>
     </html>

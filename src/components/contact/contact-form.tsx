@@ -13,10 +13,51 @@ const labelClassName = "mb-2 block text-sm font-medium text-foreground"
 
 export function ContactForm({ className }: { className?: string }) {
   const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setSubmitted(true)
+    setError(null)
+
+    const form = event.currentTarget
+    const formData = new FormData(form)
+
+    const payload = {
+      firstName: String(formData.get("firstName") ?? ""),
+      lastName: String(formData.get("lastName") ?? ""),
+      email: String(formData.get("email") ?? ""),
+      phone: String(formData.get("phone") ?? ""),
+      message: String(formData.get("message") ?? ""),
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const result = (await response.json()) as {
+        error?: string
+      }
+
+      if (!response.ok) {
+        setError(result.error ?? "Unable to send your message right now.")
+        return
+      }
+
+      form.reset()
+      setSubmitted(true)
+    } catch {
+      setError("Unable to send your message right now. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -133,11 +174,14 @@ export function ContactForm({ className }: { className?: string }) {
             </span>
           </label>
 
+          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
           <Button
             type="submit"
-            className="h-12 w-full rounded-xl bg-brand text-base text-brand-foreground transition-all hover:bg-brand/90"
+            disabled={isSubmitting}
+            className="h-12 w-full rounded-xl bg-brand text-base text-brand-foreground transition-all hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Send Message
+            {isSubmitting ? "Sending..." : "Send Message"}
           </Button>
         </form>
       )}

@@ -1,7 +1,6 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { BrandCtaButton } from "@/components/ui/brand-cta-button"
 import { brand } from "@/config/brand"
 
 export function AboutHero() {
@@ -53,10 +52,6 @@ export function AboutHero() {
             digital dreams, and partners in your journey towards business
             excellence.
           </p>
-
-          <BrandCtaButton href="/services" className="mt-8 px-7 md:h-12">
-            See All Services
-          </BrandCtaButton>
         </div>
       </div>
     </section>

@@ -3,12 +3,15 @@ import Image from "next/image"
 import Link from "next/link"
 
 import { ExecutiveVirtualAssistanceFaq } from "@/components/trainings/executive-virtual-assistance-faq"
+import { BreadcrumbJsonLd } from "@/components/seo/breadcrumb-json-ld"
+import { JsonLd } from "@/components/seo/json-ld"
 import { Badge } from "@/components/ui/badge"
 import { BrandCtaButton } from "@/components/ui/brand-cta-button"
 import { buttonVariants } from "@/components/ui/button"
 import {
   evaAdditionalRoles,
   evaCareerBenefits,
+  evaFaqs,
   evaHero,
   evaJobRoles,
   evaProgramBenefits,
@@ -17,6 +20,7 @@ import {
 import { Sparkles } from "lucide-react"
 import { siteMetadata } from "@/config/brand"
 import { createPageMetadata } from "@/lib/seo"
+import { getFaqSchema } from "@/lib/structured-data"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = createPageMetadata({
@@ -25,6 +29,7 @@ export const metadata: Metadata = createPageMetadata({
   description:
     "Become a professional Executive Virtual Assistant with Techyx360. Learn administrative support, remote work skills, and productivity tools through a 10-week hands-on training program.",
   path: "/trainings/executive-virtual-assistance",
+  ogImageAlt: evaHero.imageAlt,
   keywords: [
     "executive virtual assistance course",
     "virtual assistant training Nigeria",
@@ -37,6 +42,17 @@ export const metadata: Metadata = createPageMetadata({
 export default function ExecutiveVirtualAssistancePage() {
   return (
     <main className="flex flex-1 flex-col">
+      <JsonLd data={getFaqSchema(evaFaqs)} />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", path: "/" },
+          { name: "Trainings", path: "/trainings/register" },
+          {
+            name: "Executive Virtual Assistance",
+            path: "/trainings/executive-virtual-assistance",
+          },
+        ]}
+      />
       <section className="relative overflow-hidden bg-[#f4f6fa] py-14 sm:py-16 lg:py-20 dark:bg-[#0f1524]">
         <Image
           src="/hero-element.svg"

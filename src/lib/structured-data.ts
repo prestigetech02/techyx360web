@@ -2,6 +2,16 @@ import { organization, siteUrl } from "@/config/site"
 import { services } from "@/config/services"
 import { absoluteUrl } from "@/lib/seo"
 
+export type BreadcrumbItem = {
+  name: string
+  path: string
+}
+
+export type FaqItem = {
+  question: string
+  answer: string
+}
+
 export function getOrganizationSchema() {
   return {
     "@context": "https://schema.org",
@@ -77,4 +87,90 @@ export function getServicesSchema() {
 
 export function getSiteStructuredData() {
   return [getOrganizationSchema(), getWebsiteSchema(), getServicesSchema()]
+}
+
+export function getBreadcrumbSchema(items: BreadcrumbItem[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(item.path),
+    })),
+  }
+}
+
+export function getFaqSchema(faqs: FaqItem[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  }
+}
+
+type ArticleSchemaOptions = {
+  title: string
+  description: string
+  path: string
+  image: string
+  datePublished: string
+  dateModified?: string
+  author: string
+  tags: string[]
+  wordCount?: number
+}
+
+export function getArticleSchema({
+  title,
+  description,
+  path,
+  image,
+  datePublished,
+  dateModified,
+  author,
+  tags,
+  wordCount,
+}: ArticleSchemaOptions) {
+  const pageUrl = absoluteUrl(path)
+  const imageUrl = image.startsWith("http") ? image : absoluteUrl(image)
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: title,
+    description,
+    image: {
+      "@type": "ImageObject",
+      url: imageUrl,
+      width: 1200,
+      height: 630,
+    },
+    datePublished,
+    dateModified: dateModified ?? datePublished,
+    author: {
+      "@type": "Organization",
+      name: author,
+      "@id": organization.id,
+    },
+    publisher: {
+      "@id": organization.id,
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": pageUrl,
+    },
+    url: pageUrl,
+    keywords: tags.join(", "),
+    ...(tags[0] ? { articleSection: tags[0] } : {}),
+    ...(wordCount ? { wordCount } : {}),
+  }
 }

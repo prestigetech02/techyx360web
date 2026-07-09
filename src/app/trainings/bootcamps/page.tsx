@@ -11,7 +11,7 @@ import { siteMetadata } from "@/config/brand"
 import { createPageMetadata } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
-const heroImage = "/bootcamp-hero.svg"
+const heroImage = "/bootcamp-hero.webp"
 
 export const metadata: Metadata = createPageMetadata({
   title: "Tech Bootcamps in Nigeria | AI, Digital Skills & Career Accelerators",
@@ -92,7 +92,6 @@ export default function BootcampsPage() {
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-contain object-center"
                 priority
-                unoptimized
               />
             </div>
           </div>

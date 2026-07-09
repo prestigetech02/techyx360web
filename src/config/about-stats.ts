@@ -2,15 +2,15 @@ export type AboutStat = {
   id: string
   target: number
   label: string
-  format: "number" | "percent" | "k"
+  format: "number" | "percent" | "plus"
 }
 
 export const aboutStats: AboutStat[] = [
   {
     id: "years",
-    target: 25,
-    label: "Years Experience",
-    format: "number",
+    target: 5,
+    label: "Years of Experience",
+    format: "plus",
   },
   {
     id: "retention",
@@ -20,15 +20,14 @@ export const aboutStats: AboutStat[] = [
   },
   {
     id: "projects",
-    target: 8000,
-    label: "Project Completed",
-    format: "k",
+    target: 50,
+    label: "Projects Completed",
+    format: "plus",
   },
   {
-    id: "clients",
-    target: 19000,
-    label: "Happy Clients",
-    format: "k",
+    id: "students",
+    target: 1000,
+    label: "Students Trained",
+    format: "plus",
   },
 ]
-

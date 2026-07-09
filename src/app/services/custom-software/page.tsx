@@ -14,11 +14,11 @@ import {
 import { navigation } from "@/config/navigation"
 import { siteMetadata } from "@/config/brand"
 import { createPageMetadata } from "@/lib/seo"
+import { ServicePageHero } from "@/components/services/service-page-hero"
 import { BrandCtaButton } from "@/components/ui/brand-cta-button"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-const bgImage = "/mobile.jpg"
 const sideImage =
   "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1400&q=80"
 
@@ -74,51 +74,11 @@ export const metadata: Metadata = createPageMetadata({
 export default function CustomSoftwarePage() {
   return (
     <main className="flex flex-1 flex-col">
-      <section className="relative overflow-hidden">
-        <Image
-          src={bgImage}
-          alt=""
-          aria-hidden
-          fill
-          priority
-          className="object-cover opacity-30"
-        />
-
-        <div className="absolute inset-0 bg-[#0b2c66]/90" />
-
-        <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Custom Software Solution
-          </h1>
-
-          <nav aria-label="Breadcrumb" className="mt-5">
-            <ol className="inline-flex max-w-full flex-nowrap items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs text-white/70 backdrop-blur-sm sm:gap-2 sm:px-4 sm:py-2 sm:text-sm">
-              <li>
-                <Link href="/" className="transition-colors hover:text-white">
-                  Home
-                </Link>
-              </li>
-              <li aria-hidden className="text-white/40">
-                /
-              </li>
-              <li>
-                <Link
-                  href="/services"
-                  className="transition-colors hover:text-white"
-                >
-                  Services
-                </Link>
-              </li>
-              <li aria-hidden className="text-white/40">
-                /
-              </li>
-              <li className="font-semibold text-white">
-                Custom Software Solution
-              </li>
-            </ol>
-          </nav>
-        </div>
-      </section>
+      <ServicePageHero
+        title="Custom Software Solution"
+        breadcrumbLabel="Custom Software Solution"
+        path="/services/custom-software"
+      />
 
       <section className="bg-[#f4f6fa] py-14 sm:py-16 lg:py-20 dark:bg-[#0f1524]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -131,7 +91,6 @@ export default function CustomSoftwarePage() {
                   fill
                   sizes="(max-width: 1024px) 100vw, 60vw"
                   className="object-cover"
-                  priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-transparent" />
               </div>

@@ -37,6 +37,7 @@ export function mapBlogPostRowToBlogPost(row: BlogPostRow): BlogPost {
     excerpt: row.excerpt,
     content: row.content,
     dateISO: row.published_at,
+    modifiedAtISO: row.updated_at,
     readTimeMins: row.read_time_mins,
     tags: row.tags,
     author: row.author,
@@ -57,6 +58,7 @@ export function mapBlogPostRowToAdminPost(row: BlogPostRow): AdminBlogPost {
 function mapStaticPostToAdminPost(post: BlogPost): AdminBlogPost {
   return {
     ...post,
+    modifiedAtISO: post.modifiedAtISO ?? post.dateISO,
     status: "published",
     source: "static",
   }

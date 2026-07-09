@@ -1,4 +1,3 @@
-import { blogPosts } from "@/config/blog"
 import { footerSocialIcons } from "@/config/footer"
 import { services } from "@/config/services"
 import { getAllCourseRegistrationPaths } from "@/config/training-schools"
@@ -65,11 +64,5 @@ export const indexableRoutes: IndexableRoute[] = [
     changeFrequency: "monthly" as const,
     priority: 0.75,
   })),
+  { path: "/privacy-policy", changeFrequency: "yearly", priority: 0.3 },
 ]
-
-export const blogSitemapEntries = blogPosts.map((post) => ({
-  path: `/blog/${post.slug}`,
-  changeFrequency: "monthly" as const,
-  priority: 0.6,
-  lastModified: post.dateISO,
-}))

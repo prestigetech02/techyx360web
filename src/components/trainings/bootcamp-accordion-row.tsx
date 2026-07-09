@@ -48,7 +48,6 @@ export function BootcampAccordionRow({
                 "object-cover transition-transform duration-700 ease-out",
                 isActive ? "scale-105" : "scale-100"
               )}
-              unoptimized
             />
 
             <div

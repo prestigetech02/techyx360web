@@ -4,6 +4,7 @@ export type BlogPost = {
   excerpt: string
   content: string
   dateISO: string
+  modifiedAtISO?: string
   readTimeMins: number
   tags: string[]
   author: string

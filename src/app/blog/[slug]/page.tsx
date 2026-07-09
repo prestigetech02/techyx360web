@@ -7,16 +7,18 @@ import { notFound } from "next/navigation"
 import { BlogPostContent } from "@/components/blog/blog-post-content"
 import { BlogPostSidebar } from "@/components/blog/blog-post-sidebar"
 import { BlogRelatedPosts } from "@/components/blog/blog-related-posts"
+import { BreadcrumbJsonLd } from "@/components/seo/breadcrumb-json-ld"
 import { JsonLd } from "@/components/seo/json-ld"
 import { Badge } from "@/components/ui/badge"
 import type { BlogPost } from "@/config/blog"
 import { brand, siteMetadata } from "@/config/brand"
-import { organization } from "@/config/site"
+import { stripHtmlTags } from "@/lib/blog/content"
 import {
   getBlogPostBySlug,
   getPublishedBlogPosts,
 } from "@/lib/blog/posts"
-import { absoluteUrl, createPageMetadata } from "@/lib/seo"
+import { createPageMetadata } from "@/lib/seo"
+import { getArticleSchema } from "@/lib/structured-data"
 
 export const dynamicParams = true
 
@@ -47,29 +49,33 @@ export async function generateMetadata({
     path: `/blog/${post.slug}`,
     keywords: [...siteMetadata.keywords, ...post.tags],
     ogImage: post.featuredImage,
+    ogImageAlt: post.featuredImageAlt,
     type: "article",
+    article: {
+      publishedTime: post.dateISO,
+      modifiedTime: post.modifiedAtISO ?? post.dateISO,
+      authors: [post.author],
+      tags: post.tags,
+    },
   })
 }
 
-function getArticleSchema(post: BlogPost) {
-  return {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: post.title,
+function getArticleWordCount(content: string) {
+  return stripHtmlTags(content).split(/\s+/).filter(Boolean).length
+}
+
+function getArticleStructuredData(post: BlogPost) {
+  return getArticleSchema({
+    title: post.title,
     description: post.excerpt,
+    path: `/blog/${post.slug}`,
     image: post.featuredImage,
     datePublished: post.dateISO,
-    author: {
-      "@type": "Organization",
-      name: post.author,
-      "@id": organization.id,
-    },
-    publisher: {
-      "@id": organization.id,
-    },
-    mainEntityOfPage: absoluteUrl(`/blog/${post.slug}`),
-    keywords: post.tags.join(", "),
-  }
+    dateModified: post.modifiedAtISO ?? post.dateISO,
+    author: post.author,
+    tags: post.tags,
+    wordCount: getArticleWordCount(post.content),
+  })
 }
 
 function formatDate(iso: string) {
@@ -93,7 +99,14 @@ export default async function BlogPostPage({
 
   return (
     <main className="flex flex-1 flex-col">
-      <JsonLd data={getArticleSchema(post)} />
+      <JsonLd data={getArticleStructuredData(post)} />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", path: "/" },
+          { name: "Blog", path: "/blog" },
+          { name: post.title, path: `/blog/${post.slug}` },
+        ]}
+      />
 
       <section className="relative overflow-hidden bg-[#0b2c66]">
         <div

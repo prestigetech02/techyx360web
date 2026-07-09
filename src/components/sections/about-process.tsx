@@ -73,7 +73,6 @@ export function AboutProcess() {
               fill
               sizes="(max-width: 1024px) 100vw, 40vw"
               className="object-cover"
-              priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/15 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-6">

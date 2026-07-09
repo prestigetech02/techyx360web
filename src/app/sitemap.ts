@@ -1,9 +1,12 @@
 import type { MetadataRoute } from "next"
 
-import { blogSitemapEntries, indexableRoutes } from "@/config/site"
+import { indexableRoutes } from "@/config/site"
+import { getPublishedBlogPosts } from "@/lib/blog/posts"
 import { absoluteUrl } from "@/lib/seo"
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export const revalidate = 3600
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = indexableRoutes.map((route) => ({
     url: absoluteUrl(route.path),
     lastModified: route.lastModified ?? new Date(),
@@ -11,11 +14,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: route.priority,
   }))
 
-  const blogEntries: MetadataRoute.Sitemap = blogSitemapEntries.map((route) => ({
-    url: absoluteUrl(route.path),
-    lastModified: route.lastModified,
-    changeFrequency: route.changeFrequency,
-    priority: route.priority,
+  const posts = await getPublishedBlogPosts()
+  const blogEntries: MetadataRoute.Sitemap = posts.map((post) => ({
+    url: absoluteUrl(`/blog/${post.slug}`),
+    lastModified: post.dateISO,
+    changeFrequency: "monthly",
+    priority: 0.6,
   }))
 
   return [...staticEntries, ...blogEntries]

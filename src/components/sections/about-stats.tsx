@@ -7,7 +7,7 @@ import { aboutStats, type AboutStat } from "@/config/about-stats"
 
 function formatStat(stat: AboutStat, value: number) {
   if (stat.format === "percent") return `${Math.round(value)}%`
-  if (stat.format === "k") return `${Math.round(value / 1000)}K`
+  if (stat.format === "plus") return `${Math.round(value)}+`
   return `${Math.round(value)}`
 }
 

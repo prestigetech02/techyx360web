@@ -18,7 +18,7 @@ import { brand, siteMetadata } from "@/config/brand"
 import { createPageMetadata } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
-const heroImage = "/corp.hero.svg"
+const heroImage = "/corp.hero.webp"
 
 const trainingSolutions = [
   {
@@ -103,7 +103,6 @@ export default function CorporateTrainingPage() {
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-contain object-center"
                 priority
-                unoptimized
               />
             </div>
 

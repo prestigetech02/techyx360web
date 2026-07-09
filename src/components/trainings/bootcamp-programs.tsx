@@ -45,7 +45,6 @@ export function BootcampPrograms() {
                   fill
                   sizes="(max-width: 640px) 100vw, 50vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  unoptimized
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
               </div>

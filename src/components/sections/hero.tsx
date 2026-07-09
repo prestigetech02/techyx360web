@@ -30,7 +30,7 @@ function HeroVisual() {
   return (
     <div className="relative mx-auto aspect-square w-full max-w-lg -translate-y-4 sm:-translate-y-6 lg:max-w-none lg:-translate-y-8">
       <Image
-        src="/hero2.svg"
+        src="/hero2.webp"
         alt="Techyx360 technology solutions"
         fill
         priority

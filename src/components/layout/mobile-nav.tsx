@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { MenuIcon, Minus, Plus, SearchIcon, XIcon } from "lucide-react"
+import { MenuIcon, Minus, Plus, XIcon } from "lucide-react"
 
 import {
   FacebookIcon,
@@ -13,8 +13,8 @@ import {
   TwitterIcon,
 } from "@/components/icons/social-icons"
 import { Logo } from "@/components/layout/logo"
+import { SiteSearchInput } from "@/components/layout/site-search-input"
 import { buttonVariants } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Sheet,
   SheetClose,
@@ -170,14 +170,11 @@ export function MobileNav() {
           </div>
 
           <div className="px-5 py-4">
-            <div className="relative">
-              <Input
-                type="search"
-                placeholder="Search Here..."
-                className="h-11 rounded-xl border-transparent bg-muted/80 pr-11 text-sm shadow-none placeholder:text-muted-foreground focus-visible:border-brand/30 focus-visible:ring-brand/20"
-              />
-              <SearchIcon className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            </div>
+            <SiteSearchInput
+              placeholder="Search pages, services, trainings..."
+              inputClassName="h-11 rounded-xl border-transparent bg-muted/80 text-sm shadow-none placeholder:text-muted-foreground focus-visible:border-brand/30 focus-visible:ring-brand/20"
+              onNavigate={() => setOpen(false)}
+            />
           </div>
 
           <nav className="flex-1 overflow-y-auto px-5">

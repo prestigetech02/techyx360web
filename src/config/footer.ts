@@ -5,8 +5,8 @@ export const footerDescription =
 
 export const footerCompanyLinks = [
   { label: "About Us", href: "/about" },
-  { label: "Careers", href: "/careers" },
-  { label: "Our Clients", href: "/portfolio" },
+  { label: "Our Services", href: "/services/web-development" },
+  { label: "Trainings", href: "/trainings/register" },
   { label: "News", href: "/blog" },
   { label: "Contact", href: "/contact" },
 ] as const
@@ -67,6 +67,6 @@ export const footerSocialIcons = [
 
 export const footerBottomLinks = [
   { label: "About Company", href: "/about" },
-  { label: "Team", href: "/about#team" },
+  { label: "Privacy Policy", href: "/privacy-policy" },
   { label: "Blog", href: "/blog" },
 ] as const

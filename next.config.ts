@@ -5,6 +5,7 @@ const supabaseHostname = process.env.NEXT_PUBLIC_SUPABASE_URL
   : null;
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],
   // Allow LAN devices (e.g. phone on Wi-Fi) to load dev client bundles / HMR.
   // Add your phone's LAN IP if it changes.
   allowedDevOrigins: ["192.168.9.217"],

@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+/* Invoice document styles (screen + print + PDF export) */
+@import "../styles/invoice-document.css";
 
 @custom-variant dark (&:is(.dark *));
 

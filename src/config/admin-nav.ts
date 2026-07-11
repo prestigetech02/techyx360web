@@ -4,6 +4,7 @@ import {
   CreditCard,
   FileText,
   GraduationCap,
+  Inbox,
   LayoutDashboard,
   Mail,
   Newspaper,
@@ -11,10 +12,16 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
-export type AdminNavItem = {
+export type AdminNavChildItem = {
   label: string
   href: string
+}
+
+export type AdminNavItem = {
+  label: string
+  href?: string
   icon: LucideIcon
+  children?: AdminNavChildItem[]
 }
 
 export const adminNavItems: AdminNavItem[] = [
@@ -37,6 +44,16 @@ export const adminNavItems: AdminNavItem[] = [
     label: "Contact",
     href: "/admin/contact",
     icon: Mail,
+  },
+  {
+    label: "Submissions",
+    icon: Inbox,
+    children: [
+      {
+        label: "PIF Application",
+        href: "/admin/submissions/pif-applications",
+      },
+    ],
   },
   {
     label: "Clients",
@@ -64,3 +81,5 @@ export const adminNavItems: AdminNavItem[] = [
     icon: Settings,
   },
 ]
+
+export const pifApplicationsAdminPath = "/admin/submissions/pif-applications"

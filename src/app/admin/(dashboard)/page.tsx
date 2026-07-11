@@ -12,6 +12,7 @@ export const metadata = {
 export default async function AdminDashboardPage() {
   let registrationCount = "—"
   let contactCount = "—"
+  let pifApplicationCount = "—"
   let notificationCount = "0"
 
   if (isSupabaseConfigured()) {
@@ -20,8 +21,10 @@ export default async function AdminDashboardPage() {
     const [
       registrationsResult,
       contactsResult,
+      pifApplicationsResult,
       newRegistrationsResult,
       newContactsResult,
+      newPifApplicationsResult,
     ] = await Promise.all([
       supabase
         .from("course_registrations")
@@ -30,11 +33,18 @@ export default async function AdminDashboardPage() {
         .from("contact_submissions")
         .select("id", { count: "exact", head: true }),
       supabase
+        .from("pif_applications")
+        .select("id", { count: "exact", head: true }),
+      supabase
         .from("course_registrations")
         .select("id", { count: "exact", head: true })
         .eq("status", "new"),
       supabase
         .from("contact_submissions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "new"),
+      supabase
+        .from("pif_applications")
         .select("id", { count: "exact", head: true })
         .eq("status", "new"),
     ])
@@ -47,14 +57,23 @@ export default async function AdminDashboardPage() {
       contactCount = String(contactsResult.count ?? 0)
     }
 
+    if (!pifApplicationsResult.error) {
+      pifApplicationCount = String(pifApplicationsResult.count ?? 0)
+    }
+
     const newRegistrationCount = newRegistrationsResult.error
       ? 0
       : (newRegistrationsResult.count ?? 0)
     const newContactCount = newContactsResult.error
       ? 0
       : (newContactsResult.count ?? 0)
+    const newPifCount = newPifApplicationsResult.error
+      ? 0
+      : (newPifApplicationsResult.count ?? 0)
 
-    notificationCount = String(newRegistrationCount + newContactCount)
+    notificationCount = String(
+      newRegistrationCount + newContactCount + newPifCount
+    )
   }
 
   return (
@@ -68,7 +87,7 @@ export default async function AdminDashboardPage() {
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">
           Welcome to your Techyx360 admin dashboard. Manage course registrations,
-          contact submissions, and blog content from here.
+          contact submissions, PIF applications, and blog content from here.
         </p>
       </div>
 
@@ -76,7 +95,7 @@ export default async function AdminDashboardPage() {
         {[
           { label: "Course Registrations", value: registrationCount },
           { label: "Contact Messages", value: contactCount },
-          { label: "Blog Posts", value: "—" },
+          { label: "PIF Applications", value: pifApplicationCount },
           { label: "Notifications", value: notificationCount },
         ].map((stat) => (
           <div

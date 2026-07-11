@@ -14,12 +14,14 @@ import {
 
 import {
   formatNotificationTime,
+  mapPifApplicationToNotification,
   mapRegistrationToNotification,
   mapSubmissionToNotification,
   truncateNotificationMessage,
   type AdminNotification,
   type ContactSubmissionRow,
   type CourseRegistrationRow,
+  type PifApplicationRow,
 } from "@/lib/admin/notifications"
 import { createClient } from "@/lib/supabase/client"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
@@ -29,6 +31,7 @@ type AdminNotificationsContextValue = {
   newCount: number
   contactCount: number
   registrationCount: number
+  pifCount: number
   notifications: AdminNotification[]
   isLoading: boolean
   refresh: () => Promise<void>
@@ -111,6 +114,23 @@ async function fetchNewNotifications() {
   }
 
   notifications.push(...registrationRows.map(mapRegistrationToNotification))
+
+  const pifResult = await supabase
+    .from("pif_applications")
+    .select(
+      "id, first_name, last_name, email, motivation, preferred_track, status, created_at"
+    )
+    .eq("status", "new")
+    .order("created_at", { ascending: false })
+    .limit(20)
+
+  if (pifResult.error) {
+    console.warn("PIF notifications unavailable:", pifResult.error.message)
+  } else {
+    notifications.push(
+      ...(pifResult.data ?? []).map(mapPifApplicationToNotification)
+    )
+  }
 
   return sortNotifications(notifications).slice(0, 20)
 }
@@ -303,6 +323,79 @@ export function AdminNotificationsProvider({
           router.refresh()
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "pif_applications",
+        },
+        (payload) => {
+          const row = payload.new as PifApplicationRow
+
+          if (row.status !== "new") return
+
+          const notification = mapPifApplicationToNotification(row)
+
+          setNotifications((current) => {
+            if (current.some((item) => item.id === notification.id)) {
+              return current
+            }
+
+            return sortNotifications([notification, ...current]).slice(0, 20)
+          })
+
+          notify.info(
+            `PIF application from ${notification.firstName} ${notification.lastName}`
+          )
+
+          router.refresh()
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "pif_applications",
+        },
+        (payload) => {
+          const row = payload.new as PifApplicationRow
+          const notificationId = `pif:${row.id}`
+
+          if (row.status === "new") {
+            const notification = mapPifApplicationToNotification(row)
+            setNotifications((current) => {
+              if (current.some((item) => item.id === notification.id)) {
+                return current
+              }
+
+              return sortNotifications([notification, ...current]).slice(0, 20)
+            })
+          } else {
+            setNotifications((current) =>
+              current.filter((item) => item.id !== notificationId)
+            )
+          }
+
+          router.refresh()
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "pif_applications",
+        },
+        (payload) => {
+          const row = payload.old as Pick<PifApplicationRow, "id">
+          setNotifications((current) =>
+            current.filter((item) => item.id !== `pif:${row.id}`)
+          )
+          router.refresh()
+        }
+      )
       .subscribe()
 
     return () => {
@@ -317,11 +410,13 @@ export function AdminNotificationsProvider({
     const registrationCount = notifications.filter(
       (item) => item.type === "registration"
     ).length
+    const pifCount = notifications.filter((item) => item.type === "pif").length
 
     return {
       newCount: notifications.length,
       contactCount,
       registrationCount,
+      pifCount,
       notifications,
       isLoading,
       refresh,

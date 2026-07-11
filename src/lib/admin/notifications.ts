@@ -1,4 +1,5 @@
 import type { Database } from "@/types/database"
+import { pifApplicationsAdminPath } from "@/config/admin-nav"
 
 export type ContactSubmissionRow =
   Database["public"]["Tables"]["contact_submissions"]["Row"]
@@ -6,9 +7,12 @@ export type ContactSubmissionRow =
 export type CourseRegistrationRow =
   Database["public"]["Tables"]["course_registrations"]["Row"]
 
+export type PifApplicationRow =
+  Database["public"]["Tables"]["pif_applications"]["Row"]
+
 export type AdminNotification = {
   id: string
-  type: "contact" | "registration"
+  type: "contact" | "registration" | "pif"
   firstName: string
   lastName: string
   email: string
@@ -68,6 +72,31 @@ export function mapRegistrationToNotification(
     createdAt: row.created_at,
     href: "/admin/registrations",
     label: typeLabel,
+  }
+}
+
+export function mapPifApplicationToNotification(
+  row: Pick<
+    PifApplicationRow,
+    | "id"
+    | "first_name"
+    | "last_name"
+    | "email"
+    | "motivation"
+    | "preferred_track"
+    | "created_at"
+  >
+): AdminNotification {
+  return {
+    id: `pif:${row.id}`,
+    type: "pif",
+    firstName: row.first_name,
+    lastName: row.last_name,
+    email: row.email,
+    message: `${row.preferred_track} — ${row.motivation}`,
+    createdAt: row.created_at,
+    href: pifApplicationsAdminPath,
+    label: "PIF application",
   }
 }
 

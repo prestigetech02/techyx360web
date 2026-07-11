@@ -1,4 +1,6 @@
 import { findCourseBySlug } from "@/config/training-schools"
+import { recaptchaActions } from "@/lib/recaptcha/actions"
+import { getRecaptchaToken } from "@/lib/recaptcha/client"
 
 export type RegistrationType = "course" | "siwes" | "corporate"
 
@@ -102,12 +104,19 @@ export function buildCorporateRegistrationPayload(input: {
 export async function submitCourseRegistration(
   payload: CourseRegistrationPayload
 ) {
+  const recaptchaToken = await getRecaptchaToken(
+    recaptchaActions.courseRegistration
+  )
+
   const response = await fetch("/api/registrations", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      ...payload,
+      recaptchaToken,
+    }),
   })
 
   const result = (await response.json().catch(() => null)) as {

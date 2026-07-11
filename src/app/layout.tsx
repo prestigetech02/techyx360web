@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { ConditionalSiteShell } from "@/components/layout/conditional-site-shell";
+import { RecaptchaProvider } from "@/components/recaptcha/recaptcha-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SiteSchemas } from "@/components/seo/site-schemas";
 import { Toaster } from "@/components/ui/sonner";
@@ -60,6 +61,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ConditionalSiteShell>{children}</ConditionalSiteShell>
+          <RecaptchaProvider />
           <Toaster />
         </ThemeProvider>
       </body>

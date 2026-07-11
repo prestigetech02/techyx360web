@@ -54,6 +54,16 @@ export const indexableRoutes: IndexableRoute[] = [
   { path: "/trainings/siwes-it", changeFrequency: "monthly", priority: 0.8 },
   { path: "/trainings/bootcamps", changeFrequency: "monthly", priority: 0.8 },
   {
+    path: "/trainings/product-innovation-fellowship",
+    changeFrequency: "monthly",
+    priority: 0.8,
+  },
+  {
+    path: "/trainings/product-innovation-fellowship/apply",
+    changeFrequency: "monthly",
+    priority: 0.7,
+  },
+  {
     path: "/trainings/executive-virtual-assistance",
     changeFrequency: "monthly",
     priority: 0.8,

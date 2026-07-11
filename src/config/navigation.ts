@@ -65,6 +65,12 @@ export const navigation: NavItem[] = [
         href: "/trainings/bootcamps",
         description: "Intensive hands-on bootcamps for in-demand tech skills",
       },
+      {
+        label: "Product Innovation Fellowship",
+        href: "/trainings/product-innovation-fellowship",
+        description:
+          "Fellowship program for building and launching innovative products",
+      },
     ],
   },
   { label: "Blog", href: "/blog" },

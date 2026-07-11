@@ -5,6 +5,8 @@ import { FormEvent, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { recaptchaActions } from "@/lib/recaptcha/actions"
+import { getRecaptchaToken } from "@/lib/recaptcha/client"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
@@ -35,12 +37,17 @@ export function ContactForm({ className }: { className?: string }) {
     setIsSubmitting(true)
 
     try {
+      const recaptchaToken = await getRecaptchaToken(recaptchaActions.contact)
+
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          recaptchaToken,
+        }),
       })
 
       const result = (await response.json()) as {

@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server"
 
-import type { RegistrationType } from "@/lib/registrations"
+import { pifLearningTracks } from "@/config/product-innovation-fellowship"
 import { recaptchaActions } from "@/lib/recaptcha/actions"
 import { requireRecaptcha } from "@/lib/recaptcha/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 
-const ALLOWED_REGISTRATION_TYPES = new Set<RegistrationType>([
-  "course",
-  "siwes",
-  "corporate",
-])
+const allowedTracks = new Set<string>(pifLearningTracks)
 
 function sanitize(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
@@ -29,7 +25,7 @@ export async function POST(request: Request) {
 
     const recaptchaError = await requireRecaptcha(
       body,
-      recaptchaActions.courseRegistration
+      recaptchaActions.pifApplication
     )
     if (recaptchaError) return recaptchaError
 
@@ -37,34 +33,32 @@ export async function POST(request: Request) {
     const lastName = sanitize(body.lastName)
     const email = sanitize(body.email).toLowerCase()
     const phone = sanitize(body.phone)
-    const schoolId = sanitize(body.schoolId)
-    const schoolName = sanitize(body.schoolName)
-    const courseSlug = sanitize(body.courseSlug)
-    const courseTitle = sanitize(body.courseTitle)
-    const courseKey = sanitize(body.courseKey)
-    const message = sanitize(body.message)
-    const registrationType = sanitize(body.registrationType) || "course"
+    const educationExperience = sanitize(body.educationExperience)
+    const preferredTrack = sanitize(body.preferredTrack)
+    const portfolioUrl = sanitize(body.portfolioUrl)
+    const motivation = sanitize(body.motivation)
+    const goals = sanitize(body.goals)
+    const programCommitmentAgreed = body.programCommitmentAgreed === true
 
     if (
       !firstName ||
       !lastName ||
       !email ||
       !phone ||
-      !schoolId ||
-      !schoolName ||
-      !courseSlug ||
-      !courseTitle ||
-      !courseKey
+      !educationExperience ||
+      !preferredTrack ||
+      !motivation ||
+      !goals
     ) {
       return NextResponse.json(
-        { error: "All required registration fields must be provided." },
+        { error: "Please complete all required fields." },
         { status: 400 }
       )
     }
 
-    if (!ALLOWED_REGISTRATION_TYPES.has(registrationType as RegistrationType)) {
+    if (!programCommitmentAgreed) {
       return NextResponse.json(
-        { error: "Invalid registration type." },
+        { error: "You must agree to the program commitment to apply." },
         { status: 400 }
       )
     }
@@ -76,34 +70,40 @@ export async function POST(request: Request) {
       )
     }
 
+    if (!allowedTracks.has(preferredTrack)) {
+      return NextResponse.json(
+        { error: "Select a valid preferred track." },
+        { status: 400 }
+      )
+    }
+
     const supabase = createAdminClient()
-    const { error } = await supabase.from("course_registrations").insert({
+    const { error } = await supabase.from("pif_applications").insert({
       first_name: firstName,
       last_name: lastName,
       email,
       phone,
-      school_id: schoolId,
-      school_name: schoolName,
-      course_slug: courseSlug,
-      course_title: courseTitle,
-      course_key: courseKey,
-      message: message || null,
-      registration_type: registrationType,
+      education_experience: educationExperience,
+      preferred_track: preferredTrack,
+      portfolio_url: portfolioUrl || null,
+      motivation,
+      goals,
+      program_commitment_agreed: programCommitmentAgreed,
     })
 
     if (error) {
-      console.error("Failed to save course registration", error)
+      console.error("Failed to save PIF application", error)
       return NextResponse.json(
-        { error: "Unable to save your registration right now." },
+        { error: "Unable to save your application right now." },
         { status: 500 }
       )
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Unexpected course registration error", error)
+    console.error("Unexpected PIF application error", error)
     return NextResponse.json(
-      { error: "Unable to process your registration right now." },
+      { error: "Unable to process your application right now." },
       { status: 500 }
     )
   }

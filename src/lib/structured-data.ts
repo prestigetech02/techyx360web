@@ -117,6 +117,41 @@ export function getFaqSchema(faqs: FaqItem[]) {
   }
 }
 
+type CourseSchemaOptions = {
+  name: string
+  description: string
+  path: string
+  image: string
+  duration?: string
+  teaches?: string[]
+}
+
+export function getCourseSchema({
+  name,
+  description,
+  path,
+  image,
+  duration,
+  teaches,
+}: CourseSchemaOptions) {
+  const imageUrl = image.startsWith("http") ? image : absoluteUrl(image)
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name,
+    description,
+    url: absoluteUrl(path),
+    image: imageUrl,
+    provider: {
+      "@id": organization.id,
+    },
+    inLanguage: "en-NG",
+    ...(duration ? { timeRequired: duration } : {}),
+    ...(teaches?.length ? { teaches } : {}),
+  }
+}
+
 type ArticleSchemaOptions = {
   title: string
   description: string

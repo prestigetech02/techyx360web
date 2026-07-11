@@ -50,6 +50,14 @@ export const pageOgImages: Record<
     url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1200&q=80",
     alt: "Executive virtual assistant working remotely",
   },
+  "/trainings/product-innovation-fellowship": {
+    url: "/pil.png",
+    alt: "Product Innovation Fellowship — team building real digital products",
+  },
+  "/trainings/product-innovation-fellowship/apply": {
+    url: "/pil.png",
+    alt: "Apply for the Product Innovation Fellowship at Techyx360",
+  },
   "/trainings/register": {
     url: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80",
     alt: "Register for Techyx360 training programs",

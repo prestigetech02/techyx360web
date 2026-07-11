@@ -267,6 +267,54 @@ export type Database = {
           },
         ]
       }
+      pif_applications: {
+        Row: {
+          id: string
+          first_name: string
+          last_name: string
+          email: string
+          phone: string
+          education_experience: string
+          preferred_track: string
+          portfolio_url: string | null
+          motivation: string
+          goals: string
+          program_commitment_agreed: boolean
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          first_name: string
+          last_name: string
+          email: string
+          phone: string
+          education_experience: string
+          preferred_track: string
+          portfolio_url?: string | null
+          motivation: string
+          goals: string
+          program_commitment_agreed?: boolean
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          first_name?: string
+          last_name?: string
+          email?: string
+          phone?: string
+          education_experience?: string
+          preferred_track?: string
+          portfolio_url?: string | null
+          motivation?: string
+          goals?: string
+          program_commitment_agreed?: boolean
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

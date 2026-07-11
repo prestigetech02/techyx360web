@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 
+import { recaptchaActions } from "@/lib/recaptcha/actions"
+import { requireRecaptcha } from "@/lib/recaptcha/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 
@@ -17,6 +19,12 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as Record<string, unknown>
+
+    const recaptchaError = await requireRecaptcha(
+      body,
+      recaptchaActions.contact
+    )
+    if (recaptchaError) return recaptchaError
 
     const firstName = sanitize(body.firstName)
     const lastName = sanitize(body.lastName)

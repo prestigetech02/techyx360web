@@ -22,7 +22,7 @@ import { getCourseSchema, getFaqSchema } from "@/lib/structured-data"
 import { cn } from "@/lib/utils"
 
 const pagePath = pifCoursePath
-const shareImage = "/pil.png"
+const shareImage = "/pil-og.jpg"
 
 const highlights = [
   "12 Weeks of Hands-on Learning",
@@ -114,6 +114,8 @@ export const metadata: Metadata = createPageMetadata({
   ogImage: shareImage,
   ogImageAlt:
     "Product Innovation Fellowship — team building real digital products at Techyx360",
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
   keywords: [
     "product innovation fellowship",
     "product manager training Nigeria",

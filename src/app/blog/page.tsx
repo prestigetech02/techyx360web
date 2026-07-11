@@ -88,14 +88,8 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
 
       <section className="bg-background py-14 sm:py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-10 lg:grid-cols-[1fr_3fr]">
-            <BlogSidebar
-              posts={allPosts}
-              activeMonth={activeMonth}
-              activeTag={activeTag}
-            />
-
-            <section aria-label="Blog posts">
+          <div className="flex flex-col gap-10 lg:grid lg:grid-cols-[1fr_3fr] lg:items-start">
+            <section aria-label="Blog posts" className="order-1 lg:col-start-2">
               {filterLabel ? (
                 <div className="mb-6 rounded-2xl border border-border/60 bg-card/40 px-4 py-3 text-sm text-muted-foreground">
                   Showing {totalPosts} post{totalPosts === 1 ? "" : "s"}
@@ -135,6 +129,13 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
                 </div>
               )}
             </section>
+
+            <BlogSidebar
+              posts={allPosts}
+              activeMonth={activeMonth}
+              activeTag={activeTag}
+              className="order-2 lg:col-start-1 lg:row-start-1"
+            />
           </div>
         </div>
       </section>

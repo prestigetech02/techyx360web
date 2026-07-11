@@ -16,9 +16,11 @@ export const metadata: Metadata = createPageMetadata({
   description:
     "Apply for the Techyx360 Product Innovation Fellowship. Share your background, preferred track, and goals to join our 12-week immersive product-building program.",
   path: pifApplyPath,
-  ogImage: "/pil.png",
+  ogImage: "/pil-og.jpg",
   ogImageAlt:
     "Apply for the Product Innovation Fellowship at Techyx360",
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
   keywords: [
     "apply product innovation fellowship",
     "PIF application",

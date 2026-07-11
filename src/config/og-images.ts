@@ -51,12 +51,16 @@ export const pageOgImages: Record<
     alt: "Executive virtual assistant working remotely",
   },
   "/trainings/product-innovation-fellowship": {
-    url: "/pil.png",
+    url: "/pil-og.jpg",
     alt: "Product Innovation Fellowship — team building real digital products",
+    width: 1200,
+    height: 630,
   },
   "/trainings/product-innovation-fellowship/apply": {
-    url: "/pil.png",
+    url: "/pil-og.jpg",
     alt: "Apply for the Product Innovation Fellowship at Techyx360",
+    width: 1200,
+    height: 630,
   },
   "/trainings/register": {
     url: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80",

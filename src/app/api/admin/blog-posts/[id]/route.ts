@@ -9,12 +9,16 @@ function sanitize(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
 }
 
-function parseTags(value: unknown) {
+function parseKeywords(value: unknown) {
   if (!Array.isArray(value)) return []
 
   return value
-    .map((tag) => (typeof tag === "string" ? tag.trim() : ""))
+    .map((keyword) => (typeof keyword === "string" ? keyword.trim() : ""))
     .filter(Boolean)
+}
+
+function parseTags(value: unknown) {
+  return parseKeywords(value)
 }
 
 type RouteContext = {
@@ -49,6 +53,8 @@ export async function PATCH(request: Request, context: RouteContext) {
     const publishedAt = sanitize(body.publishedAt)
     const status = sanitize(body.status)
     const tags = parseTags(body.tags)
+    const metaDescription = sanitize(body.metaDescription)
+    const metaKeywords = parseKeywords(body.metaKeywords)
 
     if (!title || !slug || !excerpt || !content || !featuredImage || !featuredImageAlt) {
       return NextResponse.json(
@@ -95,6 +101,8 @@ export async function PATCH(request: Request, context: RouteContext) {
         tags,
         featured_image: featuredImage,
         featured_image_alt: featuredImageAlt,
+        meta_description: metaDescription || null,
+        meta_keywords: metaKeywords,
         read_time_mins: estimateReadTimeMins(content),
         status,
         published_at: publishedAt,

@@ -25,6 +25,8 @@ type BlogPostFormValues = {
   content: string
   author: string
   tags: string
+  metaDescription: string
+  metaKeywords: string
   featuredImage: string
   featuredImageAlt: string
   publishedAt: string
@@ -46,6 +48,8 @@ const defaultValues: BlogPostFormValues = {
   content: "",
   author: "Techyx360 Team",
   tags: "",
+  metaDescription: "",
+  metaKeywords: "",
   featuredImage: "",
   featuredImageAlt: "",
   publishedAt: defaultPublishedAt,
@@ -127,6 +131,11 @@ export function BlogPostForm({
         .split(",")
         .map((tag) => tag.trim())
         .filter(Boolean),
+      metaDescription: values.metaDescription,
+      metaKeywords: values.metaKeywords
+        .split(",")
+        .map((keyword) => keyword.trim())
+        .filter(Boolean),
       featuredImage: values.featuredImage,
       featuredImageAlt: values.featuredImageAlt,
       publishedAt: values.publishedAt,
@@ -195,6 +204,9 @@ export function BlogPostForm({
             placeholder="Post title"
             className={fieldClassName}
           />
+          <p className="mt-2 text-xs text-muted-foreground">
+            Used as the page and social sharing title.
+          </p>
         </div>
 
         <div>
@@ -277,12 +289,63 @@ export function BlogPostForm({
             rows={3}
             value={values.excerpt}
             onChange={(event) => updateField("excerpt", event.target.value)}
-            placeholder="Short summary shown on the blog listing and SEO description."
+            placeholder="Short summary shown on the blog listing cards."
             className={cn(
               fieldClassName,
               "min-h-[96px] resize-y py-3 leading-relaxed"
             )}
           />
+        </div>
+
+        <div className="lg:col-span-2 rounded-2xl border border-border/60 bg-muted/20 p-5">
+          <h3 className="text-sm font-semibold text-foreground">SEO</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            The post title is used as the meta title. The featured image is used
+            when sharing on social platforms.
+          </p>
+
+          <div className="mt-4 space-y-4">
+            <div>
+              <label htmlFor="blog-meta-description" className={labelClassName}>
+                Meta description
+              </label>
+              <textarea
+                id="blog-meta-description"
+                name="metaDescription"
+                rows={3}
+                value={values.metaDescription}
+                onChange={(event) =>
+                  updateField("metaDescription", event.target.value)
+                }
+                placeholder="Search and social preview description. Falls back to the excerpt if empty."
+                className={cn(
+                  fieldClassName,
+                  "min-h-[96px] resize-y py-3 leading-relaxed"
+                )}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="blog-meta-keywords" className={labelClassName}>
+                Meta keywords
+              </label>
+              <Input
+                id="blog-meta-keywords"
+                name="metaKeywords"
+                type="text"
+                value={values.metaKeywords}
+                onChange={(event) =>
+                  updateField("metaKeywords", event.target.value)
+                }
+                placeholder="mobile apps, security, Nigeria"
+                className={fieldClassName}
+              />
+              <p className="mt-2 text-xs text-muted-foreground">
+                Comma-separated SEO keywords. Post tags are used if this is
+                left empty.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="lg:col-span-2">

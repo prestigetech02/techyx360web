@@ -112,6 +112,8 @@ export default async function AdminBlogEditPage({
             content: post.content,
             author: post.author,
             tags: post.tags.join(", "),
+            metaDescription: post.metaDescription ?? "",
+            metaKeywords: post.metaKeywords?.join(", ") ?? "",
             featuredImage: post.featuredImage,
             featuredImageAlt: post.featuredImageAlt,
             publishedAt: post.dateISO,

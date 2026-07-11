@@ -108,6 +108,8 @@ export type Database = {
           tags: string[]
           featured_image: string
           featured_image_alt: string
+          meta_description: string | null
+          meta_keywords: string[]
           read_time_mins: number
           status: string
           published_at: string
@@ -124,6 +126,8 @@ export type Database = {
           tags?: string[]
           featured_image: string
           featured_image_alt: string
+          meta_description?: string | null
+          meta_keywords?: string[]
           read_time_mins?: number
           status?: string
           published_at: string
@@ -140,6 +144,8 @@ export type Database = {
           tags?: string[]
           featured_image?: string
           featured_image_alt?: string
+          meta_description?: string | null
+          meta_keywords?: string[]
           read_time_mins?: number
           status?: string
           published_at?: string

@@ -18,6 +18,7 @@ import {
   getBlogPostBySlug,
   getPublishedBlogPosts,
 } from "@/lib/blog/posts"
+import { createBlogPostMetadata, getBlogPostSeoDescription } from "@/lib/blog/seo"
 import { createPageMetadata } from "@/lib/seo"
 import { getArticleSchema } from "@/lib/structured-data"
 
@@ -44,21 +45,7 @@ export async function generateMetadata({
     })
   }
 
-  return createPageMetadata({
-    title: `${post.title} | ${brand.name}`,
-    description: post.excerpt,
-    path: `/blog/${post.slug}`,
-    keywords: [...siteMetadata.keywords, ...post.tags],
-    ogImage: post.featuredImage,
-    ogImageAlt: post.featuredImageAlt,
-    type: "article",
-    article: {
-      publishedTime: post.dateISO,
-      modifiedTime: post.modifiedAtISO ?? post.dateISO,
-      authors: [post.author],
-      tags: post.tags,
-    },
-  })
+  return createBlogPostMetadata(post)
 }
 
 function getArticleWordCount(content: string) {
@@ -68,7 +55,7 @@ function getArticleWordCount(content: string) {
 function getArticleStructuredData(post: BlogPost) {
   return getArticleSchema({
     title: post.title,
-    description: post.excerpt,
+    description: getBlogPostSeoDescription(post),
     path: `/blog/${post.slug}`,
     image: post.featuredImage,
     datePublished: post.dateISO,
@@ -138,7 +125,7 @@ export default async function BlogPostPage({
           </nav>
 
           <div className="mt-8">
-            <h1 className="text-2xl font-bold tracking-tight whitespace-nowrap text-white sm:text-3xl lg:text-4xl">
+            <h1 className="max-w-full text-balance break-words text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
               {post.title}
             </h1>
 

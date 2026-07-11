@@ -10,6 +10,8 @@ export type BlogPost = {
   author: string
   featuredImage: string
   featuredImageAlt: string
+  metaDescription?: string
+  metaKeywords?: string[]
 }
 
 export const blogPosts: BlogPost[] = [

@@ -24,7 +24,7 @@ export function PageHeroBanner({
       <PageHeroBackground />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
-        <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+        <h1 className="max-w-full text-balance break-words text-3xl font-bold tracking-tight text-white sm:text-4xl">
           {title}
         </h1>
         {children}

@@ -82,6 +82,10 @@ export function FeaturedImageUpload({
         <label htmlFor={id} className={labelClassName}>
           Featured image
         </label>
+        <p className="mb-3 text-xs text-muted-foreground">
+          This image is shown on the blog listing and used as the preview when
+          the post is shared on social media.
+        </p>
 
         <input
           ref={inputRef}

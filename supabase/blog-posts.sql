@@ -8,6 +8,8 @@ create table if not exists public.blog_posts (
   tags text[] not null default '{}',
   featured_image text not null,
   featured_image_alt text not null,
+  meta_description text,
+  meta_keywords text[] not null default '{}',
   read_time_mins integer not null default 5,
   status text not null default 'draft' check (status in ('draft', 'published')),
   published_at date not null,

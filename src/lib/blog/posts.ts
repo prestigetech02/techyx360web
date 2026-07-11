@@ -44,6 +44,8 @@ export function mapBlogPostRowToBlogPost(row: BlogPostRow): BlogPost {
     author: row.author,
     featuredImage: row.featured_image,
     featuredImageAlt: row.featured_image_alt,
+    metaDescription: row.meta_description ?? undefined,
+    metaKeywords: row.meta_keywords?.length ? row.meta_keywords : undefined,
   }
 }
 
@@ -74,7 +76,7 @@ async function getDatabaseBlogPosts(options?: { publishedOnly?: boolean }) {
   let query = supabase
     .from("blog_posts")
     .select(
-      "id, slug, title, excerpt, content, author, tags, featured_image, featured_image_alt, read_time_mins, status, published_at, created_at, updated_at"
+      "id, slug, title, excerpt, content, author, tags, featured_image, featured_image_alt, meta_description, meta_keywords, read_time_mins, status, published_at, created_at, updated_at"
     )
     .order("published_at", { ascending: false })
     .order("created_at", { ascending: false })
@@ -125,7 +127,7 @@ export async function getBlogPostBySlug(
     const { data } = await supabase
       .from("blog_posts")
       .select(
-        "id, slug, title, excerpt, content, author, tags, featured_image, featured_image_alt, read_time_mins, status, published_at, created_at, updated_at"
+        "id, slug, title, excerpt, content, author, tags, featured_image, featured_image_alt, meta_description, meta_keywords, read_time_mins, status, published_at, created_at, updated_at"
       )
       .eq("slug", slug)
       .maybeSingle()

@@ -261,8 +261,8 @@ export default function ProductInnovationFellowshipPage() {
 
             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-3xl lg:aspect-[2/1]">
               <Image
-                src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1400&q=80"
-                alt="Multidisciplinary team collaborating on a digital product"
+                src="/pil2.png"
+                alt="Product Innovation Fellowship team collaborating on research, design, development, and launch"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover object-center"

@@ -12,7 +12,7 @@ export function AdminShell({ children, userEmail }: AdminShellProps) {
     <AdminNotificationsProvider>
       <div className="min-h-screen bg-muted/40">
         <div className="flex min-h-screen">
-          <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:block">
+          <div className="hidden h-dvh lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:block">
             <AdminSidebar />
           </div>
 

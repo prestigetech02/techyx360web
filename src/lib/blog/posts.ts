@@ -1,5 +1,6 @@
 import type { BlogPost } from "@/config/blog"
 import { blogPosts as staticBlogPosts } from "@/config/blog"
+import { sortBlogPostsNewestFirst } from "@/lib/blog/listing"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 import type { Database } from "@/types/database"
@@ -76,6 +77,7 @@ async function getDatabaseBlogPosts(options?: { publishedOnly?: boolean }) {
       "id, slug, title, excerpt, content, author, tags, featured_image, featured_image_alt, read_time_mins, status, published_at, created_at, updated_at"
     )
     .order("published_at", { ascending: false })
+    .order("created_at", { ascending: false })
 
   if (options?.publishedOnly) {
     query = query.eq("status", "published")
@@ -100,9 +102,7 @@ export async function getAdminBlogPosts(): Promise<AdminBlogPost[]> {
     .filter((post) => !databaseSlugs.has(post.slug))
     .map(mapStaticPostToAdminPost)
 
-  return [...databasePosts, ...legacyPosts].sort(
-    (a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
-  )
+  return sortBlogPostsNewestFirst([...databasePosts, ...legacyPosts])
 }
 
 export async function getPublishedBlogPosts(): Promise<BlogPost[]> {
@@ -114,9 +114,7 @@ export async function getPublishedBlogPosts(): Promise<BlogPost[]> {
     (post) => !databaseSlugs.has(post.slug)
   )
 
-  return [...databasePosts, ...legacyPosts].sort(
-    (a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
-  )
+  return sortBlogPostsNewestFirst([...databasePosts, ...legacyPosts])
 }
 
 export async function getBlogPostBySlug(

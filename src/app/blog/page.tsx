@@ -2,10 +2,16 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { BlogCard } from "@/components/blog/blog-card"
+import { BlogPagination } from "@/components/blog/blog-pagination"
 import { BlogSidebar } from "@/components/blog/blog-sidebar"
 import { PageHeroBanner } from "@/components/layout/page-hero-banner"
 import { BreadcrumbJsonLd } from "@/components/seo/breadcrumb-json-ld"
 import { brand, siteMetadata } from "@/config/brand"
+import {
+  filterBlogPosts,
+  formatArchiveLabel,
+  paginateBlogPosts,
+} from "@/lib/blog/listing"
 import { getPublishedBlogPosts } from "@/lib/blog/posts"
 import { createPageMetadata } from "@/lib/seo"
 
@@ -22,8 +28,39 @@ export const metadata: Metadata = createPageMetadata({
   ],
 })
 
-export default async function BlogPage() {
-  const blogPosts = await getPublishedBlogPosts()
+type BlogPageProps = {
+  searchParams: Promise<{
+    page?: string
+    month?: string
+    tag?: string
+  }>
+}
+
+export default async function BlogPage({ searchParams }: BlogPageProps) {
+  const params = await searchParams
+  const activeMonth = params.month?.trim() || undefined
+  const activeTag = params.tag?.trim() || undefined
+  const requestedPage = Number(params.page ?? "1")
+  const page =
+    Number.isFinite(requestedPage) && requestedPage > 0
+      ? Math.floor(requestedPage)
+      : 1
+
+  const allPosts = await getPublishedBlogPosts()
+  const filteredPosts = filterBlogPosts(allPosts, {
+    month: activeMonth,
+    tag: activeTag,
+  })
+  const { posts, currentPage, totalPages, totalPosts } = paginateBlogPosts(
+    filteredPosts,
+    page
+  )
+
+  const filterLabel = activeMonth
+    ? formatArchiveLabel(activeMonth)
+    : activeTag
+      ? activeTag
+      : null
 
   return (
     <main className="flex flex-1 flex-col">
@@ -52,14 +89,51 @@ export default async function BlogPage() {
       <section className="bg-background py-14 sm:py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-[1fr_3fr]">
-            <BlogSidebar posts={blogPosts} />
+            <BlogSidebar
+              posts={allPosts}
+              activeMonth={activeMonth}
+              activeTag={activeTag}
+            />
 
             <section aria-label="Blog posts">
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {blogPosts.map((post) => (
-                  <BlogCard key={post.slug} post={post} />
-                ))}
-              </div>
+              {filterLabel ? (
+                <div className="mb-6 rounded-2xl border border-border/60 bg-card/40 px-4 py-3 text-sm text-muted-foreground">
+                  Showing {totalPosts} post{totalPosts === 1 ? "" : "s"}
+                  {activeMonth ? ` from ${filterLabel}` : ` tagged "${activeTag}"`}
+                </div>
+              ) : null}
+
+              {posts.length > 0 ? (
+                <>
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {posts.map((post) => (
+                      <BlogCard key={post.slug} post={post} />
+                    ))}
+                  </div>
+
+                  <BlogPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    month={activeMonth}
+                    tag={activeTag}
+                  />
+                </>
+              ) : (
+                <div className="rounded-2xl border border-border/60 bg-card/40 px-6 py-12 text-center">
+                  <p className="text-base font-semibold text-foreground">
+                    No posts found
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Try another archive month or clear your filters.
+                  </p>
+                  <Link
+                    href="/blog"
+                    className="mt-5 inline-flex text-sm font-medium text-brand transition-colors hover:text-[#eaaa33]"
+                  >
+                    View all posts
+                  </Link>
+                </div>
+              )}
             </section>
           </div>
         </div>

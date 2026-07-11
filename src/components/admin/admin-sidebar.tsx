@@ -117,30 +117,30 @@ export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
   return (
     <aside
       className={cn(
-        "flex h-full w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground",
+        "flex h-full max-h-dvh w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground",
         className
       )}
     >
-      <div className="border-b border-sidebar-border px-5 py-5">
+      <div className="shrink-0 border-b border-sidebar-border px-4 py-3">
         <Link href="/admin" onClick={onNavigate} className="inline-flex">
           <Image
             src={brand.logo.light}
             alt={brand.name}
             width={180}
             height={44}
-            className="h-9 w-auto dark:hidden"
+            className="h-8 w-auto dark:hidden"
           />
           <Image
             src={brand.logo.dark}
             alt={brand.name}
             width={180}
             height={44}
-            className="hidden h-9 w-auto dark:block"
+            className="hidden h-8 w-auto dark:block"
           />
         </Link>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-3 py-3">
         {adminNavItems.map((item) => {
           if (item.children?.length) {
             return (
@@ -185,7 +185,7 @@ export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
         })}
       </nav>
 
-      <div className="border-t border-sidebar-border px-5 py-4">
+      <div className="shrink-0 border-t border-sidebar-border px-4 py-3">
         <Link
           href="/"
           onClick={onNavigate}

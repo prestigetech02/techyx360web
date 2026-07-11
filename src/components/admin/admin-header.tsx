@@ -133,7 +133,7 @@ export function AdminHeader({ userEmail }: AdminHeaderProps) {
       </header>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-64 p-0">
+        <SheetContent side="left" className="h-dvh w-64 p-0">
           <SheetTitle className="sr-only">Admin navigation</SheetTitle>
           <AdminSidebar onNavigate={() => setMobileOpen(false)} />
         </SheetContent>

@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
+import { PageHeroBackground } from "@/components/layout/page-hero-background"
+import { ArrowLeft, Calendar, Clock, User } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, Calendar, Clock, User } from "lucide-react"
 import { notFound } from "next/navigation"
 
 import { BlogPostContent } from "@/components/blog/blog-post-content"
@@ -109,19 +110,7 @@ export default async function BlogPostPage({
       />
 
       <section className="relative overflow-hidden bg-[#0b2c66]">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute top-0 right-0 h-72 w-72 opacity-30"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, rgba(255,255,255,0.22) 1.5px, transparent 1.5px)",
-            backgroundSize: "14px 14px",
-            WebkitMaskImage:
-              "radial-gradient(ellipse at top right, rgba(0,0,0,1) 0%, transparent 70%)",
-            maskImage:
-              "radial-gradient(ellipse at top right, rgba(0,0,0,1) 0%, transparent 70%)",
-          }}
-        />
+        <PageHeroBackground />
 
         <div className="relative z-10 mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
           <nav aria-label="Breadcrumb">

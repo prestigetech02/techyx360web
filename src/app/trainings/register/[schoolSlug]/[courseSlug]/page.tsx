@@ -10,14 +10,26 @@ import {
   evaShareImage,
   evaShareImageAlt,
 } from "@/config/executive-virtual-assistance"
-import { findCourseByKey, getCourseKey } from "@/config/training-schools"
+import { findCourseByKey, findCourseBySlug, getCourseKey } from "@/config/training-schools"
 import { createPageMetadata } from "@/lib/seo"
+
+export const dynamicParams = true
 
 type CourseRegistrationDetailPageProps = {
   params: Promise<{
     schoolSlug: string
     courseSlug: string
   }>
+}
+
+function resolveCourseRegistration(schoolSlug: string, courseSlug: string) {
+  const byKey = findCourseByKey(getCourseKey(schoolSlug, courseSlug))
+  if (byKey) return byKey
+
+  const bySlug = findCourseBySlug(courseSlug)
+  if (bySlug && bySlug.school.id === schoolSlug) return bySlug
+
+  return null
 }
 
 export async function generateStaticParams() {
@@ -35,7 +47,7 @@ export async function generateMetadata({
   params,
 }: CourseRegistrationDetailPageProps): Promise<Metadata> {
   const { schoolSlug, courseSlug } = await params
-  const selection = findCourseByKey(getCourseKey(schoolSlug, courseSlug))
+  const selection = resolveCourseRegistration(schoolSlug, courseSlug)
 
   if (!selection) {
     return createPageMetadata({
@@ -71,7 +83,7 @@ export default async function CourseRegistrationDetailPage({
   params,
 }: CourseRegistrationDetailPageProps) {
   const { schoolSlug, courseSlug } = await params
-  const selection = findCourseByKey(getCourseKey(schoolSlug, courseSlug))
+  const selection = resolveCourseRegistration(schoolSlug, courseSlug)
 
   if (!selection) notFound()
 

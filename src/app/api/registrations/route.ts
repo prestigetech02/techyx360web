@@ -28,6 +28,35 @@ function parseYesNo(value: unknown) {
   return null
 }
 
+function formatEvaMessageExtras(input: {
+  location: string
+  hasWorkingComputer: boolean
+  canDevote6HoursWeekly: boolean
+  existingMessage?: string
+}) {
+  const lines = [
+    "EVA application details:",
+    `Location: ${input.location}`,
+    `Has working computer: ${input.hasWorkingComputer ? "Yes" : "No"}`,
+    `Can devote 6 hours/week: ${input.canDevote6HoursWeekly ? "Yes" : "No"}`,
+  ]
+
+  if (input.existingMessage) {
+    lines.push("", input.existingMessage)
+  }
+
+  return lines.join("\n")
+}
+
+function isMissingColumnError(error: { code?: string; message?: string }) {
+  const message = error.message?.toLowerCase() ?? ""
+
+  return (
+    error.code === "PGRST204" ||
+    (message.includes("column") && message.includes("does not exist"))
+  )
+}
+
 export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
     return NextResponse.json(
@@ -119,7 +148,7 @@ export async function POST(request: Request) {
     }
 
     const supabase = createAdminClient()
-    const { error } = await supabase.from("course_registrations").insert({
+    const baseRegistration = {
       first_name: firstName,
       last_name: lastName,
       email,
@@ -131,15 +160,54 @@ export async function POST(request: Request) {
       course_key: courseKey,
       message: message || null,
       registration_type: registrationType,
-      location: isEvaRegistration ? location : null,
-      has_working_computer: isEvaRegistration ? hasWorkingComputer : null,
-      can_devote_6_hours_weekly: isEvaRegistration
-        ? canDevote6HoursWeekly
-        : null,
-    })
+    }
 
-    if (error) {
-      console.error("Failed to save course registration", error)
+    let insertError = null
+
+    if (isEvaRegistration) {
+      const evaRegistration = {
+        ...baseRegistration,
+        location,
+        has_working_computer: hasWorkingComputer,
+        can_devote_6_hours_weekly: canDevote6HoursWeekly,
+      }
+
+      const { error } = await supabase
+        .from("course_registrations")
+        .insert(evaRegistration)
+
+      if (error && isMissingColumnError(error)) {
+        console.warn(
+          "EVA registration columns missing; saving details in message field",
+          error
+        )
+
+        const { error: fallbackError } = await supabase
+          .from("course_registrations")
+          .insert({
+            ...baseRegistration,
+            message: formatEvaMessageExtras({
+              location,
+              hasWorkingComputer,
+              canDevote6HoursWeekly,
+              existingMessage: message || undefined,
+            }),
+          })
+
+        insertError = fallbackError
+      } else {
+        insertError = error
+      }
+    } else {
+      const { error } = await supabase
+        .from("course_registrations")
+        .insert(baseRegistration)
+
+      insertError = error
+    }
+
+    if (insertError) {
+      console.error("Failed to save course registration", insertError)
       return NextResponse.json(
         { error: "Unable to save your registration right now." },
         { status: 500 }

@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react"
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { evaCourseSlug } from "@/config/executive-virtual-assistance"
 import { getCourseKey } from "@/config/training-schools"
 import { submitCourseRegistration } from "@/lib/registrations"
 import { notify } from "@/lib/toast"
@@ -13,6 +14,42 @@ import { cn } from "@/lib/utils"
 const fieldClassName =
   "h-11 w-full rounded-xl border-border bg-background px-3.5 text-sm md:text-sm"
 const labelClassName = "mb-2 block text-sm font-medium text-foreground"
+
+function YesNoField({
+  name,
+  label,
+  description,
+}: {
+  name: string
+  label: string
+  description?: string
+}) {
+  return (
+    <fieldset>
+      <legend className={labelClassName}>{label}</legend>
+      {description ? (
+        <p className="mb-3 text-sm text-muted-foreground">{description}</p>
+      ) : null}
+      <div className="flex flex-wrap gap-3">
+        {(["yes", "no"] as const).map((value) => (
+          <label
+            key={value}
+            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-border/60 bg-background px-4 text-sm font-medium text-foreground transition-colors hover:border-brand/30"
+          >
+            <input
+              type="radio"
+              name={name}
+              value={value}
+              required
+              className="size-4 border-border text-brand focus:ring-brand/30"
+            />
+            {value === "yes" ? "Yes" : "No"}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  )
+}
 
 type RegisterCourseFormProps = {
   schoolId: string
@@ -32,6 +69,7 @@ export function RegisterCourseForm({
   showSelectedCourse = true,
 }: RegisterCourseFormProps) {
   const courseValue = getCourseKey(schoolId, courseSlug)
+  const isEvaCourse = courseSlug === evaCourseSlug
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,6 +92,15 @@ export function RegisterCourseForm({
       courseKey: courseValue,
       message: String(formData.get("message") ?? ""),
       registrationType: "course" as const,
+      ...(isEvaCourse
+        ? {
+            location: String(formData.get("location") ?? ""),
+            hasWorkingComputer:
+              String(formData.get("hasWorkingComputer") ?? "") === "yes",
+            canDevote6HoursWeekly:
+              String(formData.get("canDevote6HoursWeekly") ?? "") === "yes",
+          }
+        : {}),
     }
 
     setIsSubmitting(true)
@@ -154,6 +201,35 @@ export function RegisterCourseForm({
           />
         </div>
       </div>
+
+      {isEvaCourse ? (
+        <>
+          <div>
+            <label htmlFor="register-location" className={labelClassName}>
+              Location
+            </label>
+            <Input
+              id="register-location"
+              name="location"
+              type="text"
+              required
+              placeholder="e.g. Lagos, Nigeria"
+              className={fieldClassName}
+            />
+          </div>
+
+          <YesNoField
+            name="hasWorkingComputer"
+            label="Do you have a working computer?"
+          />
+
+          <YesNoField
+            name="canDevote6HoursWeekly"
+            label="Can you devote a maximum of 6 hours per week?"
+            description="This helps us confirm you can keep up with the 10-week EVA program schedule."
+          />
+        </>
+      ) : null}
 
       <div>
         <label htmlFor="register-message" className={labelClassName}>

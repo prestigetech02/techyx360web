@@ -13,11 +13,16 @@ import {
   evaCareerBenefits,
   evaFaqs,
   evaHero,
+  evaInvestmentIncludes,
   evaJobRoles,
+  evaPricing,
   evaProgramBenefits,
   evaRegisterPath,
+  evaRelatedPrograms,
+  evaShareImage,
+  evaShareImageAlt,
 } from "@/config/executive-virtual-assistance"
-import { Sparkles } from "lucide-react"
+import { Check, Sparkles } from "lucide-react"
 import { siteMetadata } from "@/config/brand"
 import { createPageMetadata } from "@/lib/seo"
 import { getFaqSchema } from "@/lib/structured-data"
@@ -27,9 +32,12 @@ export const metadata: Metadata = createPageMetadata({
   title:
     "Executive Virtual Assistance Course | Techyx360 Technologies",
   description:
-    "Become a professional Executive Virtual Assistant with Techyx360. Learn administrative support, remote work skills, and productivity tools through a 10-week hands-on training program.",
+    "Work remotely and launch your EVA career with Techyx360. Learn administrative support, productivity tools, and client-ready skills through a 10-week hands-on certification program.",
   path: "/trainings/executive-virtual-assistance",
-  ogImageAlt: evaHero.imageAlt,
+  ogImage: evaShareImage,
+  ogImageAlt: evaShareImageAlt,
+  ogImageWidth: 1672,
+  ogImageHeight: 941,
   keywords: [
     "executive virtual assistance course",
     "virtual assistant training Nigeria",
@@ -86,7 +94,21 @@ export default function ExecutiveVirtualAssistancePage() {
               </h1>
 
               <p className="mt-4 text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-muted-foreground">
-                {evaHero.description}
+                {evaHero.description} Part of our{" "}
+                <Link
+                  href="/trainings/individual-certifications"
+                  className="font-medium text-brand underline-offset-2 hover:underline"
+                >
+                  individual certifications
+                </Link>{" "}
+                track —{" "}
+                <Link
+                  href={evaRegisterPath}
+                  className="font-medium text-brand underline-offset-2 hover:underline"
+                >
+                  enroll today
+                </Link>{" "}
+                to get started.
               </p>
 
               <p className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-[#eaaa33] sm:text-base">
@@ -135,6 +157,25 @@ export default function ExecutiveVirtualAssistancePage() {
             <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl dark:text-foreground">
               Why Become an Executive Virtual Assistant?
             </h2>
+
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Remote work is here to stay — and skilled EVAs are in demand across
+              startups, agencies, and executive teams. Explore our{" "}
+              <Link
+                href="/trainings/bootcamps"
+                className="font-medium text-brand underline-offset-2 hover:underline"
+              >
+                bootcamps
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/services/tech-trainings"
+                className="font-medium text-brand underline-offset-2 hover:underline"
+              >
+                tech training services
+              </Link>{" "}
+              for more ways to grow your digital career.
+            </p>
           </div>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:gap-6">
@@ -180,6 +221,25 @@ export default function ExecutiveVirtualAssistancePage() {
             <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl dark:text-foreground">
               What You Get From the Training
             </h2>
+
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+              From certification to job placement support, this program is built
+              to get you client-ready. See{" "}
+              <Link
+                href="#eva-pricing"
+                className="font-medium text-brand underline-offset-2 hover:underline"
+              >
+                pricing and what&apos;s included
+              </Link>{" "}
+              or{" "}
+              <Link
+                href={evaRegisterPath}
+                className="font-medium text-brand underline-offset-2 hover:underline"
+              >
+                register now
+              </Link>{" "}
+              to secure your spot.
+            </p>
           </div>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
@@ -213,6 +273,83 @@ export default function ExecutiveVirtualAssistancePage() {
       </section>
 
       <section
+        id="eva-pricing"
+        className="scroll-mt-24 bg-background py-14 sm:py-16 lg:py-20"
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm">
+            <div className="grid lg:grid-cols-2">
+              <div className="flex flex-col border-b border-border/60 bg-[#f4f6fa] p-6 sm:p-8 lg:border-b-0 lg:border-r dark:bg-[#0f1524]">
+                <Badge
+                  variant="outline"
+                  className="mb-4 inline-flex rounded-full border-brand/30 bg-brand/10 px-4 py-2 text-[0.65rem] font-semibold tracking-[0.2em] text-brand uppercase md:text-xs"
+                >
+                  Your Investment
+                </Badge>
+
+                <div className="flex flex-wrap items-end gap-3">
+                  <p className="text-4xl font-bold tracking-tight text-brand sm:text-5xl">
+                    {evaPricing.currentPrice}
+                  </p>
+                  <p className="pb-1 text-lg font-semibold text-muted-foreground line-through sm:text-xl">
+                    {evaPricing.regularPrice}
+                  </p>
+                </div>
+
+                <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+                  {evaPricing.description}
+                </p>
+
+                <p className="mt-6 text-sm font-medium text-zinc-700 dark:text-foreground">
+                  Flexible payment options are available.
+                </p>
+
+                <div className="mt-auto hidden border-t border-border/60 pt-6 lg:block">
+                  <p className="text-base font-semibold text-zinc-900 dark:text-foreground">
+                    Ready to start your EVA career?
+                  </p>
+                  <div className="mt-4">
+                    <BrandCtaButton href={evaRegisterPath}>
+                      Enroll Now
+                    </BrandCtaButton>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 sm:p-8">
+                <h3 className="text-lg font-semibold text-zinc-900 dark:text-foreground">
+                  What&apos;s Included
+                </h3>
+
+                <ul className="mt-5 space-y-3">
+                  {evaInvestmentIncludes.map((item) => (
+                    <li
+                      key={item}
+                      className="flex items-start gap-2.5 text-sm font-medium text-zinc-800 sm:text-base dark:text-foreground"
+                    >
+                      <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-brand/15 text-brand">
+                        <Check className="size-3.5" strokeWidth={3} aria-hidden />
+                      </span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="border-t border-border/60 p-6 sm:p-8 lg:hidden">
+                <p className="text-base font-semibold text-zinc-900 dark:text-foreground">
+                  Ready to start your EVA career?
+                </p>
+                <div className="mt-4">
+                  <BrandCtaButton href={evaRegisterPath}>Enroll Now</BrandCtaButton>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
         id="eva-faq"
         className="scroll-mt-24 bg-background py-14 sm:py-16 lg:py-20"
       >
@@ -232,7 +369,14 @@ export default function ExecutiveVirtualAssistancePage() {
 
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
                 Everything you need to know before enrolling in the Executive
-                Virtual Assistance program.
+                Virtual Assistance program. Still unsure?{" "}
+                <Link
+                  href="/contact"
+                  className="font-medium text-brand underline-offset-2 hover:underline"
+                >
+                  Contact our team
+                </Link>{" "}
+                and we&apos;ll help you decide.
               </p>
             </div>
 
@@ -302,6 +446,41 @@ export default function ExecutiveVirtualAssistancePage() {
               </p>
             </article>
           </div>
+        </div>
+      </section>
+
+      <section className="bg-background py-14 sm:py-16 lg:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <Badge
+              variant="outline"
+              className="mb-4 inline-flex rounded-full border-brand/30 bg-brand/10 px-4 py-2 text-[0.65rem] font-semibold tracking-[0.2em] text-brand uppercase md:text-xs"
+            >
+              Related Programs
+            </Badge>
+
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-foreground">
+              Explore more Techyx360 trainings
+            </h2>
+          </div>
+
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {evaRelatedPrograms.map((program) => (
+              <li key={program.href}>
+                <Link
+                  href={program.href}
+                  className="group flex h-full flex-col rounded-2xl border border-border/60 bg-card p-5 transition-all duration-300 hover:border-brand/30 hover:shadow-md sm:p-6"
+                >
+                  <span className="text-base font-semibold text-zinc-900 group-hover:text-brand dark:text-foreground">
+                    {program.label}
+                  </span>
+                  <span className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {program.description}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

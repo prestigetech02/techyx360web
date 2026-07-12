@@ -47,8 +47,16 @@ export const pageOgImages: Record<
     alt: "SIWES and industrial training program",
   },
   "/trainings/executive-virtual-assistance": {
-    url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1200&q=80",
-    alt: "Executive virtual assistant working remotely",
+    url: "/va.png",
+    alt: "Executive virtual assistant professional at a modern workspace with headset and dual monitors",
+    width: 1672,
+    height: 941,
+  },
+  "/trainings/register/business-marketing/executive-virtual-assistance": {
+    url: "/va.png",
+    alt: "Register for Executive Virtual Assistance at Techyx360",
+    width: 1672,
+    height: 941,
   },
   "/trainings/product-innovation-fellowship": {
     url: "/pil-og.jpg",

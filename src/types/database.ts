@@ -61,6 +61,9 @@ export type Database = {
           message: string | null
           registration_type: string
           status: string
+          location: string | null
+          has_working_computer: boolean | null
+          can_devote_6_hours_weekly: boolean | null
           created_at: string
         }
         Insert: {
@@ -77,6 +80,9 @@ export type Database = {
           message?: string | null
           registration_type?: string
           status?: string
+          location?: string | null
+          has_working_computer?: boolean | null
+          can_devote_6_hours_weekly?: boolean | null
           created_at?: string
         }
         Update: {
@@ -93,6 +99,9 @@ export type Database = {
           message?: string | null
           registration_type?: string
           status?: string
+          location?: string | null
+          has_working_computer?: boolean | null
+          can_devote_6_hours_weekly?: boolean | null
           created_at?: string
         }
         Relationships: []

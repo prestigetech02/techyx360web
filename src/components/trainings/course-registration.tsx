@@ -8,6 +8,11 @@ import { Clock, Download, Minus, Plus } from "lucide-react"
 import { RegisterCourseForm } from "@/components/trainings/register-course-form"
 import { Badge } from "@/components/ui/badge"
 import {
+  evaCourseSlug,
+  evaShareImage,
+  evaShareImageAlt,
+} from "@/config/executive-virtual-assistance"
+import {
   findCourseByKey,
   getCourseKey,
   getCoursePath,
@@ -63,6 +68,9 @@ export function CourseRegistration() {
 
   const { school, course } = selection
   const CourseIcon = course.icon
+  const isEvaCourse = course.slug === evaCourseSlug
+  const programImage = isEvaCourse ? evaShareImage : school.image
+  const programImageAlt = isEvaCourse ? evaShareImageAlt : school.imageAlt
 
   const toggleSchool = (schoolId: string) => {
     setOpenSchools((current) => {
@@ -178,8 +186,8 @@ export function CourseRegistration() {
         <article className="overflow-hidden rounded-2xl border border-border/60 bg-card">
           <div className="relative aspect-[21/9] w-full">
             <Image
-              src={school.image}
-              alt={school.imageAlt}
+              src={programImage}
+              alt={programImageAlt}
               fill
               sizes="(max-width: 1024px) 100vw, 760px"
               className="object-cover"

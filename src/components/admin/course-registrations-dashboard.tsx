@@ -72,6 +72,20 @@ function statusBadgeClass(status: string) {
   }
 }
 
+function formatYesNo(value: boolean | null) {
+  if (value === true) return "Yes"
+  if (value === false) return "No"
+  return "—"
+}
+
+function hasEvaDetails(registration: CourseRegistration) {
+  return (
+    registration.location !== null ||
+    registration.has_working_computer !== null ||
+    registration.can_devote_6_hours_weekly !== null
+  )
+}
+
 function StatCard({
   label,
   value,
@@ -292,13 +306,14 @@ export function CourseRegistrationsDashboard({
 
         {registrations.length > 0 ? (
           <div className="max-w-full overflow-x-auto">
-            <table className="w-full min-w-[1180px] text-left text-sm">
+            <table className="w-full min-w-[1320px] text-left text-sm">
               <thead>
                 <tr className="border-b border-border/60 bg-muted/30 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   <th className="px-6 py-3">Name</th>
                   <th className="px-4 py-3">Type</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Phone</th>
+                  <th className="px-4 py-3">Location</th>
                   <th className="px-4 py-3">School</th>
                   <th className="px-4 py-3">Course</th>
                   <th className="px-4 py-3">Notes</th>
@@ -326,6 +341,13 @@ export function CourseRegistrationsDashboard({
                     </td>
                     <td className="px-4 py-4 text-muted-foreground">
                       {registration.phone}
+                    </td>
+                    <td className="max-w-[140px] px-4 py-4 text-foreground/80">
+                      <span title={registration.location ?? undefined}>
+                        {registration.location
+                          ? truncate(registration.location, 24)
+                          : "—"}
+                      </span>
                     </td>
                     <td className="max-w-[160px] px-4 py-4 text-foreground/80">
                       <span title={registration.school_name}>
@@ -443,6 +465,35 @@ export function CourseRegistrationsDashboard({
                     </a>
                   </div>
                 </div>
+
+                {hasEvaDetails(viewRegistration) ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                        Location
+                      </p>
+                      <p className="mt-1 text-sm text-foreground">
+                        {viewRegistration.location ?? "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                        Working computer
+                      </p>
+                      <p className="mt-1 text-sm text-foreground">
+                        {formatYesNo(viewRegistration.has_working_computer)}
+                      </p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                        Can devote 6 hours/week
+                      </p>
+                      <p className="mt-1 text-sm text-foreground">
+                        {formatYesNo(viewRegistration.can_devote_6_hours_weekly)}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
 
                 {viewRegistration.message ? (
                   <div>

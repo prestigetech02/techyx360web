@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import type { RegistrationType } from "@/lib/registrations"
+import { evaCourseSlug } from "@/config/executive-virtual-assistance"
 import { recaptchaActions } from "@/lib/recaptcha/actions"
 import { requireRecaptcha } from "@/lib/recaptcha/server"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -14,6 +15,17 @@ const ALLOWED_REGISTRATION_TYPES = new Set<RegistrationType>([
 
 function sanitize(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
+}
+
+function parseYesNo(value: unknown) {
+  if (typeof value === "boolean") return value
+
+  const normalized = sanitize(value).toLowerCase()
+
+  if (normalized === "yes" || normalized === "true") return true
+  if (normalized === "no" || normalized === "false") return false
+
+  return null
 }
 
 export async function POST(request: Request) {
@@ -44,6 +56,10 @@ export async function POST(request: Request) {
     const courseKey = sanitize(body.courseKey)
     const message = sanitize(body.message)
     const registrationType = sanitize(body.registrationType) || "course"
+    const location = sanitize(body.location)
+    const hasWorkingComputer = parseYesNo(body.hasWorkingComputer)
+    const canDevote6HoursWeekly = parseYesNo(body.canDevote6HoursWeekly)
+    const isEvaRegistration = courseSlug === evaCourseSlug
 
     if (
       !firstName ||
@@ -76,6 +92,32 @@ export async function POST(request: Request) {
       )
     }
 
+    if (isEvaRegistration) {
+      if (!location) {
+        return NextResponse.json(
+          { error: "Location is required for EVA registration." },
+          { status: 400 }
+        )
+      }
+
+      if (hasWorkingComputer === null) {
+        return NextResponse.json(
+          { error: "Please indicate if you have a working computer." },
+          { status: 400 }
+        )
+      }
+
+      if (canDevote6HoursWeekly === null) {
+        return NextResponse.json(
+          {
+            error:
+              "Please indicate if you can devote a maximum of 6 hours per week.",
+          },
+          { status: 400 }
+        )
+      }
+    }
+
     const supabase = createAdminClient()
     const { error } = await supabase.from("course_registrations").insert({
       first_name: firstName,
@@ -89,6 +131,11 @@ export async function POST(request: Request) {
       course_key: courseKey,
       message: message || null,
       registration_type: registrationType,
+      location: isEvaRegistration ? location : null,
+      has_working_computer: isEvaRegistration ? hasWorkingComputer : null,
+      can_devote_6_hours_weekly: isEvaRegistration
+        ? canDevote6HoursWeekly
+        : null,
     })
 
     if (error) {

@@ -16,6 +16,9 @@ export type CourseRegistrationPayload = {
   courseKey: string
   message?: string
   registrationType?: RegistrationType
+  location?: string
+  hasWorkingComputer?: boolean
+  canDevote6HoursWeekly?: boolean
 }
 
 function slugify(value: string) {

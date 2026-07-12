@@ -5,6 +5,11 @@ import { Suspense } from "react"
 import { PageHeroBanner } from "@/components/layout/page-hero-banner"
 import { CourseRegistration } from "@/components/trainings/course-registration"
 import { brand, siteMetadata } from "@/config/brand"
+import {
+  evaCourseSlug,
+  evaShareImage,
+  evaShareImageAlt,
+} from "@/config/executive-virtual-assistance"
 import { findCourseByKey, getCourseKey } from "@/config/training-schools"
 import { createPageMetadata } from "@/lib/seo"
 
@@ -42,13 +47,16 @@ export async function generateMetadata({
   }
 
   const { course, school } = selection
+  const isEvaCourse = courseSlug === evaCourseSlug
 
   return createPageMetadata({
     title: `Register for ${course.title} | ${brand.name}`,
     description: `Register for ${course.title} at ${school.name}. ${course.description}`,
     path: `/trainings/register/${schoolSlug}/${courseSlug}`,
-    ogImage: school.image,
-    ogImageAlt: school.imageAlt,
+    ogImage: isEvaCourse ? evaShareImage : school.image,
+    ogImageAlt: isEvaCourse ? evaShareImageAlt : school.imageAlt,
+    ogImageWidth: isEvaCourse ? 1672 : undefined,
+    ogImageHeight: isEvaCourse ? 941 : undefined,
     keywords: [
       course.title,
       school.name,

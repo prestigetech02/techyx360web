@@ -40,7 +40,7 @@ export default async function AdminRegistrationsPage() {
   const { data, error } = await supabase
     .from("course_registrations")
     .select(
-      "id, first_name, last_name, email, phone, school_id, school_name, course_slug, course_title, course_key, message, registration_type, status, created_at"
+      "id, first_name, last_name, email, phone, school_id, school_name, course_slug, course_title, course_key, message, registration_type, status, location, has_working_computer, can_devote_6_hours_weekly, created_at"
     )
     .order("created_at", { ascending: false })
     .limit(100)

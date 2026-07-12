@@ -147,6 +147,17 @@ export async function POST(request: Request) {
       }
     }
 
+    const evaDetails =
+      isEvaRegistration &&
+      hasWorkingComputer !== null &&
+      canDevote6HoursWeekly !== null
+        ? {
+            location,
+            hasWorkingComputer,
+            canDevote6HoursWeekly,
+          }
+        : null
+
     const supabase = createAdminClient()
     const baseRegistration = {
       first_name: firstName,
@@ -164,12 +175,12 @@ export async function POST(request: Request) {
 
     let insertError = null
 
-    if (isEvaRegistration) {
+    if (evaDetails) {
       const evaRegistration = {
         ...baseRegistration,
-        location,
-        has_working_computer: hasWorkingComputer,
-        can_devote_6_hours_weekly: canDevote6HoursWeekly,
+        location: evaDetails.location,
+        has_working_computer: evaDetails.hasWorkingComputer,
+        can_devote_6_hours_weekly: evaDetails.canDevote6HoursWeekly,
       }
 
       const { error } = await supabase
@@ -187,9 +198,9 @@ export async function POST(request: Request) {
           .insert({
             ...baseRegistration,
             message: formatEvaMessageExtras({
-              location,
-              hasWorkingComputer,
-              canDevote6HoursWeekly,
+              location: evaDetails.location,
+              hasWorkingComputer: evaDetails.hasWorkingComputer,
+              canDevote6HoursWeekly: evaDetails.canDevote6HoursWeekly,
               existingMessage: message || undefined,
             }),
           })

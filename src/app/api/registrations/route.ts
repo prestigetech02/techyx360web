@@ -4,6 +4,7 @@ import type { RegistrationType } from "@/lib/registrations"
 import { evaCourseSlug } from "@/config/executive-virtual-assistance"
 import { recaptchaActions } from "@/lib/recaptcha/actions"
 import { requireRecaptcha } from "@/lib/recaptcha/server"
+import type { Database } from "@/types/database"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 
@@ -12,6 +13,13 @@ const ALLOWED_REGISTRATION_TYPES = new Set<RegistrationType>([
   "siwes",
   "corporate",
 ])
+
+type CourseRegistrationInsert =
+  Database["public"]["Tables"]["course_registrations"]["Insert"]
+
+type MutableCourseRegistrationInsert = {
+  [K in keyof CourseRegistrationInsert]: CourseRegistrationInsert[K]
+}
 
 function sanitize(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
@@ -48,65 +56,96 @@ function formatEvaMessageExtras(input: {
   return lines.join("\n")
 }
 
-async function insertEvaRegistration(
-  supabase: ReturnType<typeof createAdminClient>,
-  baseRegistration: {
-    first_name: string
-    last_name: string
-    email: string
-    phone: string
-    school_id: string
-    school_name: string
-    course_slug: string
-    course_title: string
-    course_key: string
-    message: string | null
-    registration_type: string
-  },
-  evaDetails: {
-    location: string
-    hasWorkingComputer: boolean
-    canDevote6HoursWeekly: boolean
-  },
-  existingMessage: string
+function appendMessageSection(
+  existingMessage: string | null | undefined,
+  section: string
 ) {
-  const evaRegistration = {
-    ...baseRegistration,
-    location: evaDetails.location,
-    has_working_computer: evaDetails.hasWorkingComputer,
-    can_devote_6_hours_weekly: evaDetails.canDevote6HoursWeekly,
+  if (!existingMessage?.trim()) return section
+  return `${section}\n\n${existingMessage}`
+}
+
+function getMissingColumn(error: { code?: string; message?: string }) {
+  if (error.code !== "PGRST204") return null
+
+  const match = error.message?.match(/Could not find the '([^']+)' column/)
+  return match?.[1] ?? null
+}
+
+function preserveStrippedColumnInMessage(
+  column: string,
+  value: unknown,
+  message: string | null
+) {
+  if (value === null || value === undefined || value === "") {
+    return message
   }
 
-  const { error: fullInsertError } = await supabase
-    .from("course_registrations")
-    .insert(evaRegistration)
+  switch (column) {
+    case "registration_type":
+      return appendMessageSection(
+        message,
+        `Registration type: ${String(value)}`
+      )
+    case "location":
+      return appendMessageSection(message, `Location: ${String(value)}`)
+    case "has_working_computer":
+      return appendMessageSection(
+        message,
+        `Has working computer: ${value ? "Yes" : "No"}`
+      )
+    case "can_devote_6_hours_weekly":
+      return appendMessageSection(
+        message,
+        `Can devote 6 hours/week: ${value ? "Yes" : "No"}`
+      )
+    default:
+      return message
+  }
+}
 
-  if (!fullInsertError) {
-    return null
+async function insertCourseRegistration(
+  supabase: ReturnType<typeof createAdminClient>,
+  payload: CourseRegistrationInsert
+) {
+  let currentPayload: MutableCourseRegistrationInsert = { ...payload }
+  let lastError: { code?: string; message?: string } | null = null
+
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const { error } = await supabase
+      .from("course_registrations")
+      .insert(currentPayload)
+
+    if (!error) {
+      return null
+    }
+
+    lastError = error
+
+    const missingColumn = getMissingColumn(error)
+    if (!missingColumn || !(missingColumn in currentPayload)) {
+      return error
+    }
+
+    console.warn(
+      `course_registrations insert retry ${attempt + 1}: stripping column '${missingColumn}'`
+    )
+
+    const strippedValue =
+      currentPayload[missingColumn as keyof MutableCourseRegistrationInsert]
+    const nextPayload = { ...currentPayload } as MutableCourseRegistrationInsert
+    delete nextPayload[missingColumn as keyof MutableCourseRegistrationInsert]
+
+    currentPayload = {
+      ...nextPayload,
+      message: preserveStrippedColumnInMessage(
+        missingColumn,
+        strippedValue,
+        nextPayload.message ?? null
+      ),
+    }
   }
 
-  console.error("EVA registration insert failed", fullInsertError)
-  console.warn(
-    "Retrying EVA registration without dedicated columns and storing details in message"
-  )
-
-  const { error: fallbackError } = await supabase
-    .from("course_registrations")
-    .insert({
-      ...baseRegistration,
-      message: formatEvaMessageExtras({
-        location: evaDetails.location,
-        hasWorkingComputer: evaDetails.hasWorkingComputer,
-        canDevote6HoursWeekly: evaDetails.canDevote6HoursWeekly,
-        existingMessage: existingMessage || undefined,
-      }),
-    })
-
-  if (fallbackError) {
-    console.error("EVA registration fallback insert failed", fallbackError)
-  }
-
-  return fallbackError
+  return lastError
 }
 
 export async function POST(request: Request) {
@@ -199,17 +238,6 @@ export async function POST(request: Request) {
       }
     }
 
-    const evaDetails =
-      isEvaRegistration &&
-      hasWorkingComputer !== null &&
-      canDevote6HoursWeekly !== null
-        ? {
-            location,
-            hasWorkingComputer,
-            canDevote6HoursWeekly,
-          }
-        : null
-
     const supabase = (() => {
       try {
         return createAdminClient()
@@ -229,7 +257,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const baseRegistration = {
+    const registrationPayload: CourseRegistrationInsert = {
       first_name: firstName,
       last_name: lastName,
       email,
@@ -239,26 +267,34 @@ export async function POST(request: Request) {
       course_slug: courseSlug,
       course_title: courseTitle,
       course_key: courseKey,
-      message: message || null,
+      message:
+        isEvaRegistration &&
+        hasWorkingComputer !== null &&
+        canDevote6HoursWeekly !== null
+          ? formatEvaMessageExtras({
+              location,
+              hasWorkingComputer,
+              canDevote6HoursWeekly,
+              existingMessage: message || undefined,
+            })
+          : message || null,
       registration_type: registrationType,
     }
 
-    let insertError = null
-
-    if (evaDetails) {
-      insertError = await insertEvaRegistration(
-        supabase,
-        baseRegistration,
-        evaDetails,
-        message
-      )
-    } else {
-      const { error } = await supabase
-        .from("course_registrations")
-        .insert(baseRegistration)
-
-      insertError = error
+    if (
+      isEvaRegistration &&
+      hasWorkingComputer !== null &&
+      canDevote6HoursWeekly !== null
+    ) {
+      registrationPayload.location = location
+      registrationPayload.has_working_computer = hasWorkingComputer
+      registrationPayload.can_devote_6_hours_weekly = canDevote6HoursWeekly
     }
+
+    const insertError = await insertCourseRegistration(
+      supabase,
+      registrationPayload
+    )
 
     if (insertError) {
       console.error("Failed to save course registration", insertError)

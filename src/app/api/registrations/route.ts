@@ -48,13 +48,65 @@ function formatEvaMessageExtras(input: {
   return lines.join("\n")
 }
 
-function isMissingColumnError(error: { code?: string; message?: string }) {
-  const message = error.message?.toLowerCase() ?? ""
+async function insertEvaRegistration(
+  supabase: ReturnType<typeof createAdminClient>,
+  baseRegistration: {
+    first_name: string
+    last_name: string
+    email: string
+    phone: string
+    school_id: string
+    school_name: string
+    course_slug: string
+    course_title: string
+    course_key: string
+    message: string | null
+    registration_type: string
+  },
+  evaDetails: {
+    location: string
+    hasWorkingComputer: boolean
+    canDevote6HoursWeekly: boolean
+  },
+  existingMessage: string
+) {
+  const evaRegistration = {
+    ...baseRegistration,
+    location: evaDetails.location,
+    has_working_computer: evaDetails.hasWorkingComputer,
+    can_devote_6_hours_weekly: evaDetails.canDevote6HoursWeekly,
+  }
 
-  return (
-    error.code === "PGRST204" ||
-    (message.includes("column") && message.includes("does not exist"))
+  const { error: fullInsertError } = await supabase
+    .from("course_registrations")
+    .insert(evaRegistration)
+
+  if (!fullInsertError) {
+    return null
+  }
+
+  console.error("EVA registration insert failed", fullInsertError)
+  console.warn(
+    "Retrying EVA registration without dedicated columns and storing details in message"
   )
+
+  const { error: fallbackError } = await supabase
+    .from("course_registrations")
+    .insert({
+      ...baseRegistration,
+      message: formatEvaMessageExtras({
+        location: evaDetails.location,
+        hasWorkingComputer: evaDetails.hasWorkingComputer,
+        canDevote6HoursWeekly: evaDetails.canDevote6HoursWeekly,
+        existingMessage: existingMessage || undefined,
+      }),
+    })
+
+  if (fallbackError) {
+    console.error("EVA registration fallback insert failed", fallbackError)
+  }
+
+  return fallbackError
 }
 
 export async function POST(request: Request) {
@@ -158,7 +210,25 @@ export async function POST(request: Request) {
           }
         : null
 
-    const supabase = createAdminClient()
+    const supabase = (() => {
+      try {
+        return createAdminClient()
+      } catch (error) {
+        console.error("Unable to create Supabase admin client", error)
+        return null
+      }
+    })()
+
+    if (!supabase) {
+      return NextResponse.json(
+        {
+          error:
+            "Registration service is not configured correctly. Please contact support.",
+        },
+        { status: 500 }
+      )
+    }
+
     const baseRegistration = {
       first_name: firstName,
       last_name: lastName,
@@ -176,39 +246,12 @@ export async function POST(request: Request) {
     let insertError = null
 
     if (evaDetails) {
-      const evaRegistration = {
-        ...baseRegistration,
-        location: evaDetails.location,
-        has_working_computer: evaDetails.hasWorkingComputer,
-        can_devote_6_hours_weekly: evaDetails.canDevote6HoursWeekly,
-      }
-
-      const { error } = await supabase
-        .from("course_registrations")
-        .insert(evaRegistration)
-
-      if (error && isMissingColumnError(error)) {
-        console.warn(
-          "EVA registration columns missing; saving details in message field",
-          error
-        )
-
-        const { error: fallbackError } = await supabase
-          .from("course_registrations")
-          .insert({
-            ...baseRegistration,
-            message: formatEvaMessageExtras({
-              location: evaDetails.location,
-              hasWorkingComputer: evaDetails.hasWorkingComputer,
-              canDevote6HoursWeekly: evaDetails.canDevote6HoursWeekly,
-              existingMessage: message || undefined,
-            }),
-          })
-
-        insertError = fallbackError
-      } else {
-        insertError = error
-      }
+      insertError = await insertEvaRegistration(
+        supabase,
+        baseRegistration,
+        evaDetails,
+        message
+      )
     } else {
       const { error } = await supabase
         .from("course_registrations")

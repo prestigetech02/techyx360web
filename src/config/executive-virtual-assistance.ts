@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 
 import { getCoursePath } from "@/config/training-schools"
+import { invoicePaymentDefaults } from "@/config/invoice-defaults"
 
 export const evaSchoolId = "business-marketing"
 export const evaCourseSlug = "executive-virtual-assistance"
@@ -185,6 +186,15 @@ export const evaPricing = {
   regularPrice: "₦180,000",
   description:
     "A one-time fee for the complete 10-week Executive Virtual Assistance program.",
+}
+
+export const evaPaymentDetails = {
+  bankName: invoicePaymentDefaults.bankName,
+  accountNumber: invoicePaymentDefaults.accountNumber,
+  accountName: invoicePaymentDefaults.accountName,
+  amount: evaPricing.currentPrice,
+  paymentNote:
+    "Make payment to the account below, then upload your payment receipt before submitting. Use your full name as the payment reference.",
 }
 
 export const evaInvestmentIncludes = [

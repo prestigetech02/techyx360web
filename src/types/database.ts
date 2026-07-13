@@ -64,6 +64,7 @@ export type Database = {
           location: string | null
           has_working_computer: boolean | null
           can_devote_6_hours_weekly: boolean | null
+          payment_receipt_path: string | null
           created_at: string
         }
         Insert: {
@@ -83,6 +84,7 @@ export type Database = {
           location?: string | null
           has_working_computer?: boolean | null
           can_devote_6_hours_weekly?: boolean | null
+          payment_receipt_path?: string | null
           created_at?: string
         }
         Update: {
@@ -102,6 +104,7 @@ export type Database = {
           location?: string | null
           has_working_computer?: boolean | null
           can_devote_6_hours_weekly?: boolean | null
+          payment_receipt_path?: string | null
           created_at?: string
         }
         Relationships: []

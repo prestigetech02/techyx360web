@@ -4,6 +4,7 @@ import type { RegistrationType } from "@/lib/registrations"
 import { evaCourseSlug } from "@/config/executive-virtual-assistance"
 import { recaptchaActions } from "@/lib/recaptcha/actions"
 import { requireRecaptcha } from "@/lib/recaptcha/server"
+import { uploadRegistrationReceipt } from "@/lib/registrations/receipt-upload"
 import type { Database } from "@/types/database"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
@@ -21,6 +22,10 @@ type MutableCourseRegistrationInsert = {
   [K in keyof CourseRegistrationInsert]: CourseRegistrationInsert[K]
 }
 
+type RegistrationRequestBody = Record<string, unknown> & {
+  paymentReceipt?: File
+}
+
 function sanitize(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
 }
@@ -34,6 +39,32 @@ function parseYesNo(value: unknown) {
   if (normalized === "no" || normalized === "false") return false
 
   return null
+}
+
+async function parseRegistrationRequest(
+  request: Request
+): Promise<RegistrationRequestBody> {
+  const contentType = request.headers.get("content-type") ?? ""
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData()
+    const body: RegistrationRequestBody = {}
+
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        if (key === "paymentReceipt" && value.size > 0) {
+          body.paymentReceipt = value
+        }
+        continue
+      }
+
+      body[key] = value
+    }
+
+    return body
+  }
+
+  return (await request.json()) as RegistrationRequestBody
 }
 
 function formatEvaMessageExtras(input: {
@@ -98,6 +129,11 @@ function preserveStrippedColumnInMessage(
         message,
         `Can devote 6 hours/week: ${value ? "Yes" : "No"}`
       )
+    case "payment_receipt_path":
+      return appendMessageSection(
+        message,
+        `Payment receipt uploaded: ${String(value)}`
+      )
     default:
       return message
   }
@@ -157,7 +193,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as Record<string, unknown>
+    const body = await parseRegistrationRequest(request)
 
     const recaptchaError = await requireRecaptcha(
       body,
@@ -179,6 +215,7 @@ export async function POST(request: Request) {
     const location = sanitize(body.location)
     const hasWorkingComputer = parseYesNo(body.hasWorkingComputer)
     const canDevote6HoursWeekly = parseYesNo(body.canDevote6HoursWeekly)
+    const paymentReceipt = body.paymentReceipt
     const isEvaRegistration = courseSlug === evaCourseSlug
 
     if (
@@ -236,6 +273,13 @@ export async function POST(request: Request) {
           { status: 400 }
         )
       }
+
+      if (!(paymentReceipt instanceof File) || paymentReceipt.size === 0) {
+        return NextResponse.json(
+          { error: "Please upload your payment receipt before submitting." },
+          { status: 400 }
+        )
+      }
     }
 
     const supabase = (() => {
@@ -255,6 +299,21 @@ export async function POST(request: Request) {
         },
         { status: 500 }
       )
+    }
+
+    let paymentReceiptPath: string | null = null
+
+    if (isEvaRegistration && paymentReceipt instanceof File) {
+      const uploadResult = await uploadRegistrationReceipt(
+        paymentReceipt,
+        courseSlug
+      )
+
+      if ("error" in uploadResult) {
+        return NextResponse.json({ error: uploadResult.error }, { status: 400 })
+      }
+
+      paymentReceiptPath = uploadResult.path
     }
 
     const registrationPayload: CourseRegistrationInsert = {
@@ -289,6 +348,7 @@ export async function POST(request: Request) {
       registrationPayload.location = location
       registrationPayload.has_working_computer = hasWorkingComputer
       registrationPayload.can_devote_6_hours_weekly = canDevote6HoursWeekly
+      registrationPayload.payment_receipt_path = paymentReceiptPath
     }
 
     const insertError = await insertCourseRegistration(

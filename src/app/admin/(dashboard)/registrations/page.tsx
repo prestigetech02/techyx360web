@@ -1,5 +1,6 @@
 import { CourseRegistrationsDashboard } from "@/components/admin/course-registrations-dashboard"
 import { brand } from "@/config/brand"
+import { getRegistrationReceiptSignedUrl } from "@/lib/registrations/receipt-upload"
 import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase"
 
 export const metadata = {
@@ -40,10 +41,24 @@ export default async function AdminRegistrationsPage() {
   const { data, error } = await supabase
     .from("course_registrations")
     .select(
-      "id, first_name, last_name, email, phone, school_id, school_name, course_slug, course_title, course_key, message, registration_type, status, location, has_working_computer, can_devote_6_hours_weekly, created_at"
+      "id, first_name, last_name, email, phone, school_id, school_name, course_slug, course_title, course_key, message, registration_type, status, location, has_working_computer, can_devote_6_hours_weekly, payment_receipt_path, created_at"
     )
     .order("created_at", { ascending: false })
     .limit(100)
+
+  const registrations = await Promise.all(
+    (data ?? []).map(async (registration) => {
+      if (!registration.payment_receipt_path) {
+        return { ...registration, payment_receipt_url: null }
+      }
+
+      const payment_receipt_url = await getRegistrationReceiptSignedUrl(
+        registration.payment_receipt_path
+      )
+
+      return { ...registration, payment_receipt_url }
+    })
+  )
 
   return (
     <div className="min-w-0 space-y-6">
@@ -65,7 +80,7 @@ export default async function AdminRegistrationsPage() {
           `course_registrations` table in Supabase.
         </div>
       ) : (
-        <CourseRegistrationsDashboard registrations={data ?? []} />
+        <CourseRegistrationsDashboard registrations={registrations} />
       )}
     </div>
   )

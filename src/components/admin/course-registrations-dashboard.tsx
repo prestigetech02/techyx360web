@@ -31,7 +31,9 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 export type CourseRegistration =
-  Database["public"]["Tables"]["course_registrations"]["Row"]
+  Database["public"]["Tables"]["course_registrations"]["Row"] & {
+    payment_receipt_url?: string | null
+  }
 
 type CourseRegistrationsDashboardProps = {
   registrations: CourseRegistration[]
@@ -492,6 +494,22 @@ export function CourseRegistrationsDashboard({
                         {formatYesNo(viewRegistration.can_devote_6_hours_weekly)}
                       </p>
                     </div>
+                  </div>
+                ) : null}
+
+                {viewRegistration.payment_receipt_url ? (
+                  <div>
+                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                      Payment receipt
+                    </p>
+                    <a
+                      href={viewRegistration.payment_receipt_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-flex text-sm font-medium text-brand hover:underline"
+                    >
+                      View uploaded receipt
+                    </a>
                   </div>
                 ) : null}
 

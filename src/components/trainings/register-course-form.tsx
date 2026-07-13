@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { FormEvent, useState } from "react"
 
+import { EvaPaymentSection } from "@/components/trainings/eva-payment-section"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { evaCourseSlug } from "@/config/executive-virtual-assistance"
@@ -80,6 +81,10 @@ export function RegisterCourseForm({
     const form = event.currentTarget
     const formData = new FormData(form)
 
+    const paymentReceipt = isEvaCourse
+      ? (formData.get("paymentReceipt") as File | null)
+      : null
+
     const payload = {
       firstName: String(formData.get("firstName") ?? ""),
       lastName: String(formData.get("lastName") ?? ""),
@@ -106,7 +111,10 @@ export function RegisterCourseForm({
     setIsSubmitting(true)
 
     try {
-      await submitCourseRegistration(payload)
+      await submitCourseRegistration(
+        payload,
+        paymentReceipt && paymentReceipt.size > 0 ? paymentReceipt : null
+      )
 
       form.reset()
       notify.success(
@@ -228,6 +236,8 @@ export function RegisterCourseForm({
             label="Can you devote a maximum of 6 hours per week?"
             description="This helps us confirm you can keep up with the 10-week EVA program schedule."
           />
+
+          <EvaPaymentSection disabled={isSubmitting} />
         </>
       ) : null}
 

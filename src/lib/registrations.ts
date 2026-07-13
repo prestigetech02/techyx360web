@@ -105,11 +105,65 @@ export function buildCorporateRegistrationPayload(input: {
 }
 
 export async function submitCourseRegistration(
-  payload: CourseRegistrationPayload
+  payload: CourseRegistrationPayload,
+  paymentReceipt?: File | null
 ) {
   const recaptchaToken = await getRecaptchaToken(
     recaptchaActions.courseRegistration
   )
+
+  if (paymentReceipt) {
+    const formData = new FormData()
+
+    formData.append("firstName", payload.firstName)
+    formData.append("lastName", payload.lastName)
+    formData.append("email", payload.email)
+    formData.append("phone", payload.phone)
+    formData.append("schoolId", payload.schoolId)
+    formData.append("schoolName", payload.schoolName)
+    formData.append("courseSlug", payload.courseSlug)
+    formData.append("courseTitle", payload.courseTitle)
+    formData.append("courseKey", payload.courseKey)
+    formData.append("message", payload.message ?? "")
+    formData.append("registrationType", payload.registrationType ?? "course")
+
+    if (payload.location) formData.append("location", payload.location)
+    if (payload.hasWorkingComputer !== undefined) {
+      formData.append(
+        "hasWorkingComputer",
+        payload.hasWorkingComputer ? "yes" : "no"
+      )
+    }
+    if (payload.canDevote6HoursWeekly !== undefined) {
+      formData.append(
+        "canDevote6HoursWeekly",
+        payload.canDevote6HoursWeekly ? "yes" : "no"
+      )
+    }
+
+    if (recaptchaToken) {
+      formData.append("recaptchaToken", recaptchaToken)
+    }
+
+    formData.append("paymentReceipt", paymentReceipt)
+
+    const response = await fetch("/api/registrations", {
+      method: "POST",
+      body: formData,
+    })
+
+    const result = (await response.json().catch(() => null)) as {
+      error?: string
+    } | null
+
+    if (!response.ok) {
+      throw new Error(
+        result?.error ?? "Unable to submit your registration right now."
+      )
+    }
+
+    return
+  }
 
   const response = await fetch("/api/registrations", {
     method: "POST",

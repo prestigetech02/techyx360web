@@ -21,7 +21,7 @@ const iconMap: Record<CareerHighlight["icon"], LucideIcon> = {
 
 export function CareersHighlights() {
   return (
-    <div className="relative z-20 mx-auto -mt-12 max-w-7xl px-4 sm:-mt-14 sm:px-6 lg:-mt-16 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div className="rounded-2xl border border-border/50 bg-white px-4 py-5 shadow-[0_12px_40px_-12px_rgba(15,21,36,0.28)] sm:rounded-3xl sm:px-6 sm:py-6 lg:px-8 dark:border-white/10 dark:bg-card dark:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.45)]">
         <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-0 lg:grid-cols-4">
           {careerHighlights.map((highlight, index) => {

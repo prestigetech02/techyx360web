@@ -1,4 +1,5 @@
 import { contactDetails } from "@/config/contact"
+import { normalizeCareerSalaryValue } from "@/lib/careers/salary"
 
 export type CareerOpenPosition = {
   id: string
@@ -216,17 +217,20 @@ export function formatCareerSalaryRange(
   salaryMin: number | null,
   salaryMax: number | null
 ) {
-  if (salaryMin == null && salaryMax == null) return null
-  if (salaryMin != null && salaryMax != null) {
-    if (salaryMin === salaryMax) {
-      return `${formatCareerSalaryAmount(salaryMin)} / month`
+  const min = normalizeCareerSalaryValue(salaryMin)
+  const max = normalizeCareerSalaryValue(salaryMax)
+
+  if (min == null && max == null) return null
+  if (min != null && max != null) {
+    if (min === max) {
+      return `${formatCareerSalaryAmount(min)} / month`
     }
-    return `${formatCareerSalaryAmount(salaryMin)} – ${formatCareerSalaryAmount(salaryMax)} / month`
+    return `${formatCareerSalaryAmount(min)} – ${formatCareerSalaryAmount(max)} / month`
   }
-  if (salaryMin != null) {
-    return `From ${formatCareerSalaryAmount(salaryMin)} / month`
+  if (min != null) {
+    return `From ${formatCareerSalaryAmount(min)} / month`
   }
-  return `Up to ${formatCareerSalaryAmount(salaryMax!)} / month`
+  return `Up to ${formatCareerSalaryAmount(max!)} / month`
 }
 
 export const careerDatePostedFilterOptions = [

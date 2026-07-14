@@ -35,7 +35,8 @@ import {
 import { createPageMetadata } from "@/lib/seo"
 
 export const dynamicParams = true
-export const revalidate = 60
+export const revalidate = 0
+export const dynamic = "force-dynamic"
 
 export async function generateStaticParams() {
   const openings = await getOpenJobOpenings()
@@ -166,10 +167,6 @@ export default async function CareerDetailPage({
                 {position.title}
               </h1>
 
-              <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/80 sm:text-lg">
-                {position.description}
-              </p>
-
               <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/75">
                 <span className="inline-flex items-center gap-1.5">
                   <Briefcase className="size-4 text-brand" aria-hidden />
@@ -193,10 +190,6 @@ export default async function CareerDetailPage({
                     {salaryLabel}
                   </span>
                 ) : null}
-              </div>
-
-              <div className="mt-8">
-                <ApplyCareerDialogButton />
               </div>
             </div>
           </div>

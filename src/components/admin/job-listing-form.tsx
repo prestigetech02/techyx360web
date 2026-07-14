@@ -9,8 +9,10 @@ import { DropdownField } from "@/components/ui/dropdown"
 import { Input } from "@/components/ui/input"
 import { careerEmploymentTypeOptions } from "@/config/careers"
 import { isRichTextEmpty } from "@/lib/blog/content"
+import { parseCareerSalaryInput } from "@/lib/careers/salary"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import type { JobOpeningRow } from "@/lib/careers/openings"
 
 const fieldClassName =
   "h-11 w-full rounded-xl border-border bg-background px-3.5 text-sm"
@@ -48,17 +50,49 @@ function slugifyPreview(value: string) {
     .replace(/^-|-$/g, "")
 }
 
-export function JobListingForm() {
+function listToTextareaValue(items: string[] | null | undefined) {
+  return (items ?? []).join("\n")
+}
+
+type JobListingFormProps = {
+  listing?: JobOpeningRow
+}
+
+export function JobListingForm({ listing }: JobListingFormProps) {
   const router = useRouter()
+  const isEditing = Boolean(listing)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [title, setTitle] = useState("")
-  const [slug, setSlug] = useState("")
-  const [slugTouched, setSlugTouched] = useState(false)
-  const [status, setStatus] = useState("open")
-  const [icon, setIcon] = useState("product")
-  const [employmentType, setEmploymentType] = useState("Full-time")
-  const [overview, setOverview] = useState("")
+  const [title, setTitle] = useState(listing?.title ?? "")
+  const [slug, setSlug] = useState(listing?.slug ?? "")
+  const [slugTouched, setSlugTouched] = useState(Boolean(listing))
+  const [status, setStatus] = useState(listing?.status ?? "open")
+  const [icon, setIcon] = useState(listing?.icon ?? "product")
+  const [employmentType, setEmploymentType] = useState(
+    listing?.employment_type ?? "Full-time"
+  )
+  const [overview, setOverview] = useState(listing?.overview ?? "")
+  const [department, setDepartment] = useState(listing?.department ?? "")
+  const [location, setLocation] = useState(listing?.location ?? "")
+  const [description, setDescription] = useState(listing?.description ?? "")
+  const [responsibilities, setResponsibilities] = useState(
+    listToTextareaValue(listing?.responsibilities)
+  )
+  const [requirements, setRequirements] = useState(
+    listToTextareaValue(listing?.requirements)
+  )
+  const [niceToHave, setNiceToHave] = useState(
+    listToTextareaValue(listing?.nice_to_have)
+  )
+  const [benefits, setBenefits] = useState(
+    listToTextareaValue(listing?.benefits)
+  )
+  const [salaryMin, setSalaryMin] = useState(
+    listing?.salary_min != null ? String(listing.salary_min) : ""
+  )
+  const [salaryMax, setSalaryMax] = useState(
+    listing?.salary_max != null ? String(listing.salary_max) : ""
+  )
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -74,6 +108,20 @@ export function JobListingForm() {
     const form = event.currentTarget
     const formData = new FormData(form)
 
+    const parsedSalaryMin = parseCareerSalaryInput(
+      formData.get("salaryMin") ?? salaryMin
+    )
+    const parsedSalaryMax = parseCareerSalaryInput(
+      formData.get("salaryMax") ?? salaryMax
+    )
+
+    if (parsedSalaryMin === undefined || parsedSalaryMax === undefined) {
+      const message = "Enter valid salary amounts (NGN per month), or leave blank."
+      setError(message)
+      notify.error(message)
+      return
+    }
+
     const payload = {
       title: String(formData.get("title") ?? "").trim(),
       slug: String(formData.get("slug") ?? "").trim(),
@@ -84,22 +132,27 @@ export function JobListingForm() {
       overview,
       responsibilities: String(formData.get("responsibilities") ?? ""),
       requirements: String(formData.get("requirements") ?? ""),
-      niceToHave: String(formData.get("niceToHave") ?? ""),
-      benefits: String(formData.get("benefits") ?? ""),
+      niceToHave: String(formData.get("niceToHave") ?? niceToHave),
+      benefits: String(formData.get("benefits") ?? benefits),
       status,
       icon,
-      salaryMin: formData.get("salaryMin"),
-      salaryMax: formData.get("salaryMax"),
+      salaryMin: parsedSalaryMin,
+      salaryMax: parsedSalaryMax,
     }
 
     setIsSubmitting(true)
 
     try {
-      const response = await fetch("/api/admin/job-openings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
+      const response = await fetch(
+        isEditing
+          ? `/api/admin/job-openings/${listing!.id}`
+          : "/api/admin/job-openings",
+        {
+          method: isEditing ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      )
 
       const result = (await response.json().catch(() => null)) as {
         error?: string
@@ -107,17 +160,22 @@ export function JobListingForm() {
       } | null
 
       if (!response.ok) {
-        throw new Error(result?.error ?? "Unable to create listing.")
+        throw new Error(
+          result?.error ??
+            (isEditing ? "Unable to update listing." : "Unable to create listing.")
+        )
       }
 
-      notify.success("Job listing created.")
+      notify.success(isEditing ? "Job listing updated." : "Job listing created.")
       router.push("/admin/job-listings")
       router.refresh()
     } catch (submitError) {
       const message =
         submitError instanceof Error
           ? submitError.message
-          : "Unable to create listing."
+          : isEditing
+            ? "Unable to update listing."
+            : "Unable to create listing."
       setError(message)
       notify.error(message)
     } finally {
@@ -175,6 +233,8 @@ export function JobListingForm() {
             id="job-department"
             name="department"
             required
+            value={department}
+            onChange={(event) => setDepartment(event.target.value)}
             placeholder="e.g. Engineering"
             className={fieldClassName}
           />
@@ -188,6 +248,8 @@ export function JobListingForm() {
             id="job-location"
             name="location"
             required
+            value={location}
+            onChange={(event) => setLocation(event.target.value)}
             placeholder="e.g. Lagos, Nigeria"
             className={fieldClassName}
           />
@@ -247,6 +309,8 @@ export function JobListingForm() {
             type="number"
             min={0}
             step={10000}
+            value={salaryMin}
+            onChange={(event) => setSalaryMin(event.target.value)}
             placeholder="e.g. 300000"
             className={fieldClassName}
           />
@@ -262,6 +326,8 @@ export function JobListingForm() {
             type="number"
             min={0}
             step={10000}
+            value={salaryMax}
+            onChange={(event) => setSalaryMax(event.target.value)}
             placeholder="e.g. 600000"
             className={fieldClassName}
           />
@@ -281,6 +347,8 @@ export function JobListingForm() {
           name="description"
           required
           rows={3}
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
           placeholder="One or two sentences shown on the careers listing cards."
           className={textareaClassName}
         />
@@ -312,6 +380,8 @@ export function JobListingForm() {
             id="job-responsibilities"
             name="responsibilities"
             rows={5}
+            value={responsibilities}
+            onChange={(event) => setResponsibilities(event.target.value)}
             placeholder="One item per line"
             className={textareaClassName}
           />
@@ -324,6 +394,8 @@ export function JobListingForm() {
             id="job-requirements"
             name="requirements"
             rows={5}
+            value={requirements}
+            onChange={(event) => setRequirements(event.target.value)}
             placeholder="One item per line"
             className={textareaClassName}
           />
@@ -336,6 +408,8 @@ export function JobListingForm() {
             id="job-niceToHave"
             name="niceToHave"
             rows={5}
+            value={niceToHave}
+            onChange={(event) => setNiceToHave(event.target.value)}
             placeholder="One item per line"
             className={textareaClassName}
           />
@@ -348,6 +422,8 @@ export function JobListingForm() {
             id="job-benefits"
             name="benefits"
             rows={5}
+            value={benefits}
+            onChange={(event) => setBenefits(event.target.value)}
             placeholder="One item per line"
             className={textareaClassName}
           />
@@ -371,7 +447,13 @@ export function JobListingForm() {
           disabled={isSubmitting}
           className="h-11 rounded-xl bg-brand px-5 text-brand-foreground hover:bg-brand/90"
         >
-          {isSubmitting ? "Creating..." : "Create listing"}
+          {isSubmitting
+            ? isEditing
+              ? "Saving..."
+              : "Creating..."
+            : isEditing
+              ? "Save changes"
+              : "Create listing"}
         </Button>
       </div>
     </form>

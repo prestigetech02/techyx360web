@@ -15,7 +15,8 @@ import { getOpenJobOpenings } from "@/lib/careers/openings"
 import { getCareersListingStructuredData } from "@/lib/careers/seo"
 import { createPageMetadata } from "@/lib/seo"
 
-export const revalidate = 60
+export const revalidate = 0
+export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = createPageMetadata({
   title: `Careers at ${brand.name} | Tech Jobs in Lagos & Remote Nigeria`,
@@ -51,10 +52,10 @@ export default async function CareersPage() {
         />
         <JsonLd data={getCareersListingStructuredData(openPositions)} />
 
-        <section className="relative isolate overflow-hidden bg-[#0f1524]">
+        <section className="relative isolate overflow-visible bg-[#0f1524]">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0"
+            className="pointer-events-none absolute inset-0 overflow-hidden"
           >
             <Image
               src="/careers-hero.png"
@@ -97,9 +98,13 @@ export default async function CareersPage() {
 
             <div className="hidden lg:block" aria-hidden />
           </div>
-        </section>
 
-        <CareersHighlights />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 translate-y-1/2">
+            <div className="pointer-events-auto">
+              <CareersHighlights />
+            </div>
+          </div>
+        </section>
 
         <OpenPositionsSection positions={openPositions} />
       </main>

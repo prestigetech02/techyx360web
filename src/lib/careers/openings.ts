@@ -2,6 +2,7 @@ import "server-only"
 
 import type { CareerOpenPosition } from "@/config/careers"
 import { careerOpenPositions as staticCareerOpenPositions } from "@/config/careers"
+import { normalizeCareerSalaryValue } from "@/lib/careers/salary"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 import type { Database } from "@/types/database"
@@ -45,9 +46,25 @@ export function mapJobOpeningRowToPosition(
     icon: mapIcon(row.icon),
     postedAt: row.created_at,
     updatedAt: row.updated_at || row.created_at,
-    salaryMin: row.salary_min,
-    salaryMax: row.salary_max,
+    salaryMin: normalizeCareerSalaryValue(row.salary_min),
+    salaryMax: normalizeCareerSalaryValue(row.salary_max),
   }
+}
+
+function getStaticOpenPositions() {
+  return staticCareerOpenPositions
+    .filter((position) => position.status === "Open")
+    .sort(
+      (left, right) =>
+        new Date(right.postedAt).getTime() - new Date(left.postedAt).getTime()
+    )
+}
+
+function getStaticAllPositions() {
+  return [...staticCareerOpenPositions].sort(
+    (left, right) =>
+      new Date(right.postedAt).getTime() - new Date(left.postedAt).getTime()
+  )
 }
 
 async function getDatabaseJobOpenings(options?: {
@@ -74,42 +91,56 @@ async function getDatabaseJobOpenings(options?: {
 
     if (error) {
       console.error("Failed to load job openings from database", error)
-      return [] as JobOpeningRow[]
+      return null
     }
 
     return data ?? []
   } catch (error) {
     console.error("Unexpected job openings lookup error", error)
-    return [] as JobOpeningRow[]
+    return null
   }
 }
 
 export async function getOpenJobOpenings(): Promise<CareerOpenPosition[]> {
+  if (!isSupabaseConfigured()) {
+    return getStaticOpenPositions()
+  }
+
   const rows = await getDatabaseJobOpenings({ openOnly: true })
+
+  if (rows === null) {
+    console.error(
+      "Job openings query failed. Ensure supabase/job-openings-salary-migration.sql has been applied."
+    )
+    return []
+  }
 
   if (rows.length > 0) {
     return rows.map(mapJobOpeningRowToPosition)
   }
 
-  return staticCareerOpenPositions
-    .filter((position) => position.status === "Open")
-    .sort(
-      (left, right) =>
-        new Date(right.postedAt).getTime() - new Date(left.postedAt).getTime()
-    )
+  return []
 }
 
 export async function getAllJobOpenings(): Promise<CareerOpenPosition[]> {
+  if (!isSupabaseConfigured()) {
+    return getStaticAllPositions()
+  }
+
   const rows = await getDatabaseJobOpenings()
+
+  if (rows === null) {
+    console.error(
+      "Job openings query failed. Ensure supabase/job-openings-salary-migration.sql has been applied."
+    )
+    return []
+  }
 
   if (rows.length > 0) {
     return rows.map(mapJobOpeningRowToPosition)
   }
 
-  return [...staticCareerOpenPositions].sort(
-    (left, right) =>
-      new Date(right.postedAt).getTime() - new Date(left.postedAt).getTime()
-  )
+  return []
 }
 
 export async function getJobOpeningBySlug(slug: string) {
@@ -129,11 +160,17 @@ export async function getJobOpeningBySlug(slug: string) {
 
       if (error) {
         console.error("Failed to load job opening by slug", error)
-      } else if (data) {
+        return null
+      }
+
+      if (data) {
         return mapJobOpeningRowToPosition(data)
       }
+
+      return null
     } catch (error) {
       console.error("Unexpected job opening lookup error", error)
+      return null
     }
   }
 
@@ -151,4 +188,42 @@ export async function getOtherOpenJobOpenings(
   return openings
     .filter((position) => position.id !== currentSlug)
     .slice(0, limit)
+}
+
+export async function getAllJobOpeningRows(): Promise<JobOpeningRow[]> {
+  if (!isSupabaseConfigured()) {
+    return []
+  }
+
+  const rows = await getDatabaseJobOpenings()
+  return rows ?? []
+}
+
+export async function getJobOpeningRowById(
+  id: string
+): Promise<JobOpeningRow | null> {
+  if (!isSupabaseConfigured()) {
+    return null
+  }
+
+  try {
+    const supabase = createAdminClient()
+    const { data, error } = await supabase
+      .from("job_openings")
+      .select(
+        "id, slug, title, department, location, employment_type, description, overview, responsibilities, requirements, nice_to_have, benefits, status, icon, sort_order, salary_min, salary_max, created_at, updated_at"
+      )
+      .eq("id", id)
+      .maybeSingle()
+
+    if (error) {
+      console.error("Failed to load job opening by id", error)
+      return null
+    }
+
+    return data
+  } catch (error) {
+    console.error("Unexpected job opening id lookup error", error)
+    return null
+  }
 }

@@ -171,7 +171,7 @@ export function OpenPositionsSection({
   return (
     <section
       id="open-positions"
-      className="scroll-mt-24 bg-[#f4f6fa] pt-16 pb-14 sm:pt-20 sm:pb-16 lg:pt-24 lg:pb-20 dark:bg-[#0f1524]"
+      className="scroll-mt-24 bg-[#f4f6fa] pt-14 pb-14 sm:pt-16 sm:pb-16 lg:pt-[4.75rem] lg:pb-20 dark:bg-[#0f1524]"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-12 xl:grid-cols-[minmax(0,1fr)_24rem]">

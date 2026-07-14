@@ -207,6 +207,22 @@ export const evaInvestmentIncludes = [
   "Career Advancement Support",
 ]
 
+export const evaTestimonial = {
+  badge: "Student Story",
+  title: "From learner to paid virtual assistant",
+  quote:
+    "Before Techyx360, I had basic computer skills and no clear career path. The EVA program taught me how to manage executives, use productivity tools, and work professionally with clients. Within weeks of completing the course, I landed my first remote VA role and now work flexible hours supporting busy founders.",
+  name: "Chioma Adebayo",
+  role: "EVA Graduate · Remote Virtual Assistant",
+  rating: 5,
+  /**
+   * Paste a YouTube embed URL, e.g. https://www.youtube.com/embed/VIDEO_ID
+   * Leave empty until the graduate video is ready.
+   */
+  videoEmbedUrl: "",
+  videoTitle: "EVA graduate shares her Techyx360 training experience",
+}
+
 export const evaRelatedPrograms = [
   {
     label: "Individual Certifications",

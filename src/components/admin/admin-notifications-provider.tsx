@@ -14,11 +14,13 @@ import {
 
 import {
   formatNotificationTime,
+  mapCareerApplicationToNotification,
   mapPifApplicationToNotification,
   mapRegistrationToNotification,
   mapSubmissionToNotification,
   truncateNotificationMessage,
   type AdminNotification,
+  type CareerApplicationRow,
   type ContactSubmissionRow,
   type CourseRegistrationRow,
   type PifApplicationRow,
@@ -32,6 +34,7 @@ type AdminNotificationsContextValue = {
   contactCount: number
   registrationCount: number
   pifCount: number
+  careerCount: number
   notifications: AdminNotification[]
   isLoading: boolean
   refresh: () => Promise<void>
@@ -129,6 +132,26 @@ async function fetchNewNotifications() {
   } else {
     notifications.push(
       ...(pifResult.data ?? []).map(mapPifApplicationToNotification)
+    )
+  }
+
+  const careerResult = await supabase
+    .from("career_applications")
+    .select(
+      "id, full_name, email, position_title, years_of_experience, status, created_at"
+    )
+    .eq("status", "new")
+    .order("created_at", { ascending: false })
+    .limit(20)
+
+  if (careerResult.error) {
+    console.warn(
+      "Career notifications unavailable:",
+      careerResult.error.message
+    )
+  } else {
+    notifications.push(
+      ...(careerResult.data ?? []).map(mapCareerApplicationToNotification)
     )
   }
 
@@ -396,6 +419,79 @@ export function AdminNotificationsProvider({
           router.refresh()
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "career_applications",
+        },
+        (payload) => {
+          const row = payload.new as CareerApplicationRow
+
+          if (row.status !== "new") return
+
+          const notification = mapCareerApplicationToNotification(row)
+
+          setNotifications((current) => {
+            if (current.some((item) => item.id === notification.id)) {
+              return current
+            }
+
+            return sortNotifications([notification, ...current]).slice(0, 20)
+          })
+
+          notify.info(
+            `Career application from ${notification.firstName} ${notification.lastName}`.trim()
+          )
+
+          router.refresh()
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "career_applications",
+        },
+        (payload) => {
+          const row = payload.new as CareerApplicationRow
+          const notificationId = `career:${row.id}`
+
+          if (row.status === "new") {
+            const notification = mapCareerApplicationToNotification(row)
+            setNotifications((current) => {
+              if (current.some((item) => item.id === notification.id)) {
+                return current
+              }
+
+              return sortNotifications([notification, ...current]).slice(0, 20)
+            })
+          } else {
+            setNotifications((current) =>
+              current.filter((item) => item.id !== notificationId)
+            )
+          }
+
+          router.refresh()
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "career_applications",
+        },
+        (payload) => {
+          const row = payload.old as Pick<CareerApplicationRow, "id">
+          setNotifications((current) =>
+            current.filter((item) => item.id !== `career:${row.id}`)
+          )
+          router.refresh()
+        }
+      )
       .subscribe()
 
     return () => {
@@ -411,12 +507,16 @@ export function AdminNotificationsProvider({
       (item) => item.type === "registration"
     ).length
     const pifCount = notifications.filter((item) => item.type === "pif").length
+    const careerCount = notifications.filter(
+      (item) => item.type === "career"
+    ).length
 
     return {
       newCount: notifications.length,
       contactCount,
       registrationCount,
       pifCount,
+      careerCount,
       notifications,
       isLoading,
       refresh,

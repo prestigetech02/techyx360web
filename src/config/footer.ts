@@ -7,6 +7,7 @@ export const footerCompanyLinks = [
   { label: "About Us", href: "/about" },
   { label: "Our Services", href: "/services/web-development" },
   { label: "Trainings", href: "/trainings/register" },
+  { label: "Careers", href: "/careers" },
   { label: "News", href: "/blog" },
   { label: "Contact", href: "/contact" },
 ] as const

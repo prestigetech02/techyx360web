@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next"
 
 import { indexableRoutes } from "@/config/site"
 import { getPublishedBlogPosts } from "@/lib/blog/posts"
+import { getOpenJobOpenings } from "@/lib/careers/openings"
 import { absoluteUrl } from "@/lib/seo"
 
 export const revalidate = 3600
@@ -22,5 +23,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }))
 
-  return [...staticEntries, ...blogEntries]
+  const openings = await getOpenJobOpenings()
+  const careerEntries: MetadataRoute.Sitemap = openings.map((position) => ({
+    url: absoluteUrl(`/careers/${position.id}`),
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.65,
+  }))
+
+  return [...staticEntries, ...blogEntries, ...careerEntries]
 }

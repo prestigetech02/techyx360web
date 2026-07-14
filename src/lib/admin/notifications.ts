@@ -1,5 +1,8 @@
 import type { Database } from "@/types/database"
-import { pifApplicationsAdminPath } from "@/config/admin-nav"
+import {
+  careerApplicationsAdminPath,
+  pifApplicationsAdminPath,
+} from "@/config/admin-nav"
 
 export type ContactSubmissionRow =
   Database["public"]["Tables"]["contact_submissions"]["Row"]
@@ -10,9 +13,12 @@ export type CourseRegistrationRow =
 export type PifApplicationRow =
   Database["public"]["Tables"]["pif_applications"]["Row"]
 
+export type CareerApplicationRow =
+  Database["public"]["Tables"]["career_applications"]["Row"]
+
 export type AdminNotification = {
   id: string
-  type: "contact" | "registration" | "pif"
+  type: "contact" | "registration" | "pif" | "career"
   firstName: string
   lastName: string
   email: string
@@ -97,6 +103,32 @@ export function mapPifApplicationToNotification(
     createdAt: row.created_at,
     href: pifApplicationsAdminPath,
     label: "PIF application",
+  }
+}
+
+export function mapCareerApplicationToNotification(
+  row: Pick<
+    CareerApplicationRow,
+    | "id"
+    | "full_name"
+    | "email"
+    | "position_title"
+    | "years_of_experience"
+    | "created_at"
+  >
+): AdminNotification {
+  const [firstName, ...rest] = row.full_name.trim().split(/\s+/)
+
+  return {
+    id: `career:${row.id}`,
+    type: "career",
+    firstName: firstName || row.full_name,
+    lastName: rest.join(" "),
+    email: row.email,
+    message: `${row.position_title} — ${row.years_of_experience}`,
+    createdAt: row.created_at,
+    href: careerApplicationsAdminPath,
+    label: "Career application",
   }
 }
 

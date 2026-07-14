@@ -1,14 +1,17 @@
 import {
+  Briefcase,
   Building2,
   ClipboardList,
   CreditCard,
   FileText,
+  FileUser,
   GraduationCap,
   Inbox,
   LayoutDashboard,
   Mail,
   Newspaper,
   Settings,
+  UsersRound,
   type LucideIcon,
 } from "lucide-react"
 
@@ -56,6 +59,21 @@ export const adminNavItems: AdminNavItem[] = [
     ],
   },
   {
+    label: "Talent Pool",
+    href: "/admin/talent-pool",
+    icon: UsersRound,
+  },
+  {
+    label: "Job Listings",
+    href: "/admin/job-listings",
+    icon: Briefcase,
+  },
+  {
+    label: "Job Applications",
+    href: "/admin/job-applications",
+    icon: FileUser,
+  },
+  {
     label: "Clients",
     href: "/admin/clients",
     icon: Building2,
@@ -83,3 +101,6 @@ export const adminNavItems: AdminNavItem[] = [
 ]
 
 export const pifApplicationsAdminPath = "/admin/submissions/pif-applications"
+export const careerApplicationsAdminPath = "/admin/job-applications"
+export const talentPoolAdminPath = "/admin/talent-pool"
+export const jobListingsAdminPath = "/admin/job-listings"

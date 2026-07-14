@@ -3,6 +3,8 @@ export const contactDetails = {
   email: "info@techyx360.com",
   phones: ["(+234) 907 168 2117", "(+234) 912 886 8892"],
   phoneHref: "tel:+2349071682117",
+  whatsappNumber: "2349071682117",
+  whatsappHref: "https://wa.me/2349071682117",
   hours: "08:00AM - 06:00PM",
 } as const
 

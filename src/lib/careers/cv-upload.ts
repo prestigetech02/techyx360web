@@ -2,48 +2,45 @@ import "server-only"
 
 import { createAdminClient } from "@/lib/supabase/admin"
 
-const BUCKET = "registration-receipts"
+const BUCKET = "career-cvs"
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 const ALLOWED_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
   "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ])
 
 function getFileExtension(file: File) {
   const fromName = file.name.split(".").pop()?.toLowerCase()
-  if (fromName && ["jpg", "jpeg", "png", "webp", "pdf"].includes(fromName)) {
-    return fromName === "jpeg" ? "jpg" : fromName
+  if (fromName && ["pdf", "doc", "docx"].includes(fromName)) {
+    return fromName
   }
 
   switch (file.type) {
-    case "image/jpeg":
-      return "jpg"
-    case "image/png":
-      return "png"
-    case "image/webp":
-      return "webp"
     case "application/pdf":
       return "pdf"
+    case "application/msword":
+      return "doc"
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      return "docx"
     default:
-      return "jpg"
+      return "pdf"
   }
 }
 
-export async function uploadRegistrationReceipt(file: File, courseSlug: string) {
+export async function uploadCareerCv(file: File, positionId: string) {
   if (!ALLOWED_TYPES.has(file.type)) {
     return {
-      error: "Only JPG, PNG, WebP, and PDF files are allowed for payment receipts.",
+      error: "Only PDF, DOC, and DOCX files are allowed for CV uploads.",
     }
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    return { error: "Payment receipt must be 5 MB or smaller." }
+    return { error: "CV must be 5 MB or smaller." }
   }
 
   const extension = getFileExtension(file)
-  const objectPath = `eva/${courseSlug}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${extension}`
+  const objectPath = `${positionId}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${extension}`
   const fileBuffer = Buffer.from(await file.arrayBuffer())
 
   const supabase = createAdminClient()
@@ -53,7 +50,7 @@ export async function uploadRegistrationReceipt(file: File, courseSlug: string) 
   })
 
   if (error) {
-    console.error("Failed to upload registration receipt", error)
+    console.error("Failed to upload career CV", error)
 
     if (
       error.message?.toLowerCase().includes("bucket not found") ||
@@ -61,17 +58,17 @@ export async function uploadRegistrationReceipt(file: File, courseSlug: string) 
     ) {
       return {
         error:
-          "Receipt upload is not configured yet. Please contact support or try again later.",
+          "CV upload is not configured yet. Please contact support or try again later.",
       }
     }
 
-    return { error: "Unable to upload your payment receipt right now." }
+    return { error: "Unable to upload your CV right now." }
   }
 
   return { path: objectPath }
 }
 
-export async function getRegistrationReceiptSignedUrl(
+export async function getCareerCvSignedUrl(
   path: string,
   expiresInSeconds = 60 * 60
 ) {
@@ -81,7 +78,7 @@ export async function getRegistrationReceiptSignedUrl(
     .createSignedUrl(path, expiresInSeconds)
 
   if (error) {
-    console.error("Failed to create receipt signed URL", error)
+    console.error("Failed to create career CV signed URL", error)
     return null
   }
 

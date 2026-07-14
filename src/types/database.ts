@@ -333,6 +333,189 @@ export type Database = {
         }
         Relationships: []
       }
+      career_applications: {
+        Row: {
+          id: string
+          position_id: string
+          position_title: string
+          full_name: string
+          email: string
+          phone: string
+          location: string
+          linkedin_url: string | null
+          github_url: string | null
+          portfolio_url: string
+          cv_path: string
+          years_of_experience: string
+          expected_salary: string
+          cover_letter: string | null
+          availability: string
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          position_id: string
+          position_title: string
+          full_name: string
+          email: string
+          phone: string
+          location: string
+          linkedin_url?: string | null
+          github_url?: string | null
+          portfolio_url: string
+          cv_path: string
+          years_of_experience: string
+          expected_salary: string
+          cover_letter?: string | null
+          availability: string
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          position_id?: string
+          position_title?: string
+          full_name?: string
+          email?: string
+          phone?: string
+          location?: string
+          linkedin_url?: string | null
+          github_url?: string | null
+          portfolio_url?: string
+          cv_path?: string
+          years_of_experience?: string
+          expected_salary?: string
+          cover_letter?: string | null
+          availability?: string
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      job_openings: {
+        Row: {
+          id: string
+          slug: string
+          title: string
+          department: string
+          location: string
+          employment_type: string
+          description: string
+          overview: string
+          responsibilities: string[]
+          requirements: string[]
+          nice_to_have: string[]
+          benefits: string[]
+          status: string
+          icon: string
+          sort_order: number
+          salary_min: number | null
+          salary_max: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          slug: string
+          title: string
+          department: string
+          location: string
+          employment_type: string
+          description: string
+          overview: string
+          responsibilities?: string[]
+          requirements?: string[]
+          nice_to_have?: string[]
+          benefits?: string[]
+          status?: string
+          icon?: string
+          sort_order?: number
+          salary_min?: number | null
+          salary_max?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          slug?: string
+          title?: string
+          department?: string
+          location?: string
+          employment_type?: string
+          description?: string
+          overview?: string
+          responsibilities?: string[]
+          requirements?: string[]
+          nice_to_have?: string[]
+          benefits?: string[]
+          status?: string
+          icon?: string
+          sort_order?: number
+          salary_min?: number | null
+          salary_max?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      talent_pool_submissions: {
+        Row: {
+          id: string
+          full_name: string
+          email: string
+          phone: string
+          location: string
+          linkedin_url: string | null
+          github_url: string | null
+          portfolio_url: string | null
+          cv_path: string
+          interest_areas: string
+          years_of_experience: string
+          expected_salary: string | null
+          message: string | null
+          availability: string
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          full_name: string
+          email: string
+          phone: string
+          location: string
+          linkedin_url?: string | null
+          github_url?: string | null
+          portfolio_url?: string | null
+          cv_path: string
+          interest_areas: string
+          years_of_experience: string
+          expected_salary?: string | null
+          message?: string | null
+          availability: string
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string
+          email?: string
+          phone?: string
+          location?: string
+          linkedin_url?: string | null
+          github_url?: string | null
+          portfolio_url?: string | null
+          cv_path?: string
+          interest_areas?: string
+          years_of_experience?: string
+          expected_salary?: string | null
+          message?: string | null
+          availability?: string
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

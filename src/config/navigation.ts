@@ -6,7 +6,21 @@ export type NavItem = {
 
 export const navigation: NavItem[] = [
   { label: "Home", href: "/" },
-  { label: "About Us", href: "/about" },
+  {
+    label: "Company",
+    children: [
+      {
+        label: "About Us",
+        href: "/about",
+        description: "Learn about Techyx360 and what we do",
+      },
+      {
+        label: "Contact Us",
+        href: "/contact",
+        description: "Get in touch with our team",
+      },
+    ],
+  },
   {
     label: "Services",
     children: [
@@ -74,5 +88,5 @@ export const navigation: NavItem[] = [
     ],
   },
   { label: "Blog", href: "/blog" },
-  { label: "Contact", href: "/contact" },
+  { label: "Careers", href: "/careers" },
 ]

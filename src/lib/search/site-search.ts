@@ -1,6 +1,8 @@
 import { blogPosts } from "@/config/blog"
+import { careerOpenPositions } from "@/config/careers"
 import { navigation } from "@/config/navigation"
 import { services } from "@/config/services"
+import type { CareerOpenPosition } from "@/config/careers"
 import type { SearchResult } from "@/types/search"
 
 const staticPages: SearchResult[] = [
@@ -30,6 +32,13 @@ const staticPages: SearchResult[] = [
     title: "Blog",
     description: "Articles on IT, software, and digital growth",
     href: "/blog",
+    category: "Page",
+  },
+  {
+    id: "page-careers",
+    title: "Careers",
+    description: "Join the Techyx360 team in Lagos, Nigeria",
+    href: "/careers",
     category: "Page",
   },
   {
@@ -105,6 +114,20 @@ function getStaticBlogResults(): SearchResult[] {
   }))
 }
 
+function getCareerResults(
+  positions: CareerOpenPosition[] = careerOpenPositions
+): SearchResult[] {
+  return positions
+    .filter((position) => position.status === "Open")
+    .map((position) => ({
+      id: `career-${position.id}`,
+      title: position.title,
+      description: position.description,
+      href: `/careers/${position.id}`,
+      category: "Page" as const,
+    }))
+}
+
 export function getStaticSearchIndex(): SearchResult[] {
   const merged = new Map<string, SearchResult>()
 
@@ -113,6 +136,7 @@ export function getStaticSearchIndex(): SearchResult[] {
     ...getNavigationResults(),
     ...getServiceResults(),
     ...getStaticBlogResults(),
+    ...getCareerResults(),
   ]) {
     merged.set(item.href, item)
   }

@@ -10,6 +10,7 @@ import { useAdminNotifications } from "@/components/admin/admin-notifications-pr
 import { brand } from "@/config/brand"
 import {
   adminNavItems,
+  careerApplicationsAdminPath,
   pifApplicationsAdminPath,
   type AdminNavItem,
 } from "@/config/admin-nav"
@@ -35,17 +36,20 @@ function AdminNavGroup({
   pathname,
   onNavigate,
   pifCount,
+  careerCount,
 }: {
   item: AdminNavItem
   pathname: string
   onNavigate?: () => void
   pifCount: number
+  careerCount: number
 }) {
   const isChildActive = item.children?.some(
     (child) =>
       pathname === child.href || pathname.startsWith(`${child.href}/`)
   )
   const [isOpen, setIsOpen] = useState(Boolean(isChildActive))
+  const submissionsCount = pifCount + careerCount
 
   useEffect(() => {
     if (isChildActive) {
@@ -67,7 +71,9 @@ function AdminNavGroup({
       >
         <item.icon className="size-5 shrink-0" aria-hidden />
         <span className="flex-1 text-left">{item.label}</span>
-        {pifCount > 0 ? <NavCountBadge count={pifCount} /> : null}
+        {submissionsCount > 0 ? (
+          <NavCountBadge count={submissionsCount} />
+        ) : null}
         <ChevronDown
           className={cn(
             "size-4 shrink-0 transition-transform",
@@ -101,6 +107,9 @@ function AdminNavGroup({
                 {child.href === pifApplicationsAdminPath ? (
                   <NavCountBadge count={pifCount} />
                 ) : null}
+                {child.href === careerApplicationsAdminPath ? (
+                  <NavCountBadge count={careerCount} />
+                ) : null}
               </Link>
             )
           })}
@@ -112,7 +121,8 @@ function AdminNavGroup({
 
 export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
   const pathname = usePathname()
-  const { contactCount, registrationCount, pifCount } = useAdminNotifications()
+  const { contactCount, registrationCount, pifCount, careerCount } =
+    useAdminNotifications()
 
   return (
     <aside
@@ -150,6 +160,7 @@ export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
                 pathname={pathname}
                 onNavigate={onNavigate}
                 pifCount={pifCount}
+                careerCount={careerCount}
               />
             )
           }

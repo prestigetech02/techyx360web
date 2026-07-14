@@ -8,6 +8,7 @@ import { CursorFollower } from "@/components/layout/cursor-follower"
 import { Footer } from "@/components/layout/footer"
 import { Header } from "@/components/layout/header"
 import { TopBar } from "@/components/layout/top-bar"
+import { WhatsAppChatWidget } from "@/components/layout/whatsapp-chat-widget"
 
 type ConditionalSiteShellProps = {
   children: React.ReactNode
@@ -28,6 +29,7 @@ export function ConditionalSiteShell({ children }: ConditionalSiteShellProps) {
       {children}
       <Footer />
       <BackToTop />
+      <WhatsAppChatWidget />
       <CookieNotice />
       <CursorFollower />
     </>

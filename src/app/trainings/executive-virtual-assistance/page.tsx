@@ -21,8 +21,9 @@ import {
   evaRelatedPrograms,
   evaShareImage,
   evaShareImageAlt,
+  evaTestimonial,
 } from "@/config/executive-virtual-assistance"
-import { Check, Sparkles } from "lucide-react"
+import { Check, Sparkles, Star } from "lucide-react"
 import { siteMetadata } from "@/config/brand"
 import { createPageMetadata } from "@/lib/seo"
 import { getFaqSchema } from "@/lib/structured-data"
@@ -343,6 +344,91 @@ export default function ExecutiveVirtualAssistancePage() {
                 <div className="mt-4">
                   <BrandCtaButton href={evaRegisterPath}>Enroll Now</BrandCtaButton>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#f4f6fa] py-14 sm:py-16 lg:py-20 dark:bg-[#0f1524]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <Badge
+              variant="outline"
+              className="mb-4 rounded-full border-brand/30 bg-brand/10 px-4 py-2 text-[0.65rem] font-semibold tracking-[0.2em] text-brand uppercase md:text-xs"
+            >
+              {evaTestimonial.badge}
+            </Badge>
+
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl dark:text-foreground">
+              {evaTestimonial.title}
+            </h2>
+          </div>
+
+          <div className="mt-10 grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
+            <div className="rounded-3xl border border-border/60 bg-card p-6 sm:p-8">
+              <div
+                className="flex items-center gap-1"
+                aria-label={`${evaTestimonial.rating} out of 5 stars`}
+              >
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Star
+                    key={index}
+                    className={cn(
+                      "size-4",
+                      index < evaTestimonial.rating
+                        ? "fill-[#eaaa33] text-[#eaaa33]"
+                        : "fill-transparent text-muted-foreground/40"
+                    )}
+                    aria-hidden
+                  />
+                ))}
+              </div>
+
+              <blockquote className="mt-5 text-base leading-relaxed text-zinc-700 italic sm:text-lg dark:text-muted-foreground">
+                &ldquo;{evaTestimonial.quote}&rdquo;
+              </blockquote>
+
+              <div className="mt-6 border-t border-border/60 pt-5">
+                <p className="text-base font-semibold text-zinc-900 dark:text-foreground">
+                  {evaTestimonial.name}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {evaTestimonial.role}
+                </p>
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm">
+              <div className="relative aspect-video w-full bg-zinc-900">
+                {evaTestimonial.videoEmbedUrl ? (
+                  <iframe
+                    src={evaTestimonial.videoEmbedUrl}
+                    title={evaTestimonial.videoTitle}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="absolute inset-0 h-full w-full"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
+                    <span className="inline-flex size-14 items-center justify-center rounded-full bg-white/10 text-white">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="size-6 fill-current"
+                        aria-hidden
+                      >
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </span>
+                    <p className="text-sm font-semibold text-white">
+                      Graduate video coming soon
+                    </p>
+                    <p className="max-w-xs text-xs leading-relaxed text-white/60">
+                      Hear directly from EVA alumni about their journey and
+                      first remote roles.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

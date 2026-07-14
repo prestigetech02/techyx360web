@@ -15,6 +15,8 @@ export type CareerOpenPosition = {
   status: "Open" | "Closed"
   icon: "code" | "design" | "product" | "support"
   postedAt: string
+  /** ISO timestamp when the listing was last updated */
+  updatedAt: string
   /** Monthly salary lower bound in NGN, if disclosed */
   salaryMin: number | null
   /** Monthly salary upper bound in NGN, if disclosed */
@@ -60,6 +62,7 @@ export const careerOpenPositions: CareerOpenPosition[] = [
     status: "Open",
     icon: "code",
     postedAt: "2026-07-14T10:00:00.000Z",
+    updatedAt: "2026-07-14T10:00:00.000Z",
     salaryMin: 400000,
     salaryMax: 800000,
   },
@@ -101,6 +104,7 @@ export const careerOpenPositions: CareerOpenPosition[] = [
     status: "Open",
     icon: "design",
     postedAt: "2026-07-13T10:00:00.000Z",
+    updatedAt: "2026-07-13T10:00:00.000Z",
     salaryMin: 300000,
     salaryMax: 600000,
   },
@@ -142,6 +146,7 @@ export const careerOpenPositions: CareerOpenPosition[] = [
     status: "Open",
     icon: "product",
     postedAt: "2026-07-12T10:00:00.000Z",
+    updatedAt: "2026-07-12T10:00:00.000Z",
     salaryMin: 450000,
     salaryMax: 900000,
   },
@@ -183,6 +188,7 @@ export const careerOpenPositions: CareerOpenPosition[] = [
     status: "Open",
     icon: "support",
     postedAt: "2026-07-11T10:00:00.000Z",
+    updatedAt: "2026-07-11T10:00:00.000Z",
     salaryMin: 200000,
     salaryMax: 400000,
   },

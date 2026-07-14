@@ -26,9 +26,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const openings = await getOpenJobOpenings()
   const careerEntries: MetadataRoute.Sitemap = openings.map((position) => ({
     url: absoluteUrl(`/careers/${position.id}`),
-    lastModified: new Date(),
-    changeFrequency: "weekly" as const,
-    priority: 0.65,
+    lastModified: position.updatedAt || position.postedAt,
+    changeFrequency: "weekly",
+    priority: 0.7,
   }))
 
   return [...staticEntries, ...blogEntries, ...careerEntries]

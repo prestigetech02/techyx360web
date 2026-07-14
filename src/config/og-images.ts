@@ -86,4 +86,8 @@ export const pageOgImages: Record<
     url: "https://images.unsplash.com/photo-1499750310157-5f6570b1402e?auto=format&fit=crop&w=1200&q=80",
     alt: "Techyx360 blog — IT insights and articles",
   },
+  "/careers": {
+    url: "/careers-hero.png",
+    alt: "Techyx360 team collaborating — careers and open roles",
+  },
 }

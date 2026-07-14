@@ -44,6 +44,7 @@ export function mapJobOpeningRowToPosition(
     status: mapStatus(row.status),
     icon: mapIcon(row.icon),
     postedAt: row.created_at,
+    updatedAt: row.updated_at || row.created_at,
     salaryMin: row.salary_min,
     salaryMax: row.salary_max,
   }

@@ -8,26 +8,31 @@ import {
 } from "@/components/careers/join-talent-pool-dialog"
 import { OpenPositionsSection } from "@/components/careers/open-positions"
 import { BreadcrumbJsonLd } from "@/components/seo/breadcrumb-json-ld"
+import { JsonLd } from "@/components/seo/json-ld"
 import { BrandCtaButton } from "@/components/ui/brand-cta-button"
 import { brand, siteMetadata } from "@/config/brand"
 import { getOpenJobOpenings } from "@/lib/careers/openings"
+import { getCareersListingStructuredData } from "@/lib/careers/seo"
 import { createPageMetadata } from "@/lib/seo"
 
 export const revalidate = 60
 
 export const metadata: Metadata = createPageMetadata({
-  title: `Careers | ${brand.name} - Join Our Team in Nigeria`,
+  title: `Careers at ${brand.name} | Tech Jobs in Lagos & Remote Nigeria`,
   description:
-    "Join a team of innovators, builders, and problem-solvers at Techyx360. Build your career and create technology that makes impact across Nigeria and Africa.",
+    "Explore open tech roles at Techyx360 — engineering, product, design, and support. Join a Nigeria-based team building software and digital products across Africa.",
   path: "/careers",
   ogImage: "/careers-hero.png",
   ogImageAlt:
     "Techyx360 team members collaborating in the office at careers page",
   keywords: [
     "Techyx360 careers",
+    "tech jobs Lagos",
+    "software developer jobs Nigeria",
     "IT jobs Lagos",
-    "software company jobs Nigeria",
-    "tech jobs Techyx360",
+    "remote tech jobs Nigeria",
+    "product manager jobs Nigeria",
+    "UI UX designer jobs Lagos",
     ...siteMetadata.keywords.slice(0, 4),
   ],
 })
@@ -44,6 +49,7 @@ export default async function CareersPage() {
             { name: "Careers", path: "/careers" },
           ]}
         />
+        <JsonLd data={getCareersListingStructuredData(openPositions)} />
 
         <section className="relative isolate overflow-hidden bg-[#0f1524]">
           <div

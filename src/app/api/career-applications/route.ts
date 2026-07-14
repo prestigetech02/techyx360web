@@ -11,10 +11,10 @@ import { requireRecaptcha } from "@/lib/recaptcha/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 
-const allowedExperience = new Set(
+const allowedExperience = new Set<string>(
   careerExperienceOptions.map((option) => option.value)
 )
-const allowedAvailability = new Set(
+const allowedAvailability = new Set<string>(
   careerAvailabilityOptions.map((option) => option.value)
 )
 

@@ -152,6 +152,148 @@ export function getCourseSchema({
   }
 }
 
+type JobPostingSchemaOptions = {
+  title: string
+  descriptionHtml: string
+  path: string
+  datePosted: string
+  dateModified?: string
+  employmentType: string
+  department: string
+  location: string
+  identifier: string
+  salaryMin?: number | null
+  salaryMax?: number | null
+}
+
+function mapEmploymentType(type: string) {
+  const normalized = type.trim().toLowerCase().replace(/[\s_]+/g, "-")
+
+  if (normalized === "full-time" || normalized === "fulltime") return "FULL_TIME"
+  if (normalized === "part-time" || normalized === "parttime") return "PART_TIME"
+  if (normalized === "contract" || normalized === "contractor") {
+    return "CONTRACTOR"
+  }
+
+  return "OTHER"
+}
+
+function parseJobLocation(location: string) {
+  const isRemote = /remote/i.test(location)
+  const parts = location
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  const addressLocality = isRemote
+    ? organization.address.addressLocality
+    : (parts[0] ?? organization.address.addressLocality)
+  const addressRegion = isRemote
+    ? organization.address.addressRegion
+    : (parts.find((part) => /lagos|abuja|rivers|ogun|oyo/i.test(part)) ??
+      parts[1] ??
+      organization.address.addressRegion)
+
+  return {
+    isRemote,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality,
+      addressRegion,
+      addressCountry: "NG",
+      ...(isRemote
+        ? {}
+        : {
+            streetAddress: organization.address.streetAddress,
+          }),
+    },
+  }
+}
+
+export function getJobPostingSchema({
+  title,
+  descriptionHtml,
+  path,
+  datePosted,
+  dateModified,
+  employmentType,
+  department,
+  location,
+  identifier,
+  salaryMin,
+  salaryMax,
+}: JobPostingSchemaOptions) {
+  const pageUrl = absoluteUrl(path)
+  const postedDate = new Date(datePosted)
+  const validThrough = new Date(postedDate)
+  validThrough.setDate(validThrough.getDate() + 90)
+
+  const { isRemote, address } = parseJobLocation(location)
+
+  const schema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    title,
+    description: descriptionHtml,
+    datePosted: postedDate.toISOString(),
+    validThrough: validThrough.toISOString(),
+    employmentType: mapEmploymentType(employmentType),
+    hiringOrganization: {
+      "@id": organization.id,
+      "@type": "Organization",
+      name: organization.name,
+      sameAs: organization.url,
+      logo: organization.logo,
+    },
+    identifier: {
+      "@type": "PropertyValue",
+      name: organization.name,
+      value: identifier,
+    },
+    industry: "Information Technology",
+    occupationalCategory: department,
+    url: pageUrl,
+    directApply: true,
+    ...(dateModified
+      ? { dateModified: new Date(dateModified).toISOString() }
+      : {}),
+  }
+
+  if (isRemote) {
+    schema.jobLocationType = "TELECOMMUTE"
+    schema.applicantLocationRequirements = {
+      "@type": "Country",
+      name: "Nigeria",
+    }
+  }
+
+  schema.jobLocation = {
+    "@type": "Place",
+    address,
+  }
+
+  if (salaryMin != null || salaryMax != null) {
+    schema.baseSalary = {
+      "@type": "MonetaryAmount",
+      currency: "NGN",
+      value: {
+        "@type": "QuantitativeValue",
+        ...(salaryMin != null ? { minValue: salaryMin } : {}),
+        ...(salaryMax != null ? { maxValue: salaryMax } : {}),
+        ...(salaryMin != null && salaryMax == null
+          ? { value: salaryMin }
+          : {}),
+        ...(salaryMax != null && salaryMin == null
+          ? { value: salaryMax }
+          : {}),
+        unitText: "MONTH",
+      },
+    }
+  }
+
+  return schema
+}
+
 type ArticleSchemaOptions = {
   title: string
   description: string

@@ -40,7 +40,7 @@ export const indexableRoutes: IndexableRoute[] = [
   { path: "/about", changeFrequency: "monthly", priority: 0.8 },
   { path: "/contact", changeFrequency: "monthly", priority: 0.8 },
   { path: "/blog", changeFrequency: "weekly", priority: 0.8 },
-  { path: "/careers", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/careers", changeFrequency: "weekly", priority: 0.8 },
   ...services.map((service) => ({
     path: service.href,
     changeFrequency: "monthly" as const,

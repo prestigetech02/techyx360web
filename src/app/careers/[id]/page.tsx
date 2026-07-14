@@ -20,6 +20,7 @@ import { JoinTalentPoolDialogProvider } from "@/components/careers/join-talent-p
 import { PageHeroBackground } from "@/components/layout/page-hero-background"
 import { BlogPostContent } from "@/components/blog/blog-post-content"
 import { BreadcrumbJsonLd } from "@/components/seo/breadcrumb-json-ld"
+import { JsonLd } from "@/components/seo/json-ld"
 import { brand } from "@/config/brand"
 import { formatCareerPostedAt, formatCareerSalaryRange } from "@/config/careers"
 import {
@@ -27,6 +28,10 @@ import {
   getOpenJobOpenings,
   getOtherOpenJobOpenings,
 } from "@/lib/careers/openings"
+import {
+  createCareerOpeningMetadata,
+  getCareerOpeningStructuredData,
+} from "@/lib/careers/seo"
 import { createPageMetadata } from "@/lib/seo"
 
 export const dynamicParams = true
@@ -54,17 +59,7 @@ export async function generateMetadata({
     })
   }
 
-  return createPageMetadata({
-    title: `${position.title} | Careers | ${brand.name}`,
-    description: position.description,
-    path: `/careers/${position.id}`,
-    keywords: [
-      `${position.title} Techyx360`,
-      `${position.department} jobs Lagos`,
-      "Techyx360 careers",
-      "tech jobs Nigeria",
-    ],
-  })
+  return createCareerOpeningMetadata(position)
 }
 
 function DetailList({
@@ -124,6 +119,7 @@ export default async function CareerDetailPage({
             { name: position.title, path: `/careers/${position.id}` },
           ]}
         />
+        <JsonLd data={getCareerOpeningStructuredData(position)} />
 
         <section className="relative overflow-hidden bg-[#0f1524]">
           <PageHeroBackground />

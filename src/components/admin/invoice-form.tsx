@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Plus, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { CurrencyInput } from "@/components/ui/currency-input"
 import { DropdownField } from "@/components/ui/dropdown"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,6 +18,10 @@ import {
   normalizeLineItemAmount,
 } from "@/lib/invoices/calculations"
 import { formatNaira } from "@/lib/invoices/formatting"
+import {
+  formatAmountFromNumber,
+  parseAmountInput,
+} from "@/lib/money"
 import type {
   InvoiceDocumentType,
   InvoiceLineItemType,
@@ -135,7 +140,7 @@ export function InvoiceForm({
       return initialValues.lineItems.map((item) => ({
         key: crypto.randomUUID(),
         description: item.description,
-        amount: String(Math.abs(item.amount)),
+        amount: formatAmountFromNumber(Math.abs(item.amount)),
         type: item.type,
       }))
     }
@@ -160,7 +165,10 @@ export function InvoiceForm({
       lineItems
         .filter((item) => item.description.trim() && item.amount.trim())
         .map((item) => ({
-          amount: normalizeLineItemAmount(item.type, Number(item.amount) || 0),
+          amount: normalizeLineItemAmount(
+            item.type,
+            parseAmountInput(item.amount) ?? 0
+          ),
           type: item.type,
         })),
       { vatEnabled, vatRate: DEFAULT_VAT_RATE }
@@ -190,7 +198,7 @@ export function InvoiceForm({
       .filter((item) => item.description.trim())
       .map((item) => ({
         description: item.description.trim(),
-        amount: Number(item.amount) || 0,
+        amount: parseAmountInput(item.amount) ?? 0,
         type: item.type,
       }))
 
@@ -451,17 +459,13 @@ export function InvoiceForm({
                 placeholder="Service description"
                 className={fieldClassName}
               />
-              <Input
+              <CurrencyInput
                 aria-label="Item amount"
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
                 value={item.amount}
-                onChange={(event) =>
-                  updateLineItem(item.key, { amount: event.target.value })
+                onValueChange={(amount) =>
+                  updateLineItem(item.key, { amount })
                 }
-                placeholder="Amount (₦)"
+                placeholder="0.00"
                 className={fieldClassName}
               />
               <DropdownField

@@ -1,29 +1,41 @@
 import {
-  Briefcase,
-  Building2,
-  ClipboardList,
-  CreditCard,
-  FileText,
-  FileUser,
+  BarChart3,
+  FolderKanban,
   GraduationCap,
-  Inbox,
   LayoutDashboard,
-  Mail,
-  Newspaper,
+  Megaphone,
+  Rocket,
   Settings,
+  ShoppingCart,
+  Users,
   UsersRound,
+  Wallet,
   type LucideIcon,
 } from "lucide-react"
 
-export type AdminNavChildItem = {
+export type AdminNavBadgeKey =
+  | "contact"
+  | "registration"
+  | "pif"
+  | "career"
+
+export type AdminNavLeafItem = {
   label: string
-  href: string
+  href?: string
+  badgeKey?: AdminNavBadgeKey
+  comingSoon?: boolean
+}
+
+export type AdminNavChildItem = AdminNavLeafItem & {
+  children?: AdminNavLeafItem[]
 }
 
 export type AdminNavItem = {
   label: string
   href?: string
   icon: LucideIcon
+  badgeKey?: AdminNavBadgeKey
+  comingSoon?: boolean
   children?: AdminNavChildItem[]
 }
 
@@ -34,64 +46,149 @@ export const adminNavItems: AdminNavItem[] = [
     icon: LayoutDashboard,
   },
   {
-    label: "Course Registrations",
-    href: "/admin/registrations",
-    icon: ClipboardList,
-  },
-  {
-    label: "Students",
-    href: "/admin/students",
-    icon: GraduationCap,
-  },
-  {
-    label: "Contact",
-    href: "/admin/contact",
-    icon: Mail,
-  },
-  {
-    label: "Submissions",
-    icon: Inbox,
+    label: "CRM",
+    icon: Users,
     children: [
       {
-        label: "PIF Application",
-        href: "/admin/submissions/pif-applications",
+        label: "Leads",
+        href: "/admin/leads",
+      },
+      {
+        label: "Clients",
+        href: "/admin/clients",
+      },
+      {
+        label: "Contact Enquiries",
+        href: "/admin/contact",
+        badgeKey: "contact",
       },
     ],
   },
   {
-    label: "Talent Pool",
-    href: "/admin/talent-pool",
+    label: "Projects",
+    href: "/admin/projects",
+    icon: FolderKanban,
+  },
+  {
+    label: "Academy",
+    icon: GraduationCap,
+    children: [
+      {
+        label: "Course Registrations",
+        href: "/admin/registrations",
+        badgeKey: "registration",
+      },
+      {
+        label: "Students",
+        href: "/admin/students",
+      },
+    ],
+  },
+  {
+    label: "Programs",
+    icon: Rocket,
+    children: [
+      {
+        label: "Product Innovation Fellowship",
+        comingSoon: true,
+      },
+      {
+        label: "Bootcamps",
+        comingSoon: true,
+      },
+      {
+        label: "Events",
+        comingSoon: true,
+      },
+    ],
+  },
+  {
+    label: "Team",
     icon: UsersRound,
+    children: [
+      {
+        label: "Staff",
+        comingSoon: true,
+      },
+      {
+        label: "Recruitment",
+        children: [
+          {
+            label: "Job Listings",
+            href: "/admin/job-listings",
+          },
+          {
+            label: "Job Applications",
+            href: "/admin/job-applications",
+            badgeKey: "career",
+          },
+          {
+            label: "PIF Applications",
+            href: "/admin/submissions/pif-applications",
+            badgeKey: "pif",
+          },
+          {
+            label: "Talent Pool",
+            href: "/admin/talent-pool",
+          },
+        ],
+      },
+      {
+        label: "Attendance",
+        comingSoon: true,
+      },
+    ],
   },
   {
-    label: "Job Listings",
-    href: "/admin/job-listings",
-    icon: Briefcase,
+    label: "Finance",
+    icon: Wallet,
+    children: [
+      {
+        label: "Invoices",
+        href: "/admin/invoices",
+      },
+      {
+        label: "Expenses",
+        comingSoon: true,
+      },
+      {
+        label: "Payments",
+        href: "/admin/payments",
+      },
+    ],
   },
   {
-    label: "Job Applications",
-    href: "/admin/job-applications",
-    icon: FileUser,
+    label: "Orders",
+    icon: ShoppingCart,
+    children: [
+      {
+        label: "Service Orders",
+        comingSoon: true,
+      },
+      {
+        label: "Hosting",
+        href: "/admin/hosting",
+      },
+      {
+        label: "Domains",
+        href: "/admin/domains",
+      },
+    ],
   },
   {
-    label: "Clients",
-    href: "/admin/clients",
-    icon: Building2,
+    label: "Content & Marketing",
+    icon: Megaphone,
+    children: [
+      {
+        label: "Blog",
+        href: "/admin/blog",
+      },
+    ],
   },
   {
-    label: "Invoices",
-    href: "/admin/invoices",
-    icon: FileText,
-  },
-  {
-    label: "Payments",
-    href: "/admin/payments",
-    icon: CreditCard,
-  },
-  {
-    label: "Blog",
-    href: "/admin/blog",
-    icon: Newspaper,
+    label: "Reports",
+    icon: BarChart3,
+    comingSoon: true,
   },
   {
     label: "Settings",

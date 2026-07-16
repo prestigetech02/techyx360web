@@ -1,7 +1,13 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { LogOut, Menu, Search } from "lucide-react"
+import {
+  LogOut,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+} from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 import { AdminNotificationsBell } from "@/components/admin/admin-notifications-bell"
@@ -14,9 +20,15 @@ import { notify } from "@/lib/toast"
 
 type AdminHeaderProps = {
   userEmail?: string | null
+  sidebarCollapsed: boolean
+  onToggleSidebar: () => void
 }
 
-export function AdminHeader({ userEmail }: AdminHeaderProps) {
+export function AdminHeader({
+  userEmail,
+  sidebarCollapsed,
+  onToggleSidebar,
+}: AdminHeaderProps) {
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -49,7 +61,7 @@ export function AdminHeader({ userEmail }: AdminHeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-header backdrop-blur-sm">
+      <header className="z-30 shrink-0 border-b border-border/60 bg-header backdrop-blur-sm">
         <div className="flex h-16 items-center gap-4 px-4 sm:px-6">
           <button
             type="button"
@@ -58,6 +70,25 @@ export function AdminHeader({ userEmail }: AdminHeaderProps) {
             aria-label="Open navigation menu"
           >
             <Menu className="size-5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="hidden size-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:inline-flex"
+            aria-label={
+              sidebarCollapsed ? "Expand admin sidebar" : "Collapse admin sidebar"
+            }
+            aria-expanded={!sidebarCollapsed}
+            title={
+              sidebarCollapsed ? "Expand admin sidebar" : "Collapse admin sidebar"
+            }
+          >
+            {sidebarCollapsed ? (
+              <PanelLeftOpen className="size-5" aria-hidden />
+            ) : (
+              <PanelLeftClose className="size-5" aria-hidden />
+            )}
           </button>
 
           <div className="relative hidden min-w-0 flex-1 sm:block sm:max-w-md">
@@ -133,7 +164,7 @@ export function AdminHeader({ userEmail }: AdminHeaderProps) {
       </header>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="h-dvh w-64 p-0">
+        <SheetContent side="left" className="h-dvh w-72 p-0">
           <SheetTitle className="sr-only">Admin navigation</SheetTitle>
           <AdminSidebar onNavigate={() => setMobileOpen(false)} />
         </SheetContent>

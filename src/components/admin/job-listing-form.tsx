@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation"
 
 import { RichTextEditor } from "@/components/admin/rich-text-editor"
 import { Button } from "@/components/ui/button"
+import { CurrencyInput } from "@/components/ui/currency-input"
 import { DropdownField } from "@/components/ui/dropdown"
 import { Input } from "@/components/ui/input"
 import { careerEmploymentTypeOptions } from "@/config/careers"
 import { isRichTextEmpty } from "@/lib/blog/content"
 import { parseCareerSalaryInput } from "@/lib/careers/salary"
+import { formatAmountFromNumber } from "@/lib/money"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import type { JobOpeningRow } from "@/lib/careers/openings"
@@ -88,10 +90,14 @@ export function JobListingForm({ listing }: JobListingFormProps) {
     listToTextareaValue(listing?.benefits)
   )
   const [salaryMin, setSalaryMin] = useState(
-    listing?.salary_min != null ? String(listing.salary_min) : ""
+    listing?.salary_min != null
+      ? formatAmountFromNumber(listing.salary_min)
+      : ""
   )
   const [salaryMax, setSalaryMax] = useState(
-    listing?.salary_max != null ? String(listing.salary_max) : ""
+    listing?.salary_max != null
+      ? formatAmountFromNumber(listing.salary_max)
+      : ""
   )
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -303,15 +309,12 @@ export function JobListingForm({ listing }: JobListingFormProps) {
           <label htmlFor="job-salaryMin" className={labelClassName}>
             Salary min (NGN / month)
           </label>
-          <Input
+          <CurrencyInput
             id="job-salaryMin"
             name="salaryMin"
-            type="number"
-            min={0}
-            step={10000}
             value={salaryMin}
-            onChange={(event) => setSalaryMin(event.target.value)}
-            placeholder="e.g. 300000"
+            onValueChange={setSalaryMin}
+            placeholder="e.g. 300,000.00"
             className={fieldClassName}
           />
         </div>
@@ -320,15 +323,12 @@ export function JobListingForm({ listing }: JobListingFormProps) {
           <label htmlFor="job-salaryMax" className={labelClassName}>
             Salary max (NGN / month)
           </label>
-          <Input
+          <CurrencyInput
             id="job-salaryMax"
             name="salaryMax"
-            type="number"
-            min={0}
-            step={10000}
             value={salaryMax}
-            onChange={(event) => setSalaryMax(event.target.value)}
-            placeholder="e.g. 600000"
+            onValueChange={setSalaryMax}
+            placeholder="e.g. 600,000.00"
             className={fieldClassName}
           />
         </div>

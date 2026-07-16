@@ -4,6 +4,10 @@ import { ArrowLeft } from "lucide-react"
 import { InvoiceForm } from "@/components/admin/invoice-form"
 import { Button } from "@/components/ui/button"
 import { brand } from "@/config/brand"
+import {
+  invoicePaymentDefaults,
+  invoiceSignatureDefaults,
+} from "@/config/invoice-defaults"
 import { isSupabaseConfigured } from "@/lib/supabase"
 
 export const metadata = {
@@ -14,7 +18,56 @@ export const metadata = {
   },
 }
 
-export default function AdminInvoiceNewPage() {
+type AdminInvoiceNewPageProps = {
+  searchParams: Promise<{
+    clientName?: string
+    clientEmail?: string
+    description?: string
+    amount?: string
+  }>
+}
+
+export default async function AdminInvoiceNewPage({
+  searchParams,
+}: AdminInvoiceNewPageProps) {
+  const params = await searchParams
+  const clientName = params.clientName?.trim() || ""
+  const clientEmail = params.clientEmail?.trim() || ""
+  const description = params.description?.trim() || ""
+  const amountValue = Number(params.amount)
+  const hasPrefill =
+    Boolean(clientName) ||
+    Boolean(clientEmail) ||
+    Boolean(description) ||
+    (Number.isFinite(amountValue) && amountValue > 0)
+
+  const initialValues = hasPrefill
+    ? {
+        invoiceNumber: "",
+        documentType: "invoice" as const,
+        status: "draft" as const,
+        title: description ? "Hosting renewal" : "",
+        issueDate: new Date().toISOString().slice(0, 10),
+        dueDate: "",
+        clientName,
+        clientAddress: "",
+        clientEmail,
+        lineItems: [
+          {
+            description: description || "",
+            amount:
+              Number.isFinite(amountValue) && amountValue > 0 ? amountValue : 0,
+            type: "service" as const,
+          },
+        ],
+        payment: invoicePaymentDefaults,
+        signatureName: invoiceSignatureDefaults.name,
+        signatureTitle: invoiceSignatureDefaults.title,
+        notes: "",
+        vatEnabled: false,
+      }
+    : undefined
+
   return (
     <div className="min-w-0 space-y-6">
       <div className="flex items-center gap-3">
@@ -48,7 +101,7 @@ export default function AdminInvoiceNewPage() {
         </div>
       ) : (
         <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm sm:p-8">
-          <InvoiceForm mode="create" />
+          <InvoiceForm mode="create" initialValues={initialValues} />
         </div>
       )}
     </div>

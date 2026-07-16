@@ -516,6 +516,291 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_clients: {
+        Row: {
+          id: string
+          company: string
+          contact_name: string
+          email: string
+          phone: string
+          industry: string
+          product: string
+          role: string
+          website: string | null
+          location: string
+          company_size: string
+          status: string
+          last_activity_at: string | null
+          avatar_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          company: string
+          contact_name: string
+          email: string
+          phone: string
+          industry?: string
+          product?: string
+          role?: string
+          website?: string | null
+          location?: string
+          company_size?: string
+          status?: string
+          last_activity_at?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          company?: string
+          contact_name?: string
+          email?: string
+          phone?: string
+          industry?: string
+          product?: string
+          role?: string
+          website?: string | null
+          location?: string
+          company_size?: string
+          status?: string
+          last_activity_at?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_client_notes: {
+        Row: {
+          id: string
+          client_id: string
+          content: string
+          author_name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          client_id: string
+          content: string
+          author_name?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          client_id?: string
+          content?: string
+          author_name?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      crm_leads: {
+        Row: {
+          id: string
+          full_name: string
+          email: string
+          phone: string
+          company: string
+          source: string
+          status: string
+          assigned_to: string | null
+          score: number
+          client_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          full_name: string
+          email: string
+          phone: string
+          company: string
+          source?: string
+          status?: string
+          assigned_to?: string | null
+          score?: number
+          client_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string
+          email?: string
+          phone?: string
+          company?: string
+          source?: string
+          status?: string
+          assigned_to?: string | null
+          score?: number
+          client_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_lead_notes: {
+        Row: {
+          id: string
+          lead_id: string
+          content: string
+          author_name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          lead_id: string
+          content: string
+          author_name?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          lead_id?: string
+          content?: string
+          author_name?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      crm_lead_activities: {
+        Row: {
+          id: string
+          lead_id: string
+          type: string
+          title: string
+          author_name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          lead_id: string
+          type: string
+          title: string
+          author_name?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          lead_id?: string
+          type?: string
+          title?: string
+          author_name?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      crm_projects: {
+        Row: {
+          id: string
+          client_id: string | null
+          name: string
+          category: string
+          description: string
+          status: string
+          priority: string
+          progress: number
+          start_date: string | null
+          due_date: string | null
+          team_initials: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          client_id?: string | null
+          name: string
+          category?: string
+          description?: string
+          status?: string
+          priority?: string
+          progress?: number
+          start_date?: string | null
+          due_date?: string | null
+          team_initials?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          client_id?: string | null
+          name?: string
+          category?: string
+          description?: string
+          status?: string
+          priority?: string
+          progress?: number
+          start_date?: string | null
+          due_date?: string | null
+          team_initials?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_project_milestones: {
+        Row: {
+          id: string
+          project_id: string
+          title: string
+          due_date: string | null
+          done: boolean
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          title: string
+          due_date?: string | null
+          done?: boolean
+          sort_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          title?: string
+          due_date?: string | null
+          done?: boolean
+          sort_order?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      crm_project_tasks: {
+        Row: {
+          id: string
+          project_id: string
+          title: string
+          assignee: string
+          done: boolean
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          title: string
+          assignee?: string
+          done?: boolean
+          sort_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          title?: string
+          assignee?: string
+          done?: boolean
+          sort_order?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

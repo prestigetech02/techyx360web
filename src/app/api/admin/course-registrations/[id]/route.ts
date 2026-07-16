@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/admin/require-admin"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 
-const ALLOWED_STATUSES = new Set(["new", "read", "replied"])
+const ALLOWED_STATUSES = new Set(["new", "read", "replied", "converted"])
 
 type RouteContext = {
   params: Promise<{ id: string }>

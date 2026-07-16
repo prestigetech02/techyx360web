@@ -39,7 +39,7 @@ type CourseRegistrationsDashboardProps = {
   registrations: CourseRegistration[]
 }
 
-type RegistrationStatus = "new" | "read" | "replied"
+type RegistrationStatus = "new" | "read" | "replied" | "converted"
 
 function isThisWeek(dateString: string) {
   const date = new Date(dateString)
@@ -69,6 +69,8 @@ function statusBadgeClass(status: string) {
       return "bg-amber-500/10 text-amber-700 dark:text-amber-400"
     case "replied":
       return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+    case "converted":
+      return "bg-sky-500/10 text-sky-700 dark:text-sky-400"
     default:
       return "bg-muted text-muted-foreground"
   }
@@ -239,8 +241,16 @@ export function CourseRegistrationsDashboard({
     notify.success(
       status === "read"
         ? "Registration marked as read."
-        : "Registration marked as replied."
+        : status === "converted"
+          ? "Converted to student."
+          : "Registration marked as replied."
     )
+
+    if (status === "converted") {
+      setViewRegistration((current) =>
+        current?.id === id ? { ...current, status: "converted" } : current
+      )
+    }
 
     void refreshNotifications()
     startTransition(() => {
@@ -539,22 +549,38 @@ export function CourseRegistrationsDashboard({
                 </div>
               </div>
 
-              <DialogFooter>
+              <DialogFooter className="flex-col gap-2 sm:flex-col">
                 <Button
-                  variant="outline"
-                  onClick={() => setViewRegistration(null)}
-                >
-                  Close
-                </Button>
-                <Button
-                  render={
-                    <a
-                      href={`mailto:${viewRegistration.email}?subject=${encodeURIComponent(`Re: Your registration for ${viewRegistration.course_title}`)}`}
-                    />
+                  className="w-full gap-2 rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
+                  disabled={
+                    isPending || viewRegistration.status === "converted"
+                  }
+                  onClick={() =>
+                    void updateStatus(viewRegistration.id, "converted")
                   }
                 >
-                  Reply via email
+                  <GraduationCap className="size-4" aria-hidden />
+                  {viewRegistration.status === "converted"
+                    ? "Converted to student"
+                    : "Convert to student"}
                 </Button>
+                <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setViewRegistration(null)}
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    render={
+                      <a
+                        href={`mailto:${viewRegistration.email}?subject=${encodeURIComponent(`Re: Your registration for ${viewRegistration.course_title}`)}`}
+                      />
+                    }
+                  >
+                    Reply via email
+                  </Button>
+                </div>
               </DialogFooter>
             </>
           ) : null}

@@ -37,6 +37,7 @@ export type ProjectView = {
   name: string
   category: string
   client: string
+  clientAvatarUrl: string | null
   status: ProjectStatusLabel
   statusDb: ProjectStatusDb
   progress: number

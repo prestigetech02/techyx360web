@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  BriefcaseBusiness,
   FolderKanban,
   GraduationCap,
   LayoutDashboard,
@@ -104,38 +105,30 @@ export const adminNavItems: AdminNavItem[] = [
   },
   {
     label: "Team",
+    href: "/admin/team",
     icon: UsersRound,
+  },
+  {
+    label: "Recruitment",
+    icon: BriefcaseBusiness,
     children: [
       {
-        label: "Staff",
-        comingSoon: true,
+        label: "Job Listings",
+        href: "/admin/job-listings",
       },
       {
-        label: "Recruitment",
-        children: [
-          {
-            label: "Job Listings",
-            href: "/admin/job-listings",
-          },
-          {
-            label: "Job Applications",
-            href: "/admin/job-applications",
-            badgeKey: "career",
-          },
-          {
-            label: "PIF Applications",
-            href: "/admin/submissions/pif-applications",
-            badgeKey: "pif",
-          },
-          {
-            label: "Talent Pool",
-            href: "/admin/talent-pool",
-          },
-        ],
+        label: "Job Applications",
+        href: "/admin/job-applications",
+        badgeKey: "career",
       },
       {
-        label: "Attendance",
-        comingSoon: true,
+        label: "PIF Applications",
+        href: "/admin/submissions/pif-applications",
+        badgeKey: "pif",
+      },
+      {
+        label: "Talent Pool",
+        href: "/admin/talent-pool",
       },
     ],
   },

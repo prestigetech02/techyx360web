@@ -90,19 +90,21 @@ export function mapTaskRow(row: CrmProjectTaskRow): ProjectTaskView {
 
 export function mapProjectRowToView(
   row: CrmProjectRow,
-  clientName: string | null | undefined,
+  client: { company: string | null; avatarUrl: string | null } | null,
   milestones: CrmProjectMilestoneRow[] = [],
   tasks: CrmProjectTaskRow[] = []
 ): ProjectView {
   const statusDb = isProjectStatusDb(row.status) ? row.status : "in_progress"
   const priorityDb = isProjectPriorityDb(row.priority) ? row.priority : "medium"
+  const clientName = client?.company?.trim() || "Unassigned client"
 
   return {
     id: row.id,
     clientId: row.client_id,
     name: row.name,
     category: row.category,
-    client: clientName?.trim() || "Unassigned client",
+    client: clientName,
+    clientAvatarUrl: client?.avatarUrl ?? null,
     status: PROJECT_STATUS_LABELS[statusDb],
     statusDb,
     progress: row.progress,
@@ -114,8 +116,8 @@ export function mapProjectRowToView(
     priorityDb,
     description: row.description,
     overdue: isOverdue(row.due_date, statusDb),
-    initials: getProjectInitials(row.name),
-    accent: getProjectAccent(row.id),
+    initials: getProjectInitials(clientName === "Unassigned client" ? row.name : clientName),
+    accent: getProjectAccent(row.client_id ?? row.id),
     team: row.team_initials ?? [],
     milestones: [...milestones]
       .sort((a, b) => a.sort_order - b.sort_order)
@@ -178,28 +180,34 @@ async function loadChildren(projectIds: string[]) {
   return { milestonesByProject, tasksByProject }
 }
 
-async function loadClientNames(clientIds: string[]) {
+async function loadClientInfo(clientIds: string[]) {
   const supabase = createAdminClient()
   const uniqueIds = [...new Set(clientIds.filter(Boolean))]
-  const names = new Map<string, string>()
+  const clients = new Map<
+    string,
+    { company: string | null; avatarUrl: string | null }
+  >()
 
-  if (uniqueIds.length === 0) return names
+  if (uniqueIds.length === 0) return clients
 
   const { data, error } = await supabase
     .from("crm_clients")
-    .select("id, company")
+    .select("id, company, avatar_url")
     .in("id", uniqueIds)
 
   if (error) {
-    console.error("Failed to load project client names", error)
-    return names
+    console.error("Failed to load project client info", error)
+    return clients
   }
 
   for (const client of data ?? []) {
-    names.set(client.id, client.company)
+    clients.set(client.id, {
+      company: client.company,
+      avatarUrl: client.avatar_url?.trim() || null,
+    })
   }
 
-  return names
+  return clients
 }
 
 export async function getAllProjects(): Promise<ProjectView[]> {
@@ -224,13 +232,13 @@ export async function getAllProjects(): Promise<ProjectView[]> {
     .map((project) => project.client_id)
     .filter((id): id is string => Boolean(id))
 
-  const [{ milestonesByProject, tasksByProject }, clientNames] =
-    await Promise.all([loadChildren(ids), loadClientNames(clientIds)])
+  const [{ milestonesByProject, tasksByProject }, clientInfo] =
+    await Promise.all([loadChildren(ids), loadClientInfo(clientIds)])
 
   return projects.map((project) =>
     mapProjectRowToView(
       project,
-      project.client_id ? clientNames.get(project.client_id) : null,
+      project.client_id ? clientInfo.get(project.client_id) ?? null : null,
       milestonesByProject.get(project.id) ?? [],
       tasksByProject.get(project.id) ?? []
     )
@@ -254,15 +262,15 @@ export async function getProjectById(id: string): Promise<ProjectView | null> {
 
   if (!data) return null
 
-  const [{ milestonesByProject, tasksByProject }, clientNames] =
+  const [{ milestonesByProject, tasksByProject }, clientInfo] =
     await Promise.all([
       loadChildren([id]),
-      loadClientNames(data.client_id ? [data.client_id] : []),
+      loadClientInfo(data.client_id ? [data.client_id] : []),
     ])
 
   return mapProjectRowToView(
     data,
-    data.client_id ? clientNames.get(data.client_id) : null,
+    data.client_id ? clientInfo.get(data.client_id) ?? null : null,
     milestonesByProject.get(id) ?? [],
     tasksByProject.get(id) ?? []
   )
@@ -289,15 +297,15 @@ export async function getProjectsByClientId(
   if (projects.length === 0) return []
 
   const ids = projects.map((project) => project.id)
-  const [{ milestonesByProject, tasksByProject }, clientNames] =
-    await Promise.all([loadChildren(ids), loadClientNames([clientId])])
+  const [{ milestonesByProject, tasksByProject }, clientInfo] =
+    await Promise.all([loadChildren(ids), loadClientInfo([clientId])])
 
-  const clientName = clientNames.get(clientId) ?? null
+  const client = clientInfo.get(clientId) ?? null
 
   return projects.map((project) =>
     mapProjectRowToView(
       project,
-      clientName,
+      client,
       milestonesByProject.get(project.id) ?? [],
       tasksByProject.get(project.id) ?? []
     )

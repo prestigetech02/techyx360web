@@ -141,6 +141,43 @@ function StatCard({
   )
 }
 
+function ProjectClientAvatar({
+  project,
+  size = "sm",
+}: {
+  project: Pick<
+    ProjectView,
+    "client" | "clientAvatarUrl" | "initials" | "accent"
+  >
+  size?: "sm" | "md"
+}) {
+  const sizeClass =
+    size === "md" ? "size-11 text-sm rounded-xl" : "size-9 text-xs rounded-lg"
+
+  if (project.clientAvatarUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={project.clientAvatarUrl}
+        alt={`${project.client} logo`}
+        className={cn("shrink-0 object-cover", sizeClass)}
+      />
+    )
+  }
+
+  return (
+    <div
+      className={cn(
+        "flex shrink-0 items-center justify-center font-bold",
+        sizeClass,
+        project.accent
+      )}
+    >
+      {project.initials}
+    </div>
+  )
+}
+
 function TeamAvatars({ members }: { members: string[] }) {
   const visible = members.slice(0, 4)
   const remainder = members.length - visible.length
@@ -384,14 +421,7 @@ function ProjectDetailContent({
     <>
       <SheetHeader className="shrink-0 space-y-0 border-b border-border/60 p-5 pr-12 text-left">
         <div className="flex items-start gap-3">
-          <div
-            className={cn(
-              "flex size-11 shrink-0 items-center justify-center rounded-xl text-sm font-bold",
-              project.accent
-            )}
-          >
-            {project.initials}
-          </div>
+          <ProjectClientAvatar project={project} size="md" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <SheetTitle className="text-base font-bold text-foreground">
@@ -1333,14 +1363,7 @@ export function ProjectsDashboard({
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
-                              project.accent
-                            )}
-                          >
-                            {project.initials}
-                          </div>
+                          <ProjectClientAvatar project={project} />
                           <div className="min-w-0">
                             <p className="truncate font-semibold text-foreground">
                               {project.name}
@@ -1421,14 +1444,7 @@ export function ProjectsDashboard({
                 className="rounded-2xl border border-border/60 p-4 text-left transition-colors hover:bg-muted/30"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div
-                    className={cn(
-                      "flex size-10 items-center justify-center rounded-xl text-sm font-bold",
-                      project.accent
-                    )}
-                  >
-                    {project.initials}
-                  </div>
+                  <ProjectClientAvatar project={project} size="md" />
                   <Badge
                     className={cn(
                       "border-0 font-medium",

@@ -801,6 +801,99 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          id: string
+          full_name: string
+          email: string
+          phone: string
+          role: string
+          department: string
+          status: string
+          joined_at: string
+          gender: string | null
+          address: string
+          date_of_birth: string | null
+          base_salary: number | null
+          salary_currency: string
+          payment_frequency: string | null
+          bank_name: string
+          account_name: string
+          account_number: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          full_name: string
+          email: string
+          phone?: string
+          role?: string
+          department: string
+          status?: string
+          joined_at?: string
+          gender?: string | null
+          address?: string
+          date_of_birth?: string | null
+          base_salary?: number | null
+          salary_currency?: string
+          payment_frequency?: string | null
+          bank_name?: string
+          account_name?: string
+          account_number?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string
+          email?: string
+          phone?: string
+          role?: string
+          department?: string
+          status?: string
+          joined_at?: string
+          gender?: string | null
+          address?: string
+          date_of_birth?: string | null
+          base_salary?: number | null
+          salary_currency?: string
+          payment_frequency?: string | null
+          bank_name?: string
+          account_name?: string
+          account_number?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      team_member_documents: {
+        Row: {
+          id: string
+          member_id: string
+          title: string
+          doc_type: string
+          notes: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          member_id: string
+          title: string
+          doc_type?: string
+          notes?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          member_id?: string
+          title?: string
+          doc_type?: string
+          notes?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

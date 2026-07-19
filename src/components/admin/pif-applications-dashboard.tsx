@@ -30,7 +30,9 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 export type PifApplication =
-  Database["public"]["Tables"]["pif_applications"]["Row"]
+  Database["public"]["Tables"]["pif_applications"]["Row"] & {
+    payment_receipt_url?: string | null
+  }
 
 type PifApplicationsDashboardProps = {
   applications: PifApplication[]
@@ -488,6 +490,31 @@ export function PifApplicationsDashboard({
                     </Badge>
                   </div>
                 </div>
+
+                {viewApplication.payment_receipt_url ? (
+                  <div>
+                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                      Payment receipt
+                    </p>
+                    <a
+                      href={viewApplication.payment_receipt_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-flex text-sm font-medium text-brand hover:underline"
+                    >
+                      View uploaded receipt
+                    </a>
+                  </div>
+                ) : viewApplication.payment_receipt_path ? (
+                  <div>
+                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                      Payment receipt
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Receipt uploaded, but the signed link could not be created.
+                    </p>
+                  </div>
+                ) : null}
               </div>
 
               <DialogFooter>

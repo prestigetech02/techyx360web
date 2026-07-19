@@ -14,20 +14,37 @@ export type PifApplicationPayload = {
   programCommitmentAgreed: boolean
 }
 
-export async function submitPifApplication(payload: PifApplicationPayload) {
+export async function submitPifApplication(
+  payload: PifApplicationPayload,
+  paymentReceipt: File
+) {
   const recaptchaToken = await getRecaptchaToken(
     recaptchaActions.pifApplication
   )
 
+  const formData = new FormData()
+  formData.append("firstName", payload.firstName)
+  formData.append("lastName", payload.lastName)
+  formData.append("email", payload.email)
+  formData.append("phone", payload.phone)
+  formData.append("educationExperience", payload.educationExperience)
+  formData.append("preferredTrack", payload.preferredTrack)
+  formData.append("portfolioUrl", payload.portfolioUrl ?? "")
+  formData.append("motivation", payload.motivation)
+  formData.append("goals", payload.goals)
+  formData.append(
+    "programCommitmentAgreed",
+    payload.programCommitmentAgreed ? "true" : "false"
+  )
+  formData.append("paymentReceipt", paymentReceipt)
+
+  if (recaptchaToken) {
+    formData.append("recaptchaToken", recaptchaToken)
+  }
+
   const response = await fetch("/api/pif-applications", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      ...payload,
-      recaptchaToken,
-    }),
+    body: formData,
   })
 
   const result = (await response.json().catch(() => null)) as {

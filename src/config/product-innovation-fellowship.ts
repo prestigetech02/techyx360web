@@ -1,3 +1,5 @@
+import { invoicePaymentDefaults } from "@/config/invoice-defaults"
+
 export const pifCoursePath = "/trainings/product-innovation-fellowship"
 export const pifApplyPath = "/trainings/product-innovation-fellowship/apply"
 
@@ -10,6 +12,20 @@ export const pifLearningTracks = [
   "Quality Assurance",
   "Product Marketing",
 ] as const
+
+export const pifPricing = {
+  currentPrice: "₦50,000",
+  regularPrice: "₦120,000",
+}
+
+export const pifPaymentDetails = {
+  bankName: invoicePaymentDefaults.bankName,
+  accountNumber: invoicePaymentDefaults.accountNumber,
+  accountName: invoicePaymentDefaults.accountName,
+  amount: pifPricing.currentPrice,
+  paymentNote:
+    "Make payment to the account below, then upload your payment receipt before submitting. Use your full name as the payment reference.",
+}
 
 export const pifFaqs = [
   {

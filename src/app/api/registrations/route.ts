@@ -306,7 +306,7 @@ export async function POST(request: Request) {
     if (isEvaRegistration && paymentReceipt instanceof File) {
       const uploadResult = await uploadRegistrationReceipt(
         paymentReceipt,
-        courseSlug
+        `eva/${courseSlug}`
       )
 
       if ("error" in uploadResult) {

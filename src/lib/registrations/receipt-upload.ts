@@ -31,7 +31,10 @@ function getFileExtension(file: File) {
   }
 }
 
-export async function uploadRegistrationReceipt(file: File, courseSlug: string) {
+export async function uploadRegistrationReceipt(
+  file: File,
+  folderPath: string
+) {
   if (!ALLOWED_TYPES.has(file.type)) {
     return {
       error: "Only JPG, PNG, WebP, and PDF files are allowed for payment receipts.",
@@ -43,7 +46,7 @@ export async function uploadRegistrationReceipt(file: File, courseSlug: string) 
   }
 
   const extension = getFileExtension(file)
-  const objectPath = `eva/${courseSlug}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${extension}`
+  const objectPath = `${folderPath}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${extension}`
   const fileBuffer = Buffer.from(await file.arrayBuffer())
 
   const supabase = createAdminClient()

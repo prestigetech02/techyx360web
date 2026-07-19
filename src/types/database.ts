@@ -298,6 +298,7 @@ export type Database = {
           motivation: string
           goals: string
           program_commitment_agreed: boolean
+          payment_receipt_path: string | null
           status: string
           created_at: string
         }
@@ -313,6 +314,7 @@ export type Database = {
           motivation: string
           goals: string
           program_commitment_agreed?: boolean
+          payment_receipt_path?: string | null
           status?: string
           created_at?: string
         }
@@ -328,6 +330,7 @@ export type Database = {
           motivation?: string
           goals?: string
           program_commitment_agreed?: boolean
+          payment_receipt_path?: string | null
           status?: string
           created_at?: string
         }

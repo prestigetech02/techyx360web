@@ -16,6 +16,7 @@ import {
   pifCoursePath,
   pifFaqs,
   pifLearningTracks,
+  pifPricing,
 } from "@/config/product-innovation-fellowship"
 import { createPageMetadata } from "@/lib/seo"
 import { getCourseSchema, getFaqSchema } from "@/lib/structured-data"
@@ -384,10 +385,10 @@ export default function ProductInnovationFellowshipPage() {
 
                 <div className="flex flex-wrap items-end gap-3">
                   <p className="text-4xl font-bold tracking-tight text-brand sm:text-5xl">
-                    ₦50,000
+                    {pifPricing.currentPrice}
                   </p>
                   <p className="pb-1 text-lg font-semibold text-muted-foreground line-through sm:text-xl">
-                    ₦120,000
+                    {pifPricing.regularPrice}
                   </p>
                 </div>
 

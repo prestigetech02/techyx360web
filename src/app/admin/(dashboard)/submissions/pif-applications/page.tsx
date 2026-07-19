@@ -1,5 +1,6 @@
 import { PifApplicationsDashboard } from "@/components/admin/pif-applications-dashboard"
 import { brand } from "@/config/brand"
+import { getRegistrationReceiptSignedUrl } from "@/lib/registrations/receipt-upload"
 import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase"
 
 export const metadata = {
@@ -41,10 +42,26 @@ export default async function AdminPifApplicationsPage() {
   const { data, error } = await supabase
     .from("pif_applications")
     .select(
-      "id, first_name, last_name, email, phone, education_experience, preferred_track, portfolio_url, motivation, goals, program_commitment_agreed, status, created_at"
+      "id, first_name, last_name, email, phone, education_experience, preferred_track, portfolio_url, motivation, goals, program_commitment_agreed, payment_receipt_path, status, created_at"
     )
     .order("created_at", { ascending: false })
     .limit(100)
+
+  const applications = error
+    ? []
+    : await Promise.all(
+        (data ?? []).map(async (application) => {
+          if (!application.payment_receipt_path) {
+            return { ...application, payment_receipt_url: null }
+          }
+
+          const payment_receipt_url = await getRegistrationReceiptSignedUrl(
+            application.payment_receipt_path
+          )
+
+          return { ...application, payment_receipt_url }
+        })
+      )
 
   return (
     <div className="min-w-0 space-y-6">
@@ -63,11 +80,18 @@ export default async function AdminPifApplicationsPage() {
 
       {error ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-          Could not load PIF applications. Make sure you have created the
-          `pif_applications` table in Supabase.
+          Could not load PIF applications. Make sure you have run{" "}
+          <code className="rounded bg-red-100 px-1.5 py-0.5 text-xs">
+            supabase/pif-applications.sql
+          </code>{" "}
+          and{" "}
+          <code className="rounded bg-red-100 px-1.5 py-0.5 text-xs">
+            supabase/pif-applications-payment-receipt-migration.sql
+          </code>{" "}
+          in Supabase.
         </div>
       ) : (
-        <PifApplicationsDashboard applications={data ?? []} />
+        <PifApplicationsDashboard applications={applications} />
       )}
     </div>
   )

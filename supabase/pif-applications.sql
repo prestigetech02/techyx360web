@@ -10,6 +10,7 @@ create table if not exists public.pif_applications (
   motivation text not null,
   goals text not null,
   program_commitment_agreed boolean not null default false,
+  payment_receipt_path text,
   status text not null default 'new',
   created_at timestamptz not null default now()
 );

@@ -6,6 +6,7 @@ import { FormEvent, useMemo, useState, type ReactNode } from "react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { DropdownField } from "@/components/ui/dropdown"
 import { Input } from "@/components/ui/input"
+import { PifPaymentSection } from "@/components/trainings/pif-payment-section"
 import { pifLearningTracks } from "@/config/product-innovation-fellowship"
 import { submitPifApplication } from "@/lib/pif-applications"
 import { notify } from "@/lib/toast"
@@ -74,10 +75,18 @@ export function PifApplyForm() {
       programCommitmentAgreed: formData.get("programCommitment") === "on",
     }
 
+    const paymentReceipt = formData.get("paymentReceipt")
+    if (!(paymentReceipt instanceof File) || paymentReceipt.size === 0) {
+      const message = "Please upload your payment receipt before submitting."
+      setError(message)
+      notify.error(message)
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
-      await submitPifApplication(payload)
+      await submitPifApplication(payload, paymentReceipt)
       form.reset()
       setSubmitted(true)
       notify.success(
@@ -278,6 +287,13 @@ export function PifApplyForm() {
             className={textareaClassName}
           />
         </div>
+      </FormSection>
+
+      <FormSection
+        title="Payment"
+        description="Pay the fellowship fee and upload your transfer receipt to complete your application."
+      >
+        <PifPaymentSection disabled={isSubmitting} />
       </FormSection>
 
       <div className="space-y-4 border-t border-border/70 pt-6">

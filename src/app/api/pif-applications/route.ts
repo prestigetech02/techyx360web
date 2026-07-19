@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { pifLearningTracks } from "@/config/product-innovation-fellowship"
 import { recaptchaActions } from "@/lib/recaptcha/actions"
 import { requireRecaptcha } from "@/lib/recaptcha/server"
+import { uploadRegistrationReceipt } from "@/lib/registrations/receipt-upload"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 
@@ -10,6 +11,36 @@ const allowedTracks = new Set<string>(pifLearningTracks)
 
 function sanitize(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
+}
+
+type PifApplicationRequestBody = Record<string, unknown> & {
+  paymentReceipt?: File
+}
+
+async function parsePifApplicationRequest(
+  request: Request
+): Promise<PifApplicationRequestBody> {
+  const contentType = request.headers.get("content-type") ?? ""
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData()
+    const body: PifApplicationRequestBody = {}
+
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        if (key === "paymentReceipt" && value.size > 0) {
+          body.paymentReceipt = value
+        }
+        continue
+      }
+
+      body[key] = value
+    }
+
+    return body
+  }
+
+  return (await request.json()) as PifApplicationRequestBody
 }
 
 export async function POST(request: Request) {
@@ -21,7 +52,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as Record<string, unknown>
+    const body = await parsePifApplicationRequest(request)
 
     const recaptchaError = await requireRecaptcha(
       body,
@@ -38,7 +69,10 @@ export async function POST(request: Request) {
     const portfolioUrl = sanitize(body.portfolioUrl)
     const motivation = sanitize(body.motivation)
     const goals = sanitize(body.goals)
-    const programCommitmentAgreed = body.programCommitmentAgreed === true
+    const programCommitmentAgreed =
+      body.programCommitmentAgreed === true ||
+      sanitize(body.programCommitmentAgreed).toLowerCase() === "true"
+    const paymentReceipt = body.paymentReceipt
 
     if (
       !firstName ||
@@ -77,6 +111,22 @@ export async function POST(request: Request) {
       )
     }
 
+    if (!(paymentReceipt instanceof File) || paymentReceipt.size === 0) {
+      return NextResponse.json(
+        { error: "Please upload your payment receipt before submitting." },
+        { status: 400 }
+      )
+    }
+
+    const uploadResult = await uploadRegistrationReceipt(
+      paymentReceipt,
+      "pif"
+    )
+
+    if ("error" in uploadResult) {
+      return NextResponse.json({ error: uploadResult.error }, { status: 400 })
+    }
+
     const supabase = createAdminClient()
     const { error } = await supabase.from("pif_applications").insert({
       first_name: firstName,
@@ -89,6 +139,7 @@ export async function POST(request: Request) {
       motivation,
       goals,
       program_commitment_agreed: programCommitmentAgreed,
+      payment_receipt_path: uploadResult.path,
     })
 
     if (error) {

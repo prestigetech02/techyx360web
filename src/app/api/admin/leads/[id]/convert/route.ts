@@ -50,7 +50,7 @@ export async function POST(_request: Request, context: RouteContext) {
         industry: "General",
         product: "Custom software",
         role: "Contact",
-        location: "Nigeria",
+        location: existing.address.trim() || "Nigeria",
         company_size: "11 - 50 employees",
         status: "active",
         last_activity_at: now,

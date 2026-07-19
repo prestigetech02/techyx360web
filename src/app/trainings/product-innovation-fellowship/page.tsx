@@ -384,10 +384,10 @@ export default function ProductInnovationFellowshipPage() {
 
                 <div className="flex flex-wrap items-end gap-3">
                   <p className="text-4xl font-bold tracking-tight text-brand sm:text-5xl">
-                    ₦80,000
+                    ₦50,000
                   </p>
                   <p className="pb-1 text-lg font-semibold text-muted-foreground line-through sm:text-xl">
-                    ₦300,000
+                    ₦120,000
                   </p>
                 </div>
 

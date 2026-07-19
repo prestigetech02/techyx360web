@@ -12,6 +12,7 @@ export type CreateLeadInput = {
   email: string
   phone: string
   company: string
+  address: string
   source: string
   status: LeadStatus
   assigned_to: string | null
@@ -24,6 +25,7 @@ export type UpdateLeadInput = Partial<{
   email: string
   phone: string
   company: string
+  address: string
   source: string
   status: LeadStatus
   assigned_to: string | null
@@ -56,6 +58,7 @@ export function parseCreateLeadBody(
   const email = asTrimmedString(body.email)
   const phone = asTrimmedString(body.phone)
   const company = asTrimmedString(body.company)
+  const address = asTrimmedString(body.address)
   const source = asTrimmedString(body.source) || "Website Form"
   const statusRaw = asTrimmedString(body.status).toLowerCase() || "new"
   const assignedRaw = asTrimmedString(body.assigned_to ?? body.assignedTo)
@@ -100,6 +103,7 @@ export function parseCreateLeadBody(
       email,
       phone,
       company,
+      address,
       source,
       status: statusRaw as LeadStatus,
       assigned_to: assignedRaw || null,
@@ -144,6 +148,10 @@ export function parseUpdateLeadBody(
       return { ok: false, error: "Company cannot be empty.", status: 400 }
     }
     data.company = company
+  }
+
+  if (body.address !== undefined) {
+    data.address = asTrimmedString(body.address)
   }
 
   if (body.source !== undefined) {

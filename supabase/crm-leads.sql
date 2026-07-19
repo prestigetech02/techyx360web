@@ -24,6 +24,7 @@ create table if not exists public.crm_leads (
   email text not null,
   phone text not null,
   company text not null,
+  address text not null default '',
   source text not null default 'Website Form',
   status text not null default 'new'
     check (status in ('new', 'contacted', 'qualified', 'converted', 'lost')),

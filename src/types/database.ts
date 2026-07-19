@@ -604,6 +604,7 @@ export type Database = {
           email: string
           phone: string
           company: string
+          address: string
           source: string
           status: string
           assigned_to: string | null
@@ -618,6 +619,7 @@ export type Database = {
           email: string
           phone: string
           company: string
+          address?: string
           source?: string
           status?: string
           assigned_to?: string | null
@@ -632,6 +634,7 @@ export type Database = {
           email?: string
           phone?: string
           company?: string
+          address?: string
           source?: string
           status?: string
           assigned_to?: string | null

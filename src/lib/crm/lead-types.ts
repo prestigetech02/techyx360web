@@ -30,6 +30,7 @@ export type LeadView = {
   email: string
   phone: string
   company: string
+  address: string
   source: string
   status: LeadStatus
   initials: string

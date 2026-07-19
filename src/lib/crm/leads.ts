@@ -93,6 +93,7 @@ export function mapLeadRowToView(
     email: row.email,
     phone: row.phone,
     company: row.company,
+    address: row.address?.trim() || "",
     source: row.source,
     status: isLeadStatus(row.status) ? row.status : "new",
     initials: getLeadInitials(row.full_name),
@@ -108,7 +109,7 @@ export function mapLeadRowToView(
 }
 
 const LEAD_SELECT =
-  "id, full_name, email, phone, company, source, status, assigned_to, score, client_id, created_at, updated_at"
+  "id, full_name, email, phone, company, address, source, status, assigned_to, score, client_id, created_at, updated_at"
 
 export async function getAllLeads(): Promise<LeadView[]> {
   if (!isSupabaseConfigured()) return []

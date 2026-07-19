@@ -3,6 +3,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
   type FormEvent,
@@ -19,9 +20,11 @@ import {
   ExternalLink,
   Filter,
   Mail,
+  MapPin,
   MessageCircle,
   MoreHorizontal,
   MoreVertical,
+  Pencil,
   Phone,
   Plus,
   Search,
@@ -33,6 +36,7 @@ import {
   UserCheck,
   UserPlus,
   UserRoundCheck,
+  X,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -80,6 +84,16 @@ const filterTabs: Array<{ value: "all" | LeadStatus; label: string }> = [
   { value: "lost", label: "Lost" },
 ]
 
+export type LeadAssigneeOption = {
+  id: string
+  fullName: string
+  role: string
+  department: string
+  email: string
+  initials: string
+  accent: string
+}
+
 function statusClass(status: LeadStatus) {
   switch (status) {
     case "new":
@@ -100,6 +114,178 @@ async function readErrorMessage(response: Response, fallback: string) {
     error?: string
   } | null
   return data?.error ?? fallback
+}
+
+function AssigneeCombobox({
+  id,
+  value,
+  onChange,
+  options,
+  disabled,
+  placeholder = "Search team members...",
+}: {
+  id: string
+  value: string
+  onChange: (value: string) => void
+  options: LeadAssigneeOption[]
+  disabled?: boolean
+  placeholder?: string
+}) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState(value)
+
+  useEffect(() => {
+    setQuery(value)
+  }, [value])
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false)
+        setQuery(value)
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown)
+    return () => document.removeEventListener("mousedown", handlePointerDown)
+  }, [value])
+
+  const filteredOptions = useMemo(() => {
+    const normalized = query.trim().toLowerCase()
+    if (!normalized) return options
+
+    return options.filter((option) =>
+      [option.fullName, option.email, option.role, option.department].some(
+        (field) => field.toLowerCase().includes(normalized)
+      )
+    )
+  }, [options, query])
+
+  const selected = useMemo(
+    () =>
+      options.find(
+        (option) => option.fullName.toLowerCase() === value.trim().toLowerCase()
+      ) ?? null,
+    [options, value]
+  )
+
+  function selectOption(option: LeadAssigneeOption) {
+    onChange(option.fullName)
+    setQuery(option.fullName)
+    setOpen(false)
+  }
+
+  function clearSelection() {
+    onChange("")
+    setQuery("")
+    setOpen(false)
+  }
+
+  return (
+    <div ref={rootRef} className="relative">
+      <div className="relative">
+        <Search
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden
+        />
+        <Input
+          id={id}
+          value={query}
+          disabled={disabled}
+          autoComplete="off"
+          placeholder={
+            options.length === 0
+              ? "No active team members available"
+              : placeholder
+          }
+          className={cn(fieldClassName, "pl-9 pr-9")}
+          onFocus={() => {
+            if (!disabled) setOpen(true)
+          }}
+          onChange={(event) => {
+            setQuery(event.target.value)
+            setOpen(true)
+            if (value) onChange("")
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setOpen(false)
+              setQuery(value)
+            }
+            if (event.key === "Enter") {
+              event.preventDefault()
+              if (filteredOptions[0]) {
+                selectOption(filteredOptions[0])
+              }
+            }
+          }}
+        />
+        {value || query ? (
+          <button
+            type="button"
+            className="absolute top-1/2 right-2.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+            onClick={clearSelection}
+            disabled={disabled}
+            aria-label="Clear assignee"
+          >
+            <X className="size-3.5" aria-hidden />
+          </button>
+        ) : null}
+      </div>
+
+      {open && !disabled ? (
+        <div className="absolute z-50 mt-1.5 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-popover p-1 shadow-lg ring-1 ring-foreground/10">
+          {filteredOptions.length === 0 ? (
+            <p className="px-3 py-2.5 text-sm text-muted-foreground">
+              {options.length === 0
+                ? "Add active team members first."
+                : "No matching team members."}
+            </p>
+          ) : (
+            filteredOptions.map((option) => {
+              const isSelected = selected?.id === option.id
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-muted",
+                    isSelected && "bg-brand/10"
+                  )}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => selectOption(option)}
+                >
+                  <div
+                    className={cn(
+                      "flex size-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold",
+                      option.accent
+                    )}
+                  >
+                    {option.initials}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {option.fullName}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {option.role} · {option.department}
+                    </p>
+                  </div>
+                  {isSelected ? (
+                    <CheckCircle2
+                      className="size-4 shrink-0 text-brand"
+                      aria-hidden
+                    />
+                  ) : null}
+                </button>
+              )
+            })
+          )}
+        </div>
+      ) : null}
+    </div>
+  )
 }
 
 function StatCard({
@@ -318,6 +504,8 @@ function LeadDetailSheet({
   onOpenChange,
   onConvert,
   onAddNote,
+  onUpdate,
+  assignees,
   isPending,
 }: {
   lead: LeadView | null
@@ -325,6 +513,11 @@ function LeadDetailSheet({
   onOpenChange: (open: boolean) => void
   onConvert: (id: string) => void
   onAddNote: (id: string, content: string) => Promise<void>
+  onUpdate: (
+    id: string,
+    payload: Record<string, unknown>
+  ) => Promise<LeadView | null>
+  assignees: LeadAssigneeOption[]
   isPending: boolean
 }) {
   return (
@@ -340,6 +533,8 @@ function LeadDetailSheet({
             lead={lead}
             onConvert={onConvert}
             onAddNote={onAddNote}
+            onUpdate={onUpdate}
+            assignees={assignees}
             isPending={isPending}
           />
         ) : null}
@@ -352,22 +547,109 @@ function LeadDetailContent({
   lead,
   onConvert,
   onAddNote,
+  onUpdate,
+  assignees,
   isPending,
 }: {
   lead: LeadView
   onConvert: (id: string) => void
   onAddNote: (id: string, content: string) => Promise<void>
+  onUpdate: (
+    id: string,
+    payload: Record<string, unknown>
+  ) => Promise<LeadView | null>
+  assignees: LeadAssigneeOption[]
   isPending: boolean
 }) {
   const [noteInput, setNoteInput] = useState("")
   const [showNoteInput, setShowNoteInput] = useState(false)
   const [activitiesOpen, setActivitiesOpen] = useState(false)
   const [savingNote, setSavingNote] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [name, setName] = useState(lead.name)
+  const [email, setEmail] = useState(lead.email)
+  const [phone, setPhone] = useState(lead.phone)
+  const [company, setCompany] = useState(lead.company)
+  const [address, setAddress] = useState(lead.address)
+  const [source, setSource] = useState(lead.source)
+  const [status, setStatus] = useState<LeadStatus>(lead.status)
+  const [assignedTo, setAssignedTo] = useState(
+    lead.assignedTo === "Unassigned" ? "" : lead.assignedTo
+  )
+  const [score, setScore] = useState(String(lead.score))
 
   const notes: LeadNoteView[] = lead.notes ?? []
   const activities: LeadActivityView[] = lead.activities ?? []
   const previewActivities = activities.slice(0, ACTIVITY_PREVIEW_COUNT)
   const hasMoreActivities = activities.length > ACTIVITY_PREVIEW_COUNT
+
+  function openEditDialog() {
+    setName(lead.name)
+    setEmail(lead.email)
+    setPhone(lead.phone)
+    setCompany(lead.company)
+    setAddress(lead.address)
+    setSource(lead.source)
+    setStatus(lead.status)
+    setAssignedTo(lead.assignedTo === "Unassigned" ? "" : lead.assignedTo)
+    setScore(String(lead.score))
+    setEditOpen(true)
+  }
+
+  async function saveLead(event: FormEvent) {
+    event.preventDefault()
+    if (savingEdit) return
+
+    const trimmedName = name.trim()
+    const trimmedEmail = email.trim()
+    const trimmedPhone = phone.trim()
+    const trimmedCompany = company.trim()
+    const scoreValue = Number(score)
+
+    if (!trimmedName || !trimmedEmail || !trimmedPhone || !trimmedCompany) {
+      notify.error("Name, email, phone, and company are required.")
+      return
+    }
+
+    if (!Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
+      notify.error("Lead score must be between 0 and 100.")
+      return
+    }
+
+    const trimmedAssignee = assignedTo.trim()
+    if (
+      trimmedAssignee &&
+      !assignees.some(
+        (member) =>
+          member.fullName.toLowerCase() === trimmedAssignee.toLowerCase()
+      )
+    ) {
+      notify.error("Please select an assignee from the team directory.")
+      return
+    }
+
+    setSavingEdit(true)
+    try {
+      const updated = await onUpdate(lead.id, {
+        full_name: trimmedName,
+        email: trimmedEmail,
+        phone: trimmedPhone,
+        company: trimmedCompany,
+        address: address.trim(),
+        source,
+        status,
+        assigned_to: assignedTo.trim() || null,
+        score: Math.round(scoreValue),
+      })
+
+      if (updated) {
+        setEditOpen(false)
+      }
+    } finally {
+      setSavingEdit(false)
+    }
+  }
 
   async function addNote() {
     const content = noteInput.trim()
@@ -416,6 +698,16 @@ function LeadDetailContent({
               {lead.phone}
             </p>
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={openEditDialog}
+            className="h-9 shrink-0 gap-1.5 rounded-xl"
+          >
+            <Pencil className="size-3.5" aria-hidden />
+            Edit
+          </Button>
         </div>
 
         <div className="mt-5 grid grid-cols-4 gap-2">
@@ -446,6 +738,22 @@ function LeadDetailContent({
               <dt className="text-muted-foreground">Company</dt>
               <dd className="text-right font-medium text-foreground">
                 {lead.company}
+              </dd>
+            </div>
+            <div className="flex items-start justify-between gap-4">
+              <dt className="text-muted-foreground">Address</dt>
+              <dd className="flex max-w-[65%] items-start justify-end gap-1.5 text-right font-medium text-foreground">
+                {lead.address ? (
+                  <>
+                    <MapPin
+                      className="mt-0.5 size-3.5 shrink-0 text-brand"
+                      aria-hidden
+                    />
+                    <span>{lead.address}</span>
+                  </>
+                ) : (
+                  "—"
+                )}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-4">
@@ -650,15 +958,186 @@ function LeadDetailContent({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Edit lead</DialogTitle>
+            <DialogDescription>
+              Update contact and company details for {lead.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(event) => void saveLead(event)}
+            className="space-y-3"
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label htmlFor="edit-lead-name" className={labelClassName}>
+                  Full name
+                </label>
+                <Input
+                  id="edit-lead-name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  className={fieldClassName}
+                  required
+                  disabled={savingEdit}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-lead-email" className={labelClassName}>
+                  Email
+                </label>
+                <Input
+                  id="edit-lead-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className={fieldClassName}
+                  required
+                  disabled={savingEdit}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-lead-phone" className={labelClassName}>
+                  Phone
+                </label>
+                <Input
+                  id="edit-lead-phone"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  className={fieldClassName}
+                  required
+                  disabled={savingEdit}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="edit-lead-company" className={labelClassName}>
+                  Company
+                </label>
+                <Input
+                  id="edit-lead-company"
+                  value={company}
+                  onChange={(event) => setCompany(event.target.value)}
+                  className={fieldClassName}
+                  required
+                  disabled={savingEdit}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="edit-lead-address" className={labelClassName}>
+                  Address
+                </label>
+                <Input
+                  id="edit-lead-address"
+                  value={address}
+                  onChange={(event) => setAddress(event.target.value)}
+                  placeholder="City, state, country"
+                  className={fieldClassName}
+                  disabled={savingEdit}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-lead-source" className={labelClassName}>
+                  Source
+                </label>
+                <select
+                  id="edit-lead-source"
+                  value={source}
+                  onChange={(event) => setSource(event.target.value)}
+                  className={selectClassName}
+                  disabled={savingEdit}
+                >
+                  {LEAD_SOURCES.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="edit-lead-status" className={labelClassName}>
+                  Status
+                </label>
+                <select
+                  id="edit-lead-status"
+                  value={status}
+                  onChange={(event) =>
+                    setStatus(event.target.value as LeadStatus)
+                  }
+                  className={selectClassName}
+                  disabled={savingEdit}
+                >
+                  <option value="new">New</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="qualified">Qualified</option>
+                  <option value="converted">Converted</option>
+                  <option value="lost">Lost</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="edit-lead-assigned" className={labelClassName}>
+                  Assigned to
+                </label>
+                <AssigneeCombobox
+                  id="edit-lead-assigned"
+                  value={assignedTo}
+                  onChange={setAssignedTo}
+                  options={assignees}
+                  disabled={savingEdit}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-lead-score" className={labelClassName}>
+                  Lead score (0–100)
+                </label>
+                <Input
+                  id="edit-lead-score"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={score}
+                  onChange={(event) => setScore(event.target.value)}
+                  className={fieldClassName}
+                  disabled={savingEdit}
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                disabled={savingEdit}
+                onClick={() => setEditOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
+                disabled={savingEdit}
+              >
+                {savingEdit ? "Saving..." : "Save changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
 
 type LeadsDashboardProps = {
   leads: LeadView[]
+  assignees?: LeadAssigneeOption[]
 }
 
-export function LeadsDashboard({ leads }: LeadsDashboardProps) {
+export function LeadsDashboard({
+  leads,
+  assignees = [],
+}: LeadsDashboardProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [activeTab, setActiveTab] = useState<"all" | LeadStatus>("all")
@@ -678,6 +1157,7 @@ export function LeadsDashboard({ leads }: LeadsDashboardProps) {
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [company, setCompany] = useState("")
+  const [address, setAddress] = useState("")
   const [source, setSource] = useState("Website Form")
   const [status, setStatus] = useState<LeadStatus>("new")
   const [assignedTo, setAssignedTo] = useState("")
@@ -709,12 +1189,15 @@ export function LeadsDashboard({ leads }: LeadsDashboardProps) {
 
   const assigneeOptions = useMemo(() => {
     const values = new Set<string>()
+    for (const member of assignees) {
+      values.add(member.fullName)
+    }
     for (const lead of leads) {
       const assignee = lead.assignedTo.trim()
-      if (assignee) values.add(assignee)
+      if (assignee && assignee !== "Unassigned") values.add(assignee)
     }
     return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [leads])
+  }, [assignees, leads])
 
   const activeFilterCount = useMemo(() => {
     let count = 0
@@ -738,6 +1221,7 @@ export function LeadsDashboard({ leads }: LeadsDashboardProps) {
           lead.name,
           lead.email,
           lead.company,
+          lead.address,
           lead.source,
           lead.phone,
           lead.assignedTo,
@@ -802,6 +1286,7 @@ export function LeadsDashboard({ leads }: LeadsDashboardProps) {
     setEmail("")
     setPhone("")
     setCompany("")
+    setAddress("")
     setSource("Website Form")
     setStatus("new")
     setAssignedTo("")
@@ -828,6 +1313,18 @@ export function LeadsDashboard({ leads }: LeadsDashboardProps) {
       return
     }
 
+    const trimmedAssignee = assignedTo.trim()
+    if (
+      trimmedAssignee &&
+      !assignees.some(
+        (member) =>
+          member.fullName.toLowerCase() === trimmedAssignee.toLowerCase()
+      )
+    ) {
+      notify.error("Please select an assignee from the team directory.")
+      return
+    }
+
     setCreating(true)
     try {
       const response = await fetch("/api/admin/leads", {
@@ -838,6 +1335,7 @@ export function LeadsDashboard({ leads }: LeadsDashboardProps) {
           email: trimmedEmail,
           phone: trimmedPhone,
           company: trimmedCompany,
+          address: address.trim(),
           source,
           status,
           assigned_to: assignedTo.trim() || null,
@@ -887,6 +1385,27 @@ export function LeadsDashboard({ leads }: LeadsDashboardProps) {
 
     notify.success(message)
     refreshLeads()
+  }
+
+  async function updateLead(
+    id: string,
+    payload: Record<string, unknown>
+  ): Promise<LeadView | null> {
+    const response = await fetch(`/api/admin/leads/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      notify.error(await readErrorMessage(response, "Unable to update lead."))
+      return null
+    }
+
+    const data = (await response.json()) as { lead?: LeadView }
+    notify.success("Lead updated.")
+    refreshLeads()
+    return data.lead ?? null
   }
 
   async function convertLead(id: string) {
@@ -1185,6 +1704,8 @@ export function LeadsDashboard({ leads }: LeadsDashboardProps) {
           void convertLead(id)
         }}
         onAddNote={addNote}
+        onUpdate={updateLead}
+        assignees={assignees}
         isPending={isPending}
       />
 
@@ -1385,6 +1906,18 @@ export function LeadsDashboard({ leads }: LeadsDashboardProps) {
                   required
                 />
               </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="lead-address" className={labelClassName}>
+                  Address
+                </label>
+                <Input
+                  id="lead-address"
+                  value={address}
+                  onChange={(event) => setAddress(event.target.value)}
+                  placeholder="City, state, country"
+                  className={fieldClassName}
+                />
+              </div>
               <div>
                 <label htmlFor="lead-source" className={labelClassName}>
                   Source
@@ -1425,12 +1958,12 @@ export function LeadsDashboard({ leads }: LeadsDashboardProps) {
                 <label htmlFor="lead-assigned" className={labelClassName}>
                   Assigned to
                 </label>
-                <Input
+                <AssigneeCombobox
                   id="lead-assigned"
                   value={assignedTo}
-                  onChange={(event) => setAssignedTo(event.target.value)}
-                  placeholder="e.g. Daniel Afolabi"
-                  className={fieldClassName}
+                  onChange={setAssignedTo}
+                  options={assignees}
+                  disabled={creating}
                 />
               </div>
               <div>

@@ -1,6 +1,7 @@
 import { LeadsDashboard } from "@/components/admin/leads-dashboard"
 import { brand } from "@/config/brand"
 import { getAllLeads } from "@/lib/crm/leads"
+import { getAllTeamMembers } from "@/lib/team/members"
 import { isSupabaseConfigured } from "@/lib/supabase"
 
 export const metadata = {
@@ -37,8 +38,24 @@ export default async function AdminLeadsPage() {
   }
 
   try {
-    const leads = await getAllLeads()
-    return <LeadsDashboard leads={leads} />
+    const [leads, teamMembers] = await Promise.all([
+      getAllLeads(),
+      getAllTeamMembers().catch(() => []),
+    ])
+
+    const assignees = teamMembers
+      .filter((member) => member.status === "active")
+      .map((member) => ({
+        id: member.id,
+        fullName: member.fullName,
+        role: member.role,
+        department: member.department,
+        email: member.email,
+        initials: member.initials,
+        accent: member.accent,
+      }))
+
+    return <LeadsDashboard leads={leads} assignees={assignees} />
   } catch {
     return (
       <div className="min-w-0 space-y-5">
@@ -58,6 +75,10 @@ export default async function AdminLeadsPage() {
           Could not load leads. Make sure you have run{" "}
           <code className="rounded bg-red-100 px-1.5 py-0.5 text-xs">
             supabase/crm-leads.sql
+          </code>{" "}
+          and{" "}
+          <code className="rounded bg-red-100 px-1.5 py-0.5 text-xs">
+            supabase/crm-leads-address-migration.sql
           </code>{" "}
           in Supabase.
         </div>

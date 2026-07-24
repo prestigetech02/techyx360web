@@ -2,7 +2,14 @@
 
 import { useRouter } from "next/navigation"
 import { Loader2, Search } from "lucide-react"
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react"
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react"
 
 import { Input } from "@/components/ui/input"
 import type {
@@ -64,7 +71,7 @@ export function AdminGlobalSearch({
   }, [])
 
   useEffect(() => {
-    function handleShortcut(event: KeyboardEvent) {
+    function handleShortcut(event: globalThis.KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault()
         inputRef.current?.focus()
@@ -130,7 +137,7 @@ export function AdminGlobalSearch({
     router.push(result.href)
   }
 
-  function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+  function onKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
     if (event.key === "Escape") {
       setOpen(false)
       setActiveIndex(-1)

@@ -5,6 +5,7 @@ import {
   GraduationCap,
   Settings2,
   Smartphone,
+  UsersRound,
   type LucideIcon,
 } from "lucide-react"
 
@@ -57,5 +58,12 @@ export const services: Service[] = [
       "Expert IT consulting in Nigeria for technology roadmaps, infrastructure planning, and secure digital transformation.",
     href: "/services/technical-consultancy",
     icon: Settings2,
+  },
+  {
+    title: "Talent Outsourcing",
+    description:
+      "Vetted developers, designers, and tech specialists embedded in your team—flexible staffing that scales with your projects.",
+    href: "/services/talent-outsourcing",
+    icon: UsersRound,
   },
 ]

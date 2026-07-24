@@ -54,6 +54,11 @@ export const navigation: NavItem[] = [
         href: "/services/technical-consultancy",
         description: "IT consulting & digital transformation",
       },
+      {
+        label: "Talent Outsourcing",
+        href: "/services/talent-outsourcing",
+        description: "Vetted tech talent embedded in your team",
+      },
     ],
   },
   {

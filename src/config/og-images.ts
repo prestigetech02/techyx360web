@@ -30,6 +30,10 @@ export const pageOgImages: Record<
     url: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&q=80",
     alt: "Technical consultancy and IT strategy",
   },
+  "/services/talent-outsourcing": {
+    url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80",
+    alt: "Talent outsourcing and tech team collaboration",
+  },
   "/trainings/corporate": {
     url: "/corp.hero.webp",
     alt: "Corporate technology training illustration",

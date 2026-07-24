@@ -4,6 +4,7 @@ export const recaptchaActions = {
   pifApplication: "pif_application",
   careerApplication: "career_application",
   talentPool: "talent_pool",
+  talentRequest: "talent_request",
 } as const
 
 

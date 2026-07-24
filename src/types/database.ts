@@ -519,6 +519,54 @@ export type Database = {
         }
         Relationships: []
       }
+      talent_requests: {
+        Row: {
+          id: string
+          first_name: string
+          last_name: string
+          email: string
+          phone: string
+          company: string
+          role_needed: string
+          engagement_type: string
+          headcount: number
+          duration: string
+          details: string
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          first_name: string
+          last_name: string
+          email: string
+          phone: string
+          company: string
+          role_needed: string
+          engagement_type: string
+          headcount?: number
+          duration: string
+          details: string
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          first_name?: string
+          last_name?: string
+          email?: string
+          phone?: string
+          company?: string
+          role_needed?: string
+          engagement_type?: string
+          headcount?: number
+          duration?: string
+          details?: string
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       crm_clients: {
         Row: {
           id: string

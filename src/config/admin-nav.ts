@@ -130,6 +130,10 @@ export const adminNavItems: AdminNavItem[] = [
         label: "Talent Pool",
         href: "/admin/talent-pool",
       },
+      {
+        label: "Talent Requests",
+        href: "/admin/talent-requests",
+      },
     ],
   },
   {

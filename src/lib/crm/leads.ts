@@ -28,6 +28,9 @@ export {
   LEAD_ACTIVITY_TYPES,
   LEAD_SOURCES,
   LEAD_STATUSES,
+  SOCIAL_LEAD_SOURCES,
+  formatYesNo,
+  isSocialLeadSource,
   statusChangeTitle,
 } from "@/lib/crm/lead-types"
 
@@ -100,6 +103,14 @@ export function mapLeadRowToView(
     avatarClass: getLeadAvatarClass(row.id),
     assignedTo: row.assigned_to?.trim() || "Unassigned",
     score: row.score,
+    followers: row.followers ?? null,
+    nicheHashtag: row.niche_hashtag?.trim() || "",
+    gapFound: row.gap_found?.trim() || "",
+    profileLink: row.profile_link?.trim() || "",
+    contactDate: row.contact_date,
+    opened: row.opened ?? null,
+    replied: row.replied ?? null,
+    followUpDate: row.follow_up_date,
     created: formatLeadDate(row.created_at),
     createdAt: row.created_at,
     clientId: row.client_id,
@@ -109,7 +120,7 @@ export function mapLeadRowToView(
 }
 
 const LEAD_SELECT =
-  "id, full_name, email, phone, company, address, source, status, assigned_to, score, client_id, created_at, updated_at"
+  "id, full_name, email, phone, company, address, source, status, assigned_to, score, followers, niche_hashtag, gap_found, profile_link, contact_date, opened, replied, follow_up_date, client_id, created_at, updated_at"
 
 export async function getAllLeads(): Promise<LeadView[]> {
   if (!isSupabaseConfigured()) return []

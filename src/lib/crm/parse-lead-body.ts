@@ -1,6 +1,7 @@
 import {
   LEAD_SOURCES,
   LEAD_STATUSES,
+  isSocialLeadSource,
   type LeadStatus,
 } from "@/lib/crm/lead-types"
 
@@ -17,6 +18,14 @@ export type CreateLeadInput = {
   status: LeadStatus
   assigned_to: string | null
   score: number
+  followers: number | null
+  niche_hashtag: string
+  gap_found: string
+  profile_link: string | null
+  contact_date: string | null
+  opened: boolean | null
+  replied: boolean | null
+  follow_up_date: string | null
   note: string | null
 }
 
@@ -30,6 +39,14 @@ export type UpdateLeadInput = Partial<{
   status: LeadStatus
   assigned_to: string | null
   score: number
+  followers: number | null
+  niche_hashtag: string
+  gap_found: string
+  profile_link: string | null
+  contact_date: string | null
+  opened: boolean | null
+  replied: boolean | null
+  follow_up_date: string | null
 }>
 
 function asTrimmedString(value: unknown) {
@@ -49,6 +66,166 @@ function parseScore(value: unknown): number | null {
 
 function isAllowedSource(source: string) {
   return (LEAD_SOURCES as readonly string[]).includes(source)
+}
+
+function isIsoDate(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)
+}
+
+function parseOptionalDate(
+  value: unknown,
+  fieldLabel: string
+): ParseOk<string | null> | ParseErr {
+  if (value === null || value === undefined || value === "") {
+    return { ok: true, data: null }
+  }
+  const date = asTrimmedString(value)
+  if (!isIsoDate(date)) {
+    return {
+      ok: false,
+      error: `${fieldLabel} must be YYYY-MM-DD.`,
+      status: 400,
+    }
+  }
+  return { ok: true, data: date }
+}
+
+function parseOptionalBoolean(
+  value: unknown,
+  fieldLabel: string
+): ParseOk<boolean | null> | ParseErr {
+  if (value === null || value === undefined || value === "") {
+    return { ok: true, data: null }
+  }
+  if (typeof value === "boolean") {
+    return { ok: true, data: value }
+  }
+
+  const normalized = asTrimmedString(value).toLowerCase()
+  if (normalized === "yes" || normalized === "true") {
+    return { ok: true, data: true }
+  }
+  if (normalized === "no" || normalized === "false") {
+    return { ok: true, data: false }
+  }
+
+  return {
+    ok: false,
+    error: `${fieldLabel} must be Yes or No.`,
+    status: 400,
+  }
+}
+
+function parseOptionalFollowers(
+  value: unknown,
+  source: string
+): ParseOk<number | null> | ParseErr {
+  if (!isSocialLeadSource(source)) {
+    return { ok: true, data: null }
+  }
+
+  if (value === null || value === undefined || value === "") {
+    return { ok: true, data: null }
+  }
+
+  const followers =
+    typeof value === "number" ? value : Number(asTrimmedString(value))
+
+  if (!Number.isFinite(followers) || followers < 0) {
+    return {
+      ok: false,
+      error: "Followers must be a valid non-negative number.",
+      status: 400,
+    }
+  }
+
+  return { ok: true, data: Math.round(followers) }
+}
+
+function parseOptionalUrl(value: unknown): ParseOk<string | null> | ParseErr {
+  const raw = asTrimmedString(value)
+  if (!raw) return { ok: true, data: null }
+
+  if (
+    !raw.startsWith("http://") &&
+    !raw.startsWith("https://") &&
+    !raw.startsWith("www.")
+  ) {
+    return {
+      ok: false,
+      error: "Profile link must be a valid URL.",
+      status: 400,
+    }
+  }
+
+  return { ok: true, data: raw }
+}
+
+function parseOutreachFields(
+  body: Record<string, unknown>,
+  source: string
+):
+  | ParseOk<{
+      followers: number | null
+      niche_hashtag: string
+      gap_found: string
+      profile_link: string | null
+      contact_date: string | null
+      opened: boolean | null
+      replied: boolean | null
+      follow_up_date: string | null
+    }>
+  | ParseErr {
+  const followersParsed = parseOptionalFollowers(
+    body.followers,
+    source
+  )
+  if (!followersParsed.ok) return followersParsed
+
+  const profileParsed = parseOptionalUrl(
+    body.profile_link ?? body.profileLink
+  )
+  if (!profileParsed.ok) return profileParsed
+
+  const contactDateParsed = parseOptionalDate(
+    body.contact_date ?? body.contactDate,
+    "DM/Email/Call date"
+  )
+  if (!contactDateParsed.ok) return contactDateParsed
+
+  const followUpParsed = parseOptionalDate(
+    body.follow_up_date ?? body.followUpDate,
+    "Follow up date"
+  )
+  if (!followUpParsed.ok) return followUpParsed
+
+  const openedParsed = parseOptionalBoolean(
+    body.opened,
+    "Opened"
+  )
+  if (!openedParsed.ok) return openedParsed
+
+  const repliedParsed = parseOptionalBoolean(
+    body.replied,
+    "Replied"
+  )
+  if (!repliedParsed.ok) return repliedParsed
+
+  return {
+    ok: true,
+    data: {
+      followers: followersParsed.data,
+      niche_hashtag: asTrimmedString(
+        body.niche_hashtag ?? body.nicheHashtag
+      ),
+      gap_found: asTrimmedString(body.gap_found ?? body.gapFound),
+      profile_link: profileParsed.data,
+      contact_date: contactDateParsed.data,
+      opened: openedParsed.data,
+      replied: repliedParsed.data,
+      follow_up_date: followUpParsed.data,
+    },
+  }
 }
 
 export function parseCreateLeadBody(
@@ -96,6 +273,9 @@ export function parseCreateLeadBody(
     }
   }
 
+  const outreach = parseOutreachFields(body, source)
+  if (!outreach.ok) return outreach
+
   return {
     ok: true,
     data: {
@@ -108,6 +288,7 @@ export function parseCreateLeadBody(
       status: statusRaw as LeadStatus,
       assigned_to: assignedRaw || null,
       score,
+      ...outreach.data,
       note: noteRaw || null,
     },
   }
@@ -185,6 +366,34 @@ export function parseUpdateLeadBody(
       }
     }
     data.score = score
+  }
+
+  const sourceForFollowers =
+    data.source ??
+    (typeof body.source === "string" ? body.source.trim() : "")
+
+  const hasOutreachField =
+    body.followers !== undefined ||
+    body.niche_hashtag !== undefined ||
+    body.nicheHashtag !== undefined ||
+    body.gap_found !== undefined ||
+    body.gapFound !== undefined ||
+    body.profile_link !== undefined ||
+    body.profileLink !== undefined ||
+    body.contact_date !== undefined ||
+    body.contactDate !== undefined ||
+    body.opened !== undefined ||
+    body.replied !== undefined ||
+    body.follow_up_date !== undefined ||
+    body.followUpDate !== undefined
+
+  if (hasOutreachField) {
+    const outreach = parseOutreachFields(
+      body,
+      sourceForFollowers || "Website Form"
+    )
+    if (!outreach.ok) return outreach
+    Object.assign(data, outreach.data)
   }
 
   if (Object.keys(data).length === 0) {

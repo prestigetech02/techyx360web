@@ -612,6 +612,14 @@ export type Database = {
           status: string
           assigned_to: string | null
           score: number
+          followers: number | null
+          niche_hashtag: string
+          gap_found: string
+          profile_link: string | null
+          contact_date: string | null
+          opened: boolean | null
+          replied: boolean | null
+          follow_up_date: string | null
           client_id: string | null
           created_at: string
           updated_at: string
@@ -627,6 +635,14 @@ export type Database = {
           status?: string
           assigned_to?: string | null
           score?: number
+          followers?: number | null
+          niche_hashtag?: string
+          gap_found?: string
+          profile_link?: string | null
+          contact_date?: string | null
+          opened?: boolean | null
+          replied?: boolean | null
+          follow_up_date?: string | null
           client_id?: string | null
           created_at?: string
           updated_at?: string
@@ -642,6 +658,14 @@ export type Database = {
           status?: string
           assigned_to?: string | null
           score?: number
+          followers?: number | null
+          niche_hashtag?: string
+          gap_found?: string
+          profile_link?: string | null
+          contact_date?: string | null
+          opened?: boolean | null
+          replied?: boolean | null
+          follow_up_date?: string | null
           client_id?: string | null
           created_at?: string
           updated_at?: string

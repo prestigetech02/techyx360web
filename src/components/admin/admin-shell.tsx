@@ -41,7 +41,7 @@ export function AdminShell({ children, userEmail }: AdminShellProps) {
                 setSidebarCollapsed((collapsed) => !collapsed)
               }
             />
-            <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-4 sm:p-6">
+            <main className="@container min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-4 sm:p-6">
               {children}
             </main>
           </div>

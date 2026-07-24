@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       .from("crm_leads")
       .insert(leadFields)
       .select(
-        "id, full_name, email, phone, company, address, source, status, assigned_to, score, client_id, created_at, updated_at"
+        "id, full_name, email, phone, company, address, source, status, assigned_to, score, followers, niche_hashtag, gap_found, profile_link, contact_date, opened, replied, follow_up_date, client_id, created_at, updated_at"
       )
       .single()
 

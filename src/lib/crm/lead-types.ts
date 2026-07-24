@@ -37,6 +37,14 @@ export type LeadView = {
   avatarClass: string
   assignedTo: string
   score: number
+  followers: number | null
+  nicheHashtag: string
+  gapFound: string
+  profileLink: string
+  contactDate: string | null
+  opened: boolean | null
+  replied: boolean | null
+  followUpDate: string | null
   created: string
   createdAt: string
   clientId: string | null
@@ -58,9 +66,24 @@ export const LEAD_SOURCES = [
   "LinkedIn",
   "Google Ads",
   "Facebook Ads",
+  "TikTok",
+  "Instagram",
+  "WhatsApp",
+  "X",
+  "Facebook",
+  "Snapchat",
   "Cold Call",
   "Event",
   "Other",
+] as const
+
+export const SOCIAL_LEAD_SOURCES = [
+  "TikTok",
+  "Instagram",
+  "WhatsApp",
+  "X",
+  "Facebook",
+  "Snapchat",
 ] as const
 
 export const LEAD_ACTIVITY_TYPES = new Set<LeadActivityType>([
@@ -81,6 +104,10 @@ const AVATAR_CLASSES = [
   "bg-rose-500 text-white",
   "bg-indigo-500 text-white",
 ]
+
+export function isSocialLeadSource(source: string) {
+  return (SOCIAL_LEAD_SOURCES as readonly string[]).includes(source)
+}
 
 export function getLeadInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -110,4 +137,10 @@ export function statusChangeTitle(status: LeadStatus) {
     case "new":
       return "Marked as new"
   }
+}
+
+export function formatYesNo(value: boolean | null | undefined) {
+  if (value === true) return "Yes"
+  if (value === false) return "No"
+  return "—"
 }

@@ -31,6 +31,15 @@ create table if not exists public.crm_leads (
   assigned_to text,
   score integer not null default 50
     check (score >= 0 and score <= 100),
+  followers integer
+    check (followers is null or followers >= 0),
+  niche_hashtag text not null default '',
+  gap_found text not null default '',
+  profile_link text,
+  contact_date date,
+  opened boolean,
+  replied boolean,
+  follow_up_date date,
   client_id uuid references public.crm_clients (id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

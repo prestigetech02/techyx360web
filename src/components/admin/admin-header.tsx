@@ -6,14 +6,13 @@ import {
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
-  Search,
 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
+import { AdminGlobalSearch } from "@/components/admin/admin-global-search"
 import { AdminNotificationsBell } from "@/components/admin/admin-notifications-bell"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { AdminThemeToggle } from "@/components/admin/admin-theme-toggle"
-import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { createClient } from "@/lib/supabase/client"
 import { notify } from "@/lib/toast"
@@ -91,17 +90,7 @@ export function AdminHeader({
             )}
           </button>
 
-          <div className="relative hidden min-w-0 flex-1 sm:block sm:max-w-md">
-            <Search
-              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden
-            />
-            <Input
-              type="search"
-              placeholder="Search dashboard..."
-              className="h-10 rounded-xl border-border/80 bg-muted/50 pl-9"
-            />
-          </div>
+          <AdminGlobalSearch className="hidden min-w-0 flex-1 sm:block sm:max-w-md" />
 
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
             <AdminThemeToggle />
@@ -150,16 +139,8 @@ export function AdminHeader({
           </div>
         </div>
 
-        <div className="relative border-t border-border/60 px-4 py-3 sm:hidden">
-          <Search
-            className="pointer-events-none absolute top-1/2 left-7 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            type="search"
-            placeholder="Search dashboard..."
-            className="h-10 rounded-xl border-border/80 bg-muted/50 pl-9"
-          />
+        <div className="border-t border-border/60 px-4 py-3 sm:hidden">
+          <AdminGlobalSearch compact />
         </div>
       </header>
 

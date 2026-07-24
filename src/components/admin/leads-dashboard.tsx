@@ -7,6 +7,7 @@ import {
   useState,
   useTransition,
   type FormEvent,
+  type ReactNode,
 } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -59,6 +60,8 @@ import {
 } from "@/components/ui/sheet"
 import {
   LEAD_SOURCES,
+  formatYesNo,
+  isSocialLeadSource,
   type LeadActivityType,
   type LeadActivityView,
   type LeadNoteView,
@@ -92,6 +95,36 @@ export type LeadAssigneeOption = {
   email: string
   initials: string
   accent: string
+}
+
+function formatIsoDate(value: string | null | undefined) {
+  if (!value) return "—"
+  const date = new Date(`${value}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString(undefined, { dateStyle: "medium" })
+}
+
+function yesNoValue(value: boolean | null | undefined) {
+  if (value === true) return "yes"
+  if (value === false) return "no"
+  return ""
+}
+
+function DetailRow({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="max-w-[65%] text-right font-medium text-foreground">
+        {children}
+      </dd>
+    </div>
+  )
 }
 
 function statusClass(status: LeadStatus) {
@@ -578,11 +611,22 @@ function LeadDetailContent({
     lead.assignedTo === "Unassigned" ? "" : lead.assignedTo
   )
   const [score, setScore] = useState(String(lead.score))
+  const [followers, setFollowers] = useState(
+    lead.followers == null ? "" : String(lead.followers)
+  )
+  const [nicheHashtag, setNicheHashtag] = useState(lead.nicheHashtag)
+  const [gapFound, setGapFound] = useState(lead.gapFound)
+  const [profileLink, setProfileLink] = useState(lead.profileLink)
+  const [contactDate, setContactDate] = useState(lead.contactDate ?? "")
+  const [opened, setOpened] = useState(yesNoValue(lead.opened))
+  const [replied, setReplied] = useState(yesNoValue(lead.replied))
+  const [followUpDate, setFollowUpDate] = useState(lead.followUpDate ?? "")
 
   const notes: LeadNoteView[] = lead.notes ?? []
   const activities: LeadActivityView[] = lead.activities ?? []
   const previewActivities = activities.slice(0, ACTIVITY_PREVIEW_COUNT)
   const hasMoreActivities = activities.length > ACTIVITY_PREVIEW_COUNT
+  const showFollowersField = isSocialLeadSource(source)
 
   function openEditDialog() {
     setName(lead.name)
@@ -594,6 +638,14 @@ function LeadDetailContent({
     setStatus(lead.status)
     setAssignedTo(lead.assignedTo === "Unassigned" ? "" : lead.assignedTo)
     setScore(String(lead.score))
+    setFollowers(lead.followers == null ? "" : String(lead.followers))
+    setNicheHashtag(lead.nicheHashtag)
+    setGapFound(lead.gapFound)
+    setProfileLink(lead.profileLink)
+    setContactDate(lead.contactDate ?? "")
+    setOpened(yesNoValue(lead.opened))
+    setReplied(yesNoValue(lead.replied))
+    setFollowUpDate(lead.followUpDate ?? "")
     setEditOpen(true)
   }
 
@@ -641,6 +693,14 @@ function LeadDetailContent({
         status,
         assigned_to: assignedTo.trim() || null,
         score: Math.round(scoreValue),
+        followers: showFollowersField ? followers.trim() || null : null,
+        niche_hashtag: nicheHashtag.trim(),
+        gap_found: gapFound.trim(),
+        profile_link: profileLink.trim() || null,
+        contact_date: contactDate || null,
+        opened: opened || null,
+        replied: replied || null,
+        follow_up_date: followUpDate || null,
       })
 
       if (updated) {
@@ -734,56 +794,69 @@ function LeadDetailContent({
         <section className="pb-5">
           <h3 className="text-sm font-bold text-foreground">Lead Details</h3>
           <dl className="mt-3 space-y-3 text-sm">
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Company</dt>
-              <dd className="text-right font-medium text-foreground">
-                {lead.company}
-              </dd>
-            </div>
-            <div className="flex items-start justify-between gap-4">
-              <dt className="text-muted-foreground">Address</dt>
-              <dd className="flex max-w-[65%] items-start justify-end gap-1.5 text-right font-medium text-foreground">
-                {lead.address ? (
-                  <>
-                    <MapPin
-                      className="mt-0.5 size-3.5 shrink-0 text-brand"
-                      aria-hidden
-                    />
-                    <span>{lead.address}</span>
-                  </>
-                ) : (
-                  "—"
-                )}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Source</dt>
-              <dd className="text-right font-medium text-foreground">
-                {lead.source}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Assigned To</dt>
-              <dd className="text-right font-medium text-foreground">
-                {lead.assignedTo}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Lead Score</dt>
-              <dd className="flex items-center justify-end gap-1 text-right font-medium text-foreground">
+            <DetailRow label="Company">{lead.company}</DetailRow>
+            <DetailRow label="Address">
+              {lead.address ? (
+                <span className="inline-flex items-start justify-end gap-1.5">
+                  <MapPin
+                    className="mt-0.5 size-3.5 shrink-0 text-brand"
+                    aria-hidden
+                  />
+                  <span>{lead.address}</span>
+                </span>
+              ) : (
+                "—"
+              )}
+            </DetailRow>
+            <DetailRow label="Source">{lead.source}</DetailRow>
+            {isSocialLeadSource(lead.source) ? (
+              <DetailRow label="Followers">
+                {lead.followers == null
+                  ? "—"
+                  : lead.followers.toLocaleString()}
+              </DetailRow>
+            ) : null}
+            <DetailRow label="Niche / Hashtag">
+              {lead.nicheHashtag || "—"}
+            </DetailRow>
+            <DetailRow label="Gap found">{lead.gapFound || "—"}</DetailRow>
+            <DetailRow label="Profile link">
+              {lead.profileLink ? (
+                <a
+                  href={
+                    lead.profileLink.startsWith("http")
+                      ? lead.profileLink
+                      : `https://${lead.profileLink}`
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  className="break-all text-brand hover:underline"
+                >
+                  {lead.profileLink}
+                </a>
+              ) : (
+                "—"
+              )}
+            </DetailRow>
+            <DetailRow label="DM / Email / Call date">
+              {formatIsoDate(lead.contactDate)}
+            </DetailRow>
+            <DetailRow label="Opened">{formatYesNo(lead.opened)}</DetailRow>
+            <DetailRow label="Replied">{formatYesNo(lead.replied)}</DetailRow>
+            <DetailRow label="Follow up date">
+              {formatIsoDate(lead.followUpDate)}
+            </DetailRow>
+            <DetailRow label="Assigned To">{lead.assignedTo}</DetailRow>
+            <DetailRow label="Lead Score">
+              <span className="inline-flex items-center justify-end gap-1">
                 {lead.score}
                 <Star
                   className="size-3.5 fill-amber-400 text-amber-400"
                   aria-hidden
                 />
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Created</dt>
-              <dd className="text-right font-medium text-foreground">
-                {lead.created}
-              </dd>
-            </div>
+              </span>
+            </DetailRow>
+            <DetailRow label="Created">{lead.created}</DetailRow>
           </dl>
         </section>
 
@@ -1056,6 +1129,26 @@ function LeadDetailContent({
                   ))}
                 </select>
               </div>
+              {showFollowersField ? (
+                <div>
+                  <label
+                    htmlFor="edit-lead-followers"
+                    className={labelClassName}
+                  >
+                    Followers
+                  </label>
+                  <Input
+                    id="edit-lead-followers"
+                    type="number"
+                    min={0}
+                    value={followers}
+                    onChange={(event) => setFollowers(event.target.value)}
+                    placeholder="e.g. 12500"
+                    className={fieldClassName}
+                    disabled={savingEdit}
+                  />
+                </div>
+              ) : null}
               <div>
                 <label htmlFor="edit-lead-status" className={labelClassName}>
                   Status
@@ -1102,6 +1195,115 @@ function LeadDetailContent({
                   className={fieldClassName}
                   disabled={savingEdit}
                 />
+              </div>
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="edit-lead-niche"
+                  className={labelClassName}
+                >
+                  Niche / Hashtag
+                </label>
+                <Input
+                  id="edit-lead-niche"
+                  value={nicheHashtag}
+                  onChange={(event) => setNicheHashtag(event.target.value)}
+                  placeholder="e.g. edtech, #fintech"
+                  className={fieldClassName}
+                  disabled={savingEdit}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="edit-lead-gap" className={labelClassName}>
+                  Gap found
+                </label>
+                <Input
+                  id="edit-lead-gap"
+                  value={gapFound}
+                  onChange={(event) => setGapFound(event.target.value)}
+                  placeholder="What opportunity or gap did you notice?"
+                  className={fieldClassName}
+                  disabled={savingEdit}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="edit-lead-profile"
+                  className={labelClassName}
+                >
+                  Profile link
+                </label>
+                <Input
+                  id="edit-lead-profile"
+                  value={profileLink}
+                  onChange={(event) => setProfileLink(event.target.value)}
+                  placeholder="https://..."
+                  className={fieldClassName}
+                  disabled={savingEdit}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="edit-lead-contact-date"
+                  className={labelClassName}
+                >
+                  DM / Email / Call date
+                </label>
+                <Input
+                  id="edit-lead-contact-date"
+                  type="date"
+                  value={contactDate}
+                  onChange={(event) => setContactDate(event.target.value)}
+                  className={fieldClassName}
+                  disabled={savingEdit}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="edit-lead-follow-up"
+                  className={labelClassName}
+                >
+                  Follow up date
+                </label>
+                <Input
+                  id="edit-lead-follow-up"
+                  type="date"
+                  value={followUpDate}
+                  onChange={(event) => setFollowUpDate(event.target.value)}
+                  className={fieldClassName}
+                  disabled={savingEdit}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-lead-opened" className={labelClassName}>
+                  Opened
+                </label>
+                <select
+                  id="edit-lead-opened"
+                  value={opened}
+                  onChange={(event) => setOpened(event.target.value)}
+                  className={selectClassName}
+                  disabled={savingEdit}
+                >
+                  <option value="">Not set</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="edit-lead-replied" className={labelClassName}>
+                  Replied
+                </label>
+                <select
+                  id="edit-lead-replied"
+                  value={replied}
+                  onChange={(event) => setReplied(event.target.value)}
+                  className={selectClassName}
+                  disabled={savingEdit}
+                >
+                  <option value="">Not set</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
@@ -1162,7 +1364,17 @@ export function LeadsDashboard({
   const [status, setStatus] = useState<LeadStatus>("new")
   const [assignedTo, setAssignedTo] = useState("")
   const [score, setScore] = useState("50")
+  const [followers, setFollowers] = useState("")
+  const [nicheHashtag, setNicheHashtag] = useState("")
+  const [gapFound, setGapFound] = useState("")
+  const [profileLink, setProfileLink] = useState("")
+  const [contactDate, setContactDate] = useState("")
+  const [opened, setOpened] = useState("")
+  const [replied, setReplied] = useState("")
+  const [followUpDate, setFollowUpDate] = useState("")
   const [note, setNote] = useState("")
+
+  const showFollowersField = isSocialLeadSource(source)
 
   const selectedLead = useMemo(
     () => leads.find((lead) => lead.id === selectedLeadId) ?? null,
@@ -1225,6 +1437,9 @@ export function LeadsDashboard({
           lead.source,
           lead.phone,
           lead.assignedTo,
+          lead.nicheHashtag,
+          lead.gapFound,
+          lead.profileLink,
         ].some((value) => value.toLowerCase().includes(normalizedQuery))
       const matchesSource = !filterSource || lead.source === filterSource
       const matchesAssignee =
@@ -1291,6 +1506,14 @@ export function LeadsDashboard({
     setStatus("new")
     setAssignedTo("")
     setScore("50")
+    setFollowers("")
+    setNicheHashtag("")
+    setGapFound("")
+    setProfileLink("")
+    setContactDate("")
+    setOpened("")
+    setReplied("")
+    setFollowUpDate("")
     setNote("")
   }
 
@@ -1340,6 +1563,14 @@ export function LeadsDashboard({
           status,
           assigned_to: assignedTo.trim() || null,
           score: Math.round(scoreValue),
+          followers: showFollowersField ? followers.trim() || null : null,
+          niche_hashtag: nicheHashtag.trim(),
+          gap_found: gapFound.trim(),
+          profile_link: profileLink.trim() || null,
+          contact_date: contactDate || null,
+          opened: opened || null,
+          replied: replied || null,
+          follow_up_date: followUpDate || null,
           note: note.trim() || null,
         }),
       })
@@ -1935,6 +2166,22 @@ export function LeadsDashboard({
                   ))}
                 </select>
               </div>
+              {showFollowersField ? (
+                <div>
+                  <label htmlFor="lead-followers" className={labelClassName}>
+                    Followers
+                  </label>
+                  <Input
+                    id="lead-followers"
+                    type="number"
+                    min={0}
+                    value={followers}
+                    onChange={(event) => setFollowers(event.target.value)}
+                    placeholder="e.g. 12500"
+                    className={fieldClassName}
+                  />
+                </div>
+              ) : null}
               <div>
                 <label htmlFor="lead-status" className={labelClassName}>
                   Status
@@ -1979,6 +2226,96 @@ export function LeadsDashboard({
                   onChange={(event) => setScore(event.target.value)}
                   className={fieldClassName}
                 />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="lead-niche" className={labelClassName}>
+                  Niche / Hashtag
+                </label>
+                <Input
+                  id="lead-niche"
+                  value={nicheHashtag}
+                  onChange={(event) => setNicheHashtag(event.target.value)}
+                  placeholder="e.g. edtech, #fintech"
+                  className={fieldClassName}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="lead-gap" className={labelClassName}>
+                  Gap found
+                </label>
+                <Input
+                  id="lead-gap"
+                  value={gapFound}
+                  onChange={(event) => setGapFound(event.target.value)}
+                  placeholder="What opportunity or gap did you notice?"
+                  className={fieldClassName}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="lead-profile" className={labelClassName}>
+                  Profile link
+                </label>
+                <Input
+                  id="lead-profile"
+                  value={profileLink}
+                  onChange={(event) => setProfileLink(event.target.value)}
+                  placeholder="https://..."
+                  className={fieldClassName}
+                />
+              </div>
+              <div>
+                <label htmlFor="lead-contact-date" className={labelClassName}>
+                  DM / Email / Call date
+                </label>
+                <Input
+                  id="lead-contact-date"
+                  type="date"
+                  value={contactDate}
+                  onChange={(event) => setContactDate(event.target.value)}
+                  className={fieldClassName}
+                />
+              </div>
+              <div>
+                <label htmlFor="lead-follow-up" className={labelClassName}>
+                  Follow up date
+                </label>
+                <Input
+                  id="lead-follow-up"
+                  type="date"
+                  value={followUpDate}
+                  onChange={(event) => setFollowUpDate(event.target.value)}
+                  className={fieldClassName}
+                />
+              </div>
+              <div>
+                <label htmlFor="lead-opened" className={labelClassName}>
+                  Opened
+                </label>
+                <select
+                  id="lead-opened"
+                  value={opened}
+                  onChange={(event) => setOpened(event.target.value)}
+                  className={selectClassName}
+                >
+                  <option value="">Not set</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="lead-replied" className={labelClassName}>
+                  Replied
+                </label>
+                <select
+                  id="lead-replied"
+                  value={replied}
+                  onChange={(event) => setReplied(event.target.value)}
+                  className={selectClassName}
+                >
+                  <option value="">Not set</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
               </div>
               <div className="sm:col-span-2">
                 <label htmlFor="lead-note" className={labelClassName}>

@@ -12,6 +12,10 @@ export type BlogPost = {
   featuredImageAlt: string
   metaDescription?: string
   metaKeywords?: string[]
+  /** Lightweight social preview image (WhatsApp / OG). Falls back to featuredImage. */
+  ogImage?: string
+  /** Total recorded page views / reads. */
+  viewCount?: number
 }
 
 export const blogPosts: BlogPost[] = [

@@ -7,6 +7,7 @@ import { notFound } from "next/navigation"
 
 import { BlogPostContent } from "@/components/blog/blog-post-content"
 import { BlogPostSidebar } from "@/components/blog/blog-post-sidebar"
+import { BlogPostViewTracker } from "@/components/blog/blog-post-view-tracker"
 import { BlogRelatedPosts } from "@/components/blog/blog-related-posts"
 import { BreadcrumbJsonLd } from "@/components/seo/breadcrumb-json-ld"
 import { JsonLd } from "@/components/seo/json-ld"
@@ -87,6 +88,10 @@ export default async function BlogPostPage({
 
   return (
     <main className="flex flex-1 flex-col">
+      <BlogPostViewTracker
+        slug={post.slug}
+        enabled={post.source === "database"}
+      />
       <JsonLd data={getArticleStructuredData(post)} />
       <BreadcrumbJsonLd
         items={[

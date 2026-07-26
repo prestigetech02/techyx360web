@@ -22,8 +22,10 @@ export function createBlogPostMetadata(post: BlogPost) {
     description: getBlogPostSeoDescription(post),
     path: `/blog/${post.slug}`,
     keywords: [...siteMetadata.keywords.slice(0, 4), ...keywords],
-    ogImage: post.featuredImage,
+    ogImage: post.ogImage || post.featuredImage,
     ogImageAlt: post.featuredImageAlt || post.title,
+    ogImageWidth: 1200,
+    ogImageHeight: 630,
     type: "article",
     article: {
       publishedTime: post.dateISO,

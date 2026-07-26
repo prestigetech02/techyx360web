@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { requireAdmin } from "@/lib/admin/require-admin"
+import { optimizeBlogFeaturedImage } from "@/lib/blog/optimize-featured-image"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 
@@ -12,26 +13,6 @@ const ALLOWED_TYPES = new Set([
   "image/webp",
   "image/gif",
 ])
-
-function getFileExtension(file: File) {
-  const fromName = file.name.split(".").pop()?.toLowerCase()
-  if (fromName && ["jpg", "jpeg", "png", "webp", "gif"].includes(fromName)) {
-    return fromName === "jpeg" ? "jpg" : fromName
-  }
-
-  switch (file.type) {
-    case "image/jpeg":
-      return "jpg"
-    case "image/png":
-      return "png"
-    case "image/webp":
-      return "webp"
-    case "image/gif":
-      return "gif"
-    default:
-      return "jpg"
-  }
-}
 
 export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
@@ -51,7 +32,10 @@ export async function POST(request: Request) {
     const file = formData.get("file")
 
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: "No image file provided." }, { status: 400 })
+      return NextResponse.json(
+        { error: "No image file provided." },
+        { status: 400 }
+      )
     }
 
     if (!ALLOWED_TYPES.has(file.type)) {
@@ -68,30 +52,64 @@ export async function POST(request: Request) {
       )
     }
 
-    const extension = getFileExtension(file)
-    const objectPath = `featured/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${extension}`
     const fileBuffer = Buffer.from(await file.arrayBuffer())
+    let optimized: Awaited<ReturnType<typeof optimizeBlogFeaturedImage>>
+
+    try {
+      optimized = await optimizeBlogFeaturedImage(fileBuffer)
+    } catch (error) {
+      console.error("Failed to optimize blog image", error)
+      return NextResponse.json(
+        { error: "Unable to process this image. Try a different JPG or PNG." },
+        { status: 400 }
+      )
+    }
+
+    const id = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`
+    const featuredPath = `featured/${id}.${optimized.featured.extension}`
+    const ogPath = `featured/${id}-og.${optimized.og.extension}`
 
     const supabase = createAdminClient()
-    const { error } = await supabase.storage.from(BUCKET).upload(objectPath, fileBuffer, {
-      contentType: file.type,
-      upsert: false,
-    })
 
-    if (error) {
-      console.error("Failed to upload blog image", error)
+    const [featuredUpload, ogUpload] = await Promise.all([
+      supabase.storage.from(BUCKET).upload(featuredPath, optimized.featured.buffer, {
+        contentType: optimized.featured.contentType,
+        upsert: false,
+        cacheControl: "31536000",
+      }),
+      supabase.storage.from(BUCKET).upload(ogPath, optimized.og.buffer, {
+        contentType: optimized.og.contentType,
+        upsert: false,
+        cacheControl: "31536000",
+      }),
+    ])
+
+    if (featuredUpload.error || ogUpload.error) {
+      console.error(
+        "Failed to upload blog image",
+        featuredUpload.error ?? ogUpload.error
+      )
       return NextResponse.json(
         { error: "Unable to upload image right now." },
         { status: 500 }
       )
     }
 
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(objectPath)
+    const featuredUrl = supabase.storage.from(BUCKET).getPublicUrl(featuredPath)
+      .data.publicUrl
+    const ogUrl = supabase.storage.from(BUCKET).getPublicUrl(ogPath).data
+      .publicUrl
 
     return NextResponse.json({
       success: true,
-      url: data.publicUrl,
-      path: objectPath,
+      url: featuredUrl,
+      ogUrl,
+      path: featuredPath,
+      ogPath,
+      bytes: {
+        featured: optimized.featured.buffer.byteLength,
+        og: optimized.og.buffer.byteLength,
+      },
     })
   } catch (error) {
     console.error("Unexpected blog image upload error", error)

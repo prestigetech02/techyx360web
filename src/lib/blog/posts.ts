@@ -46,6 +46,8 @@ export function mapBlogPostRowToBlogPost(row: BlogPostRow): BlogPost {
     featuredImageAlt: row.featured_image_alt,
     metaDescription: row.meta_description ?? undefined,
     metaKeywords: row.meta_keywords?.length ? row.meta_keywords : undefined,
+    ogImage: row.og_image ?? undefined,
+    viewCount: row.view_count ?? 0,
   }
 }
 
@@ -62,6 +64,7 @@ function mapStaticPostToAdminPost(post: BlogPost): AdminBlogPost {
   return {
     ...post,
     modifiedAtISO: post.modifiedAtISO ?? post.dateISO,
+    viewCount: post.viewCount ?? 0,
     status: "published",
     source: "static",
   }
@@ -76,7 +79,7 @@ async function getDatabaseBlogPosts(options?: { publishedOnly?: boolean }) {
   let query = supabase
     .from("blog_posts")
     .select(
-      "id, slug, title, excerpt, content, author, tags, featured_image, featured_image_alt, meta_description, meta_keywords, read_time_mins, status, published_at, created_at, updated_at"
+      "id, slug, title, excerpt, content, author, tags, featured_image, featured_image_alt, og_image, meta_description, meta_keywords, read_time_mins, view_count, status, published_at, created_at, updated_at"
     )
     .order("published_at", { ascending: false })
     .order("created_at", { ascending: false })
@@ -127,7 +130,7 @@ export async function getBlogPostBySlug(
     const { data } = await supabase
       .from("blog_posts")
       .select(
-        "id, slug, title, excerpt, content, author, tags, featured_image, featured_image_alt, meta_description, meta_keywords, read_time_mins, status, published_at, created_at, updated_at"
+        "id, slug, title, excerpt, content, author, tags, featured_image, featured_image_alt, og_image, meta_description, meta_keywords, read_time_mins, view_count, status, published_at, created_at, updated_at"
       )
       .eq("slug", slug)
       .maybeSingle()

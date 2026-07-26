@@ -14,7 +14,7 @@ type FeaturedImageUploadProps = {
   id?: string
   value: string
   alt: string
-  onImageChange: (url: string) => void
+  onImageChange: (url: string, ogUrl?: string) => void
   onAltChange: (alt: string) => void
 }
 
@@ -47,6 +47,7 @@ export function FeaturedImageUpload({
       const result = (await response.json()) as {
         error?: string
         url?: string
+        ogUrl?: string
       }
 
       if (!response.ok || !result.url) {
@@ -56,14 +57,14 @@ export function FeaturedImageUpload({
         return
       }
 
-      onImageChange(result.url)
+      onImageChange(result.url, result.ogUrl ?? result.url)
 
       if (!alt.trim()) {
         const baseName = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ")
         onAltChange(baseName)
       }
 
-      notify.success("Featured image uploaded.")
+      notify.success("Featured image uploaded and optimized for sharing.")
     } catch {
       const message = "Unable to upload image right now. Please try again."
       setUploadError(message)
@@ -83,8 +84,8 @@ export function FeaturedImageUpload({
           Featured image
         </label>
         <p className="mb-3 text-xs text-muted-foreground">
-          This image is shown on the blog listing and used as the preview when
-          the post is shared on social media.
+          Uploads are converted to lightweight WebP. A separate 1200×630 preview
+          is generated automatically for WhatsApp and social sharing.
         </p>
 
         <input
@@ -113,7 +114,7 @@ export function FeaturedImageUpload({
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 px-4 py-3">
               <p className="min-w-0 truncate text-xs text-muted-foreground">
-                {value}
+                Optimized WebP
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -136,7 +137,7 @@ export function FeaturedImageUpload({
                   variant="outline"
                   size="sm"
                   disabled={isUploading}
-                  onClick={() => onImageChange("")}
+                  onClick={() => onImageChange("", "")}
                   className="rounded-lg text-destructive hover:text-destructive"
                 >
                   <Trash2 className="size-4" />
@@ -162,7 +163,9 @@ export function FeaturedImageUpload({
             )}
             <div>
               <p className="text-sm font-medium text-foreground">
-                {isUploading ? "Uploading image..." : "Upload featured image"}
+                {isUploading
+                  ? "Optimizing & uploading..."
+                  : "Upload featured image"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 JPG, PNG, WebP, or GIF up to 5 MB

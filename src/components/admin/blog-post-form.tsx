@@ -29,6 +29,7 @@ type BlogPostFormValues = {
   metaKeywords: string
   featuredImage: string
   featuredImageAlt: string
+  ogImage: string
   publishedAt: string
   status: "draft" | "published"
 }
@@ -52,6 +53,7 @@ const defaultValues: BlogPostFormValues = {
   metaKeywords: "",
   featuredImage: "",
   featuredImageAlt: "",
+  ogImage: "",
   publishedAt: defaultPublishedAt,
   status: "draft",
 }
@@ -138,6 +140,7 @@ export function BlogPostForm({
         .filter(Boolean),
       featuredImage: values.featuredImage,
       featuredImageAlt: values.featuredImageAlt,
+      ogImage: values.ogImage || values.featuredImage,
       publishedAt: values.publishedAt,
       status: values.status,
     }
@@ -388,9 +391,13 @@ export function BlogPostForm({
           <FeaturedImageUpload
             value={values.featuredImage}
             alt={values.featuredImageAlt}
-            onImageChange={(featuredImage) =>
-              updateField("featuredImage", featuredImage)
-            }
+            onImageChange={(featuredImage, ogImage) => {
+              setValues((current) => ({
+                ...current,
+                featuredImage,
+                ogImage: ogImage ?? "",
+              }))
+            }}
             onAltChange={(featuredImageAlt) =>
               updateField("featuredImageAlt", featuredImageAlt)
             }

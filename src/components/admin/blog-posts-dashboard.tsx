@@ -4,7 +4,6 @@ import Link from "next/link"
 import { useMemo } from "react"
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import {
-  CalendarDays,
   Eye,
   FilePenLine,
   FileText,
@@ -19,15 +18,6 @@ import { cn } from "@/lib/utils"
 
 type BlogPostsDashboardProps = {
   posts: AdminBlogPost[]
-}
-
-function isThisMonth(dateString: string) {
-  const date = new Date(dateString)
-  const now = new Date()
-  return (
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth()
-  )
 }
 
 function formatDate(dateString: string) {
@@ -142,9 +132,12 @@ export function BlogPostsDashboard({ posts }: BlogPostsDashboardProps) {
     const total = posts.length
     const published = posts.filter((post) => post.status === "published").length
     const drafts = posts.filter((post) => post.status === "draft").length
-    const thisMonth = posts.filter((post) => isThisMonth(post.dateISO)).length
+    const totalViews = posts.reduce(
+      (sum, post) => sum + (post.viewCount ?? 0),
+      0
+    )
 
-    return { total, published, drafts, thisMonth }
+    return { total, published, drafts, totalViews }
   }, [posts])
 
   return (
@@ -169,9 +162,9 @@ export function BlogPostsDashboard({ posts }: BlogPostsDashboardProps) {
           accent="bg-amber-500/10 text-amber-700 dark:text-amber-400"
         />
         <StatCard
-          label="This month"
-          value={stats.thisMonth}
-          icon={CalendarDays}
+          label="Total views"
+          value={stats.totalViews}
+          icon={Eye}
           accent="bg-violet-500/10 text-violet-700 dark:text-violet-400"
         />
       </div>
@@ -186,13 +179,14 @@ export function BlogPostsDashboard({ posts }: BlogPostsDashboardProps) {
 
         {posts.length > 0 ? (
           <div className="max-w-full overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left text-sm">
+            <table className="w-full min-w-[1040px] text-left text-sm">
               <thead>
                 <tr className="border-b border-border/60 bg-muted/30 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   <th className="px-6 py-3">Title</th>
                   <th className="px-4 py-3">Author</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Published</th>
+                  <th className="px-4 py-3">Views</th>
                   <th className="px-4 py-3">Tags</th>
                   <th className="px-4 py-3">Read time</th>
                   <th className="px-6 py-3 text-right">Actions</th>
@@ -222,6 +216,9 @@ export function BlogPostsDashboard({ posts }: BlogPostsDashboardProps) {
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-muted-foreground">
                       {formatDate(post.dateISO)}
+                    </td>
+                    <td className="px-4 py-4 tabular-nums text-foreground">
+                      {(post.viewCount ?? 0).toLocaleString()}
                     </td>
                     <td className="max-w-[180px] px-4 py-4 text-foreground/80">
                       <span title={post.tags.join(", ")}>

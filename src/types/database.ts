@@ -122,7 +122,9 @@ export type Database = {
           featured_image_alt: string
           meta_description: string | null
           meta_keywords: string[]
+          og_image: string | null
           read_time_mins: number
+          view_count: number
           status: string
           published_at: string
           created_at: string
@@ -140,7 +142,9 @@ export type Database = {
           featured_image_alt: string
           meta_description?: string | null
           meta_keywords?: string[]
+          og_image?: string | null
           read_time_mins?: number
+          view_count?: number
           status?: string
           published_at: string
           created_at?: string
@@ -158,7 +162,9 @@ export type Database = {
           featured_image_alt?: string
           meta_description?: string | null
           meta_keywords?: string[]
+          og_image?: string | null
           read_time_mins?: number
+          view_count?: number
           status?: string
           published_at?: string
           created_at?: string
@@ -974,7 +980,12 @@ export type Database = {
       }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      increment_blog_post_views: {
+        Args: { post_slug: string }
+        Returns: number
+      }
+    }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
   }

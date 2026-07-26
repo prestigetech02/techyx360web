@@ -116,6 +116,7 @@ export default async function AdminBlogEditPage({
             metaKeywords: post.metaKeywords?.join(", ") ?? "",
             featuredImage: post.featuredImage,
             featuredImageAlt: post.featuredImageAlt,
+            ogImage: post.ogImage ?? post.featuredImage,
             publishedAt: post.dateISO,
             status: post.status,
           }}

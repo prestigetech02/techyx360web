@@ -44,6 +44,7 @@ export async function POST(request: Request) {
     const author = sanitize(body.author) || "Techyx360 Team"
     const featuredImage = sanitize(body.featuredImage)
     const featuredImageAlt = sanitize(body.featuredImageAlt)
+    const ogImage = sanitize(body.ogImage)
     const publishedAt = sanitize(body.publishedAt)
     const status = sanitize(body.status)
     const tags = parseTags(body.tags)
@@ -94,6 +95,7 @@ export async function POST(request: Request) {
         tags,
         featured_image: featuredImage,
         featured_image_alt: featuredImageAlt,
+        og_image: ogImage || featuredImage,
         meta_description: metaDescription || null,
         meta_keywords: metaKeywords,
         read_time_mins: estimateReadTimeMins(content),

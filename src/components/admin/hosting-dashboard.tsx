@@ -42,28 +42,14 @@ import {
 } from "@/components/ui/sheet"
 import { formatNaira } from "@/lib/invoices/formatting"
 import { parseAmountInput } from "@/lib/money"
+import type { HostingAccountView } from "@/lib/crm/hosting-accounts"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 type HostingStatus = "active" | "overdue" | "expired"
 type BillingCycle = "Monthly" | "Quarterly" | "Annually"
 
-type HostingAccount = {
-  id: number
-  clientName: string
-  email: string
-  phone: string
-  domain: string
-  provider: string
-  plan: string
-  amount: number
-  billingCycle: BillingCycle
-  registeredAt: string
-  expiresAt: string
-  notes: string
-  initials: string
-  accent: string
-}
+type HostingAccount = HostingAccountView
 
 type StatusFilter = "all" | HostingStatus
 
@@ -75,89 +61,6 @@ const textareaClassName = cn(
   fieldClassName,
   "min-h-[88px] resize-y py-2.5 leading-relaxed"
 )
-
-const initialAccounts: HostingAccount[] = [
-  {
-    id: 1,
-    clientName: "Edwot School Management",
-    email: "kunle@edwot.com",
-    phone: "+234 803 123 4567",
-    domain: "edwot.com",
-    provider: "Hostinger",
-    plan: "Business Cloud",
-    amount: 185000,
-    billingCycle: "Annually",
-    registeredAt: "2025-03-12",
-    expiresAt: "2026-09-12",
-    notes: "Managed WordPress + email hosting for the school portal.",
-    initials: "E",
-    accent: "bg-blue-600 text-white",
-  },
-  {
-    id: 2,
-    clientName: "Prime Logistics NG",
-    email: "ops@primelogistics.ng",
-    phone: "+234 809 441 2201",
-    domain: "primelogistics.ng",
-    provider: "Namecheap",
-    plan: "Stellar Plus",
-    amount: 95000,
-    billingCycle: "Annually",
-    registeredAt: "2024-07-01",
-    expiresAt: "2026-07-20",
-    notes: "Client prefers Namecheap; renew 2 weeks before expiry.",
-    initials: "P",
-    accent: "bg-violet-600 text-white",
-  },
-  {
-    id: 3,
-    clientName: "Amina Beauty Hub",
-    email: "hello@aminabeauty.ng",
-    phone: "+234 701 555 0192",
-    domain: "aminabeauty.ng",
-    provider: "cPanel (Shared)",
-    plan: "Starter Shared",
-    amount: 45000,
-    billingCycle: "Annually",
-    registeredAt: "2025-01-18",
-    expiresAt: "2026-07-05",
-    notes: "Payment reminder already drafted; awaiting confirmation.",
-    initials: "A",
-    accent: "bg-rose-600 text-white",
-  },
-  {
-    id: 4,
-    clientName: "Northgate Clinics",
-    email: "it@northgateclinics.com",
-    phone: "+234 802 776 3340",
-    domain: "northgateclinics.com",
-    provider: "DigitalOcean",
-    plan: "Droplet 2GB",
-    amount: 220000,
-    billingCycle: "Annually",
-    registeredAt: "2023-11-09",
-    expiresAt: "2026-06-28",
-    notes: "DNS managed in Cloudflare; invoice on renewal.",
-    initials: "N",
-    accent: "bg-emerald-600 text-white",
-  },
-  {
-    id: 5,
-    clientName: "Lagos Craft Market",
-    email: "admin@lagoscraft.market",
-    phone: "+234 813 990 1188",
-    domain: "lagoscraft.market",
-    provider: "Hostinger",
-    plan: "Premium",
-    amount: 78000,
-    billingCycle: "Annually",
-    registeredAt: "2024-05-22",
-    expiresAt: "2026-05-22",
-    notes: "Service lapsed; awaiting reactivation request.",
-    initials: "L",
-    accent: "bg-amber-600 text-white",
-  },
-]
 
 const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "All" },
@@ -229,22 +132,6 @@ function expiryHint(expiresAt: string) {
   if (remaining <= 30) return `Expires in ${remaining} days`
   return `Renews ${formatDisplayDate(expiresAt)}`
 }
-
-function initialsFromName(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return "H"
-  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase()
-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-}
-
-const accentPalette = [
-  "bg-blue-600 text-white",
-  "bg-violet-600 text-white",
-  "bg-rose-600 text-white",
-  "bg-emerald-600 text-white",
-  "bg-amber-600 text-white",
-  "bg-sky-600 text-white",
-]
 
 function StatCard({
   label,
@@ -521,9 +408,16 @@ function HostingDetailSheet({
   )
 }
 
-export function HostingDashboard() {
+type HostingDashboardProps = {
+  initialAccounts?: HostingAccount[]
+}
+
+export function HostingDashboard({
+  initialAccounts = [],
+}: HostingDashboardProps) {
   const router = useRouter()
   const [accounts, setAccounts] = useState(initialAccounts)
+  const [isSaving, setIsSaving] = useState(false)
   const [query, setQuery] = useState("")
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("all")
   const [selected, setSelected] = useState<HostingAccount | null>(null)
@@ -598,7 +492,7 @@ export function HostingDashboard() {
     setNotes("")
   }
 
-  function handleAddAccount(event: FormEvent) {
+  async function handleAddAccount(event: FormEvent) {
     event.preventDefault()
 
     const parsedAmount = parseAmountInput(amount)
@@ -620,29 +514,48 @@ export function HostingDashboard() {
       return
     }
 
-    const nextId = Math.max(0, ...accounts.map((item) => item.id)) + 1
-    const next: HostingAccount = {
-      id: nextId,
-      clientName: clientName.trim(),
-      email: email.trim(),
-      phone: phone.trim() || "—",
-      domain: domain.trim().replace(/^https?:\/\//, "").replace(/\/$/, ""),
-      provider: provider.trim(),
-      plan: plan.trim(),
-      amount: parsedAmount,
-      billingCycle,
-      registeredAt,
-      expiresAt,
-      notes: notes.trim(),
-      initials: initialsFromName(clientName),
-      accent: accentPalette[nextId % accentPalette.length],
-    }
+    setIsSaving(true)
 
-    setAccounts((current) => [next, ...current])
-    setAddOpen(false)
-    resetAddForm()
-    notify.success("Hosting account recorded.")
-    setSelected(next)
+    try {
+      const response = await fetch("/api/admin/hosting-accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientName: clientName.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          domain: domain.trim().replace(/^https?:\/\//, "").replace(/\/$/, ""),
+          provider: provider.trim(),
+          plan: plan.trim(),
+          amount: parsedAmount,
+          billingCycle,
+          registeredAt,
+          expiresAt,
+          notes: notes.trim(),
+        }),
+      })
+
+      const result = (await response.json().catch(() => null)) as {
+        error?: string
+        account?: HostingAccount
+      } | null
+
+      if (!response.ok || !result?.account) {
+        notify.error(result?.error ?? "Unable to save hosting account.")
+        return
+      }
+
+      setAccounts((current) => [result.account!, ...current])
+      setAddOpen(false)
+      resetAddForm()
+      notify.success("Hosting account recorded.")
+      setSelected(result.account)
+      router.refresh()
+    } catch {
+      notify.error("Unable to save hosting account right now.")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   function sendPaymentReminder(account: HostingAccount) {
@@ -684,11 +597,33 @@ export function HostingDashboard() {
     router.push(`/admin/invoices/new?${params.toString()}`)
   }
 
-  function deleteAccount(id: number) {
-    setAccounts((current) => current.filter((item) => item.id !== id))
-    setDeleteTarget(null)
-    if (selected?.id === id) setSelected(null)
-    notify.success("Hosting account removed.")
+  async function deleteAccount(id: string) {
+    setIsSaving(true)
+
+    try {
+      const response = await fetch(`/api/admin/hosting-accounts/${id}`, {
+        method: "DELETE",
+      })
+
+      const result = (await response.json().catch(() => null)) as {
+        error?: string
+      } | null
+
+      if (!response.ok) {
+        notify.error(result?.error ?? "Unable to delete hosting account.")
+        return
+      }
+
+      setAccounts((current) => current.filter((item) => item.id !== id))
+      setDeleteTarget(null)
+      if (selected?.id === id) setSelected(null)
+      notify.success("Hosting account removed.")
+      router.refresh()
+    } catch {
+      notify.error("Unable to delete hosting account right now.")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -1081,9 +1016,10 @@ export function HostingDashboard() {
               </Button>
               <Button
                 type="submit"
-                className="rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
+                disabled={isSaving}
+                className="rounded-xl bg-brand text-brand-foreground hover:bg-brand/90 disabled:opacity-70"
               >
-                Save hosting
+                {isSaving ? "Saving..." : "Save hosting"}
               </Button>
             </DialogFooter>
           </form>

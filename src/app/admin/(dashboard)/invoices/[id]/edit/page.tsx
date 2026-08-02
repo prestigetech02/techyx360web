@@ -8,6 +8,7 @@ import {
 } from "@/components/admin/invoice-form"
 import { Button } from "@/components/ui/button"
 import { brand } from "@/config/brand"
+import { getAllClients } from "@/lib/crm/clients"
 import {
   asDocumentType,
   asInvoiceStatus,
@@ -29,7 +30,10 @@ type PageProps = {
 
 export default async function AdminInvoiceEditPage({ params }: PageProps) {
   const { id } = await params
-  const invoice = await getInvoiceById(id)
+  const [invoice, clients] = await Promise.all([
+    getInvoiceById(id),
+    getAllClients().catch(() => []),
+  ])
 
   if (!invoice) {
     notFound()
@@ -42,6 +46,7 @@ export default async function AdminInvoiceEditPage({ params }: PageProps) {
     title: invoice.title,
     issueDate: invoice.issue_date,
     dueDate: invoice.due_date ?? "",
+    clientId: invoice.client_id ?? "",
     clientName: invoice.client_name,
     clientAddress: invoice.client_address ?? "",
     clientEmail: invoice.client_email ?? "",
@@ -92,6 +97,12 @@ export default async function AdminInvoiceEditPage({ params }: PageProps) {
           mode="edit"
           invoiceId={invoice.id}
           initialValues={initialValues}
+          clients={clients.map((client) => ({
+            id: client.id,
+            company: client.company,
+            email: client.email,
+            location: client.location,
+          }))}
         />
       </div>
     </div>

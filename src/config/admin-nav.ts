@@ -146,7 +146,7 @@ export const adminNavItems: AdminNavItem[] = [
       },
       {
         label: "Expenses",
-        comingSoon: true,
+        href: "/admin/expenses",
       },
       {
         label: "Payments",

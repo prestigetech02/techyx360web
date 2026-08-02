@@ -181,6 +181,7 @@ export type Database = {
           title: string
           issue_date: string
           due_date: string | null
+          client_id: string | null
           client_name: string
           client_address: string | null
           client_email: string | null
@@ -208,6 +209,7 @@ export type Database = {
           title: string
           issue_date?: string
           due_date?: string | null
+          client_id?: string | null
           client_name: string
           client_address?: string | null
           client_email?: string | null
@@ -235,6 +237,7 @@ export type Database = {
           title?: string
           issue_date?: string
           due_date?: string | null
+          client_id?: string | null
           client_name?: string
           client_address?: string | null
           client_email?: string | null
@@ -570,6 +573,282 @@ export type Database = {
           details?: string
           status?: string
           created_at?: string
+        }
+        Relationships: []
+      }
+      crm_hosting_accounts: {
+        Row: {
+          id: string
+          client_name: string
+          email: string
+          phone: string
+          domain: string
+          provider: string
+          plan: string
+          amount: number
+          billing_cycle: string
+          registered_at: string
+          expires_at: string
+          notes: string
+          accent: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          client_name: string
+          email: string
+          phone?: string
+          domain: string
+          provider: string
+          plan: string
+          amount: number
+          billing_cycle?: string
+          registered_at: string
+          expires_at: string
+          notes?: string
+          accent?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          client_name?: string
+          email?: string
+          phone?: string
+          domain?: string
+          provider?: string
+          plan?: string
+          amount?: number
+          billing_cycle?: string
+          registered_at?: string
+          expires_at?: string
+          notes?: string
+          accent?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_domain_accounts: {
+        Row: {
+          id: string
+          client_name: string
+          email: string
+          phone: string
+          domain: string
+          registrar: string
+          amount: number
+          billing_cycle: string
+          registered_at: string
+          expires_at: string
+          ssl_enabled: boolean
+          ssl_provider: string
+          ssl_amount: number
+          ssl_registered_at: string | null
+          ssl_expires_at: string | null
+          notes: string
+          accent: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          client_name: string
+          email: string
+          phone?: string
+          domain: string
+          registrar: string
+          amount: number
+          billing_cycle?: string
+          registered_at: string
+          expires_at: string
+          ssl_enabled?: boolean
+          ssl_provider?: string
+          ssl_amount?: number
+          ssl_registered_at?: string | null
+          ssl_expires_at?: string | null
+          notes?: string
+          accent?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          client_name?: string
+          email?: string
+          phone?: string
+          domain?: string
+          registrar?: string
+          amount?: number
+          billing_cycle?: string
+          registered_at?: string
+          expires_at?: string
+          ssl_enabled?: boolean
+          ssl_provider?: string
+          ssl_amount?: number
+          ssl_registered_at?: string | null
+          ssl_expires_at?: string | null
+          notes?: string
+          accent?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_deals: {
+        Row: {
+          id: string
+          client_id: string
+          title: string
+          value: number
+          currency: string
+          stage: string
+          probability: number | null
+          expected_close_date: string | null
+          notes: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          client_id: string
+          title: string
+          value?: number
+          currency?: string
+          stage?: string
+          probability?: number | null
+          expected_close_date?: string | null
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          client_id?: string
+          title?: string
+          value?: number
+          currency?: string
+          stage?: string
+          probability?: number | null
+          expected_close_date?: string | null
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_payments: {
+        Row: {
+          id: string
+          client_id: string | null
+          invoice_id: string | null
+          deal_id: string | null
+          amount: number
+          currency: string
+          direction: string
+          method: string
+          status: string
+          purpose: string
+          paid_at: string
+          reference: string
+          description: string
+          notes: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          client_id?: string | null
+          invoice_id?: string | null
+          deal_id?: string | null
+          amount: number
+          currency?: string
+          direction?: string
+          method?: string
+          status?: string
+          purpose?: string
+          paid_at?: string
+          reference?: string
+          description?: string
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          client_id?: string | null
+          invoice_id?: string | null
+          deal_id?: string | null
+          amount?: number
+          currency?: string
+          direction?: string
+          method?: string
+          status?: string
+          purpose?: string
+          paid_at?: string
+          reference?: string
+          description?: string
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_expenses: {
+        Row: {
+          id: string
+          client_id: string | null
+          project_id: string | null
+          amount: number
+          currency: string
+          category: string
+          vendor: string
+          method: string
+          status: string
+          spent_at: string
+          reference: string
+          description: string
+          notes: string
+          receipt_url: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          client_id?: string | null
+          project_id?: string | null
+          amount: number
+          currency?: string
+          category?: string
+          vendor?: string
+          method?: string
+          status?: string
+          spent_at?: string
+          reference?: string
+          description?: string
+          notes?: string
+          receipt_url?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          client_id?: string | null
+          project_id?: string | null
+          amount?: number
+          currency?: string
+          category?: string
+          vendor?: string
+          method?: string
+          status?: string
+          spent_at?: string
+          reference?: string
+          description?: string
+          notes?: string
+          receipt_url?: string
+          created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }

@@ -6,6 +6,7 @@ create table if not exists public.invoices (
   title text not null,
   issue_date date not null default current_date,
   due_date date,
+  client_id uuid references public.crm_clients (id) on delete set null,
   client_name text not null,
   client_address text,
   client_email text,
@@ -44,6 +45,9 @@ create index if not exists invoices_status_idx
 create index if not exists invoices_invoice_number_idx
   on public.invoices (invoice_number);
 
+create index if not exists invoices_client_id_idx
+  on public.invoices (client_id);
+
 create index if not exists invoice_line_items_invoice_id_idx
   on public.invoice_line_items (invoice_id, sort_order);
 
@@ -72,5 +76,9 @@ create policy "Authenticated users can read invoice line items"
 alter table public.invoices add column if not exists vat_enabled boolean not null default false;
 alter table public.invoices add column if not exists vat_rate numeric(5, 2) not null default 7.5;
 alter table public.invoices add column if not exists vat_amount numeric(14, 2) not null default 0;
+
+-- Run if invoices table already exists without client_id:
+alter table public.invoices
+  add column if not exists client_id uuid references public.crm_clients (id) on delete set null;
 
 notify pgrst, 'reload schema';

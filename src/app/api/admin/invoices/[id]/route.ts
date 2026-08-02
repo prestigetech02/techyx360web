@@ -85,6 +85,10 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const title = sanitize(body.title)
+    const clientId =
+      body.clientId === null
+        ? null
+        : sanitize(body.clientId) || null
     const clientName = sanitize(body.clientName)
     const clientAddress = sanitize(body.clientAddress)
     const clientEmail = sanitize(body.clientEmail)
@@ -159,6 +163,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         title,
         issue_date: issueDate,
         due_date: dueDate || null,
+        client_id: clientId,
         client_name: clientName,
         client_address: clientAddress || null,
         client_email: clientEmail || null,

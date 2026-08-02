@@ -15,6 +15,7 @@ export function asInvoiceStatus(value: string): InvoiceStatus {
   const statuses: InvoiceStatus[] = [
     "draft",
     "sent",
+    "partially_paid",
     "paid",
     "overdue",
     "cancelled",

@@ -50,6 +50,7 @@ export type InvoiceFormInitialValues = {
   title: string
   issueDate: string
   dueDate: string
+  clientId: string
   clientName: string
   clientAddress: string
   clientEmail: string
@@ -69,10 +70,18 @@ export type InvoiceFormInitialValues = {
   vatEnabled: boolean
 }
 
+type InvoiceClientOption = {
+  id: string
+  company: string
+  email: string
+  location: string
+}
+
 type InvoiceFormProps = {
   mode?: "create" | "edit"
   invoiceId?: string
   initialValues?: InvoiceFormInitialValues
+  clients?: InvoiceClientOption[]
 }
 
 const documentTypeOptions = [
@@ -83,6 +92,7 @@ const documentTypeOptions = [
 const statusOptions = [
   { value: "draft", label: "Draft" },
   { value: "sent", label: "Sent" },
+  { value: "partially_paid", label: "Partially paid" },
   { value: "paid", label: "Paid" },
   { value: "overdue", label: "Overdue" },
   { value: "cancelled", label: "Cancelled" },
@@ -109,6 +119,7 @@ export function InvoiceForm({
   mode = "create",
   invoiceId,
   initialValues,
+  clients = [],
 }: InvoiceFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -128,6 +139,7 @@ export function InvoiceForm({
     initialValues?.issueDate ?? todayISO
   )
   const [dueDate, setDueDate] = useState(initialValues?.dueDate ?? "")
+  const [clientId, setClientId] = useState(initialValues?.clientId ?? "")
   const [clientName, setClientName] = useState(initialValues?.clientName ?? "")
   const [clientAddress, setClientAddress] = useState(
     initialValues?.clientAddress ?? ""
@@ -225,6 +237,7 @@ export function InvoiceForm({
       title: title.trim(),
       issueDate,
       dueDate,
+      clientId: clientId || null,
       clientName: clientName.trim(),
       clientAddress: clientAddress.trim(),
       clientEmail: clientEmail.trim(),
@@ -375,6 +388,41 @@ export function InvoiceForm({
         </h2>
 
         <div className="grid gap-4 sm:grid-cols-2">
+          {clients.length > 0 ? (
+            <div className="sm:col-span-2">
+              <label htmlFor="invoice-crm-client" className={labelClassName}>
+                CRM client{" "}
+                <span className="font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </label>
+              <select
+                id="invoice-crm-client"
+                value={clientId}
+                onChange={(event) => {
+                  const nextId = event.target.value
+                  setClientId(nextId)
+                  const selected = clients.find((client) => client.id === nextId)
+                  if (!selected) return
+                  setClientName(selected.company)
+                  setClientEmail(selected.email)
+                  if (selected.location) {
+                    setClientAddress(selected.location)
+                  }
+                }}
+                className={cn(fieldClassName, "appearance-none")}
+              >
+                <option value="">Manual client details</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.company}
+                    {client.email ? ` · ${client.email}` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
           <div>
             <label htmlFor="invoice-client-name" className={labelClassName}>
               Client name

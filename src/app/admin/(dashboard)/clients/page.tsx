@@ -1,6 +1,8 @@
 import { ClientsDashboard } from "@/components/admin/clients-dashboard"
 import { brand } from "@/config/brand"
 import { getAllClients } from "@/lib/crm/clients"
+import { getDealStats } from "@/lib/crm/deals"
+import { getPaymentStats } from "@/lib/crm/payments"
 import { isSupabaseConfigured } from "@/lib/supabase"
 
 export const metadata = {
@@ -50,9 +52,24 @@ export default async function AdminClientsPage({
   }
 
   try {
-    const clients = await getAllClients()
+    const [clients, dealStats, paymentStats] = await Promise.all([
+      getAllClients(),
+      getDealStats().catch(() => ({ totalDeals: 0, wonValue: 0 })),
+      getPaymentStats().catch(() => ({
+        totalPayments: 0,
+        received: 0,
+        pendingCount: 0,
+        pendingAmount: 0,
+      })),
+    ])
+
     return (
-      <ClientsDashboard clients={clients} initialClientId={initialClientId} />
+      <ClientsDashboard
+        clients={clients}
+        initialClientId={initialClientId}
+        totalDeals={dealStats.totalDeals}
+        totalRevenue={paymentStats.received}
+      />
     )
   } catch {
     return (

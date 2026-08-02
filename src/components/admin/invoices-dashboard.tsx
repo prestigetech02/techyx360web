@@ -47,6 +47,8 @@ function statusBadgeClass(status: string) {
       return "bg-muted text-muted-foreground"
     case "sent":
       return "bg-sky-500/10 text-sky-700 dark:text-sky-400"
+    case "partially_paid":
+      return "bg-amber-500/10 text-amber-700 dark:text-amber-400"
     case "paid":
       return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
     case "overdue":
@@ -191,7 +193,10 @@ export function InvoicesDashboard({ invoices }: InvoicesDashboardProps) {
     const total = invoices.length
     const paidInvoices = invoices.filter((item) => item.status === "paid")
     const outstandingInvoices = invoices.filter(
-      (item) => item.status === "sent" || item.status === "overdue"
+      (item) =>
+        item.status === "sent" ||
+        item.status === "overdue" ||
+        item.status === "partially_paid"
     )
 
     const paidAmount = paidInvoices.reduce(

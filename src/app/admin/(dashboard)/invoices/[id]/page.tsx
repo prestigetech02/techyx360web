@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, Pencil } from "lucide-react"
 
 import { InvoiceActions } from "@/components/admin/invoice-actions"
+import { RecordInvoicePaymentButton } from "@/components/admin/record-invoice-payment-button"
 import { InvoiceDocument } from "@/components/invoices/document/invoice-document"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,7 @@ import { brand } from "@/config/brand"
 import { invoiceIssuerDefaults } from "@/config/invoice-defaults"
 import { isInvoiceEmailConfigured } from "@/lib/invoices/email-config"
 import { mapInvoiceToDocumentProps } from "@/lib/invoices/mappers"
+import { getInvoiceBalance } from "@/lib/invoices/payment-link"
 import { getInvoiceById } from "@/lib/invoices/queries"
 
 export const metadata = {
@@ -33,6 +35,7 @@ export default async function AdminInvoiceViewPage({ params }: PageProps) {
   }
 
   const documentProps = mapInvoiceToDocumentProps(invoice)
+  const balance = await getInvoiceBalance(invoice.id, Number(invoice.total))
 
   return (
     <div className="min-w-0 space-y-6">
@@ -73,6 +76,14 @@ export default async function AdminInvoiceViewPage({ params }: PageProps) {
             <Pencil className="size-4" aria-hidden />
             Edit
           </Button>
+          <RecordInvoicePaymentButton
+            invoiceId={invoice.id}
+            invoiceNumber={invoice.invoice_number}
+            clientId={invoice.client_id}
+            clientName={invoice.client_name}
+            balance={balance}
+            disabled={invoice.status === "cancelled"}
+          />
           <InvoiceActions
             invoiceId={invoice.id}
             invoiceNumber={invoice.invoice_number}

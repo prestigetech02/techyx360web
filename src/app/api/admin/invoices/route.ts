@@ -46,6 +46,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as Record<string, unknown>
 
     const title = sanitize(body.title)
+    const clientId = sanitize(body.clientId) || null
     const clientName = sanitize(body.clientName)
     const clientAddress = sanitize(body.clientAddress)
     const clientEmail = sanitize(body.clientEmail)
@@ -129,6 +130,7 @@ export async function POST(request: Request) {
         title,
         issue_date: issueDate,
         due_date: dueDate || null,
+        client_id: clientId,
         client_name: clientName,
         client_address: clientAddress || null,
         client_email: clientEmail || null,

@@ -39,6 +39,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { formatNaira } from "@/lib/invoices/formatting"
+import type { DomainAccountView } from "@/lib/crm/domain-accounts"
 import { parseAmountInput } from "@/lib/money"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -46,26 +47,7 @@ import { cn } from "@/lib/utils"
 type ServiceStatus = "active" | "overdue" | "expired" | "none"
 type BillingCycle = "Monthly" | "Annually" | "Biennially"
 
-type DomainAccount = {
-  id: number
-  clientName: string
-  email: string
-  phone: string
-  domain: string
-  registrar: string
-  amount: number
-  billingCycle: BillingCycle
-  registeredAt: string
-  expiresAt: string
-  sslEnabled: boolean
-  sslProvider: string
-  sslAmount: number
-  sslRegisteredAt: string
-  sslExpiresAt: string
-  notes: string
-  initials: string
-  accent: string
-}
+type DomainAccount = DomainAccountView
 
 type StatusFilter = "all" | "active" | "overdue" | "expired"
 
@@ -77,109 +59,6 @@ const textareaClassName = cn(
   fieldClassName,
   "min-h-[88px] resize-y py-2.5 leading-relaxed"
 )
-
-const initialAccounts: DomainAccount[] = [
-  {
-    id: 1,
-    clientName: "Edwot School Management",
-    email: "kunle@edwot.com",
-    phone: "+234 803 123 4567",
-    domain: "edwot.com",
-    registrar: "Namecheap",
-    amount: 28000,
-    billingCycle: "Annually",
-    registeredAt: "2024-03-12",
-    expiresAt: "2027-03-12",
-    sslEnabled: true,
-    sslProvider: "Sectigo PositiveSSL",
-    sslAmount: 18000,
-    sslRegisteredAt: "2025-03-12",
-    sslExpiresAt: "2026-09-12",
-    notes: "Domain + SSL managed together; renew SSL with hosting cycle.",
-    initials: "E",
-    accent: "bg-blue-600 text-white",
-  },
-  {
-    id: 2,
-    clientName: "Prime Logistics NG",
-    email: "ops@primelogistics.ng",
-    phone: "+234 809 441 2201",
-    domain: "primelogistics.ng",
-    registrar: "Whogohost",
-    amount: 15000,
-    billingCycle: "Annually",
-    registeredAt: "2023-07-01",
-    expiresAt: "2026-07-20",
-    sslEnabled: true,
-    sslProvider: "Let's Encrypt",
-    sslAmount: 0,
-    sslRegisteredAt: "2025-07-20",
-    sslExpiresAt: "2026-07-20",
-    notes: "Free SSL auto-renew; domain renewal needs client payment.",
-    initials: "P",
-    accent: "bg-violet-600 text-white",
-  },
-  {
-    id: 3,
-    clientName: "Amina Beauty Hub",
-    email: "hello@aminabeauty.ng",
-    phone: "+234 701 555 0192",
-    domain: "aminabeauty.ng",
-    registrar: "Namecheap",
-    amount: 16500,
-    billingCycle: "Annually",
-    registeredAt: "2024-08-10",
-    expiresAt: "2026-08-10",
-    sslEnabled: true,
-    sslProvider: "Namecheap EssentialSSL",
-    sslAmount: 22000,
-    sslRegisteredAt: "2025-08-10",
-    sslExpiresAt: "2026-07-08",
-    notes: "SSL due before domain; send combined reminder.",
-    initials: "A",
-    accent: "bg-rose-600 text-white",
-  },
-  {
-    id: 4,
-    clientName: "Northgate Clinics",
-    email: "it@northgateclinics.com",
-    phone: "+234 802 776 3340",
-    domain: "northgateclinics.com",
-    registrar: "GoDaddy",
-    amount: 32000,
-    billingCycle: "Biennially",
-    registeredAt: "2022-11-09",
-    expiresAt: "2026-06-28",
-    sslEnabled: true,
-    sslProvider: "DigiCert",
-    sslAmount: 45000,
-    sslRegisteredAt: "2025-06-28",
-    sslExpiresAt: "2026-06-28",
-    notes: "WHOIS privacy enabled. Invoice domain + SSL together.",
-    initials: "N",
-    accent: "bg-emerald-600 text-white",
-  },
-  {
-    id: 5,
-    clientName: "Lagos Craft Market",
-    email: "admin@lagoscraft.market",
-    phone: "+234 813 990 1188",
-    domain: "lagoscraft.market",
-    registrar: "Namecheap",
-    amount: 42000,
-    billingCycle: "Annually",
-    registeredAt: "2023-05-22",
-    expiresAt: "2026-05-22",
-    sslEnabled: false,
-    sslProvider: "",
-    sslAmount: 0,
-    sslRegisteredAt: "",
-    sslExpiresAt: "",
-    notes: "Domain expired. Client asked about adding SSL on reactivation.",
-    initials: "L",
-    accent: "bg-amber-600 text-white",
-  },
-]
 
 const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "All" },
@@ -272,22 +151,6 @@ function expiryHint(expiresAt: string) {
   if (remaining <= 30) return `Expires in ${remaining} days`
   return `Renews ${formatDisplayDate(expiresAt)}`
 }
-
-function initialsFromName(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return "D"
-  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase()
-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-}
-
-const accentPalette = [
-  "bg-blue-600 text-white",
-  "bg-violet-600 text-white",
-  "bg-rose-600 text-white",
-  "bg-emerald-600 text-white",
-  "bg-amber-600 text-white",
-  "bg-sky-600 text-white",
-]
 
 function StatCard({
   label,
@@ -650,9 +513,16 @@ function DomainDetailSheet({
   )
 }
 
-export function DomainsDashboard() {
+type DomainsDashboardProps = {
+  initialAccounts?: DomainAccount[]
+}
+
+export function DomainsDashboard({
+  initialAccounts = [],
+}: DomainsDashboardProps) {
   const router = useRouter()
   const [accounts, setAccounts] = useState(initialAccounts)
+  const [isSaving, setIsSaving] = useState(false)
   const [query, setQuery] = useState("")
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("all")
   const [selected, setSelected] = useState<DomainAccount | null>(null)
@@ -738,7 +608,7 @@ export function DomainsDashboard() {
     setNotes("")
   }
 
-  function handleAddAccount(event: FormEvent) {
+  async function handleAddAccount(event: FormEvent) {
     event.preventDefault()
 
     const parsedAmount = parseAmountInput(amount)
@@ -772,33 +642,52 @@ export function DomainsDashboard() {
       }
     }
 
-    const nextId = Math.max(0, ...accounts.map((item) => item.id)) + 1
-    const next: DomainAccount = {
-      id: nextId,
-      clientName: clientName.trim(),
-      email: email.trim(),
-      phone: phone.trim() || "—",
-      domain: domain.trim().replace(/^https?:\/\//, "").replace(/\/$/, ""),
-      registrar: registrar.trim(),
-      amount: parsedAmount,
-      billingCycle,
-      registeredAt,
-      expiresAt,
-      sslEnabled,
-      sslProvider: sslEnabled ? sslProvider.trim() : "",
-      sslAmount: sslEnabled ? (parsedSslAmount ?? 0) : 0,
-      sslRegisteredAt: sslEnabled ? sslRegisteredAt : "",
-      sslExpiresAt: sslEnabled ? sslExpiresAt : "",
-      notes: notes.trim(),
-      initials: initialsFromName(clientName),
-      accent: accentPalette[nextId % accentPalette.length],
-    }
+    setIsSaving(true)
 
-    setAccounts((current) => [next, ...current])
-    setAddOpen(false)
-    resetAddForm()
-    notify.success("Domain account recorded.")
-    setSelected(next)
+    try {
+      const response = await fetch("/api/admin/domain-accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientName: clientName.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          domain: domain.trim().replace(/^https?:\/\//, "").replace(/\/$/, ""),
+          registrar: registrar.trim(),
+          amount: parsedAmount,
+          billingCycle,
+          registeredAt,
+          expiresAt,
+          sslEnabled,
+          sslProvider: sslEnabled ? sslProvider.trim() : "",
+          sslAmount: sslEnabled ? (parsedSslAmount ?? 0) : 0,
+          sslRegisteredAt: sslEnabled ? sslRegisteredAt : "",
+          sslExpiresAt: sslEnabled ? sslExpiresAt : "",
+          notes: notes.trim(),
+        }),
+      })
+
+      const result = (await response.json().catch(() => null)) as {
+        error?: string
+        account?: DomainAccount
+      } | null
+
+      if (!response.ok || !result?.account) {
+        notify.error(result?.error ?? "Unable to save domain account.")
+        return
+      }
+
+      setAccounts((current) => [result.account!, ...current])
+      setAddOpen(false)
+      resetAddForm()
+      notify.success("Domain account recorded.")
+      setSelected(result.account)
+      router.refresh()
+    } catch {
+      notify.error("Unable to save domain account right now.")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   function sendPaymentReminder(account: DomainAccount) {
@@ -861,11 +750,33 @@ export function DomainsDashboard() {
     router.push(`/admin/invoices/new?${params.toString()}`)
   }
 
-  function deleteAccount(id: number) {
-    setAccounts((current) => current.filter((item) => item.id !== id))
-    setDeleteTarget(null)
-    if (selected?.id === id) setSelected(null)
-    notify.success("Domain account removed.")
+  async function deleteAccount(id: string) {
+    setIsSaving(true)
+
+    try {
+      const response = await fetch(`/api/admin/domain-accounts/${id}`, {
+        method: "DELETE",
+      })
+
+      const result = (await response.json().catch(() => null)) as {
+        error?: string
+      } | null
+
+      if (!response.ok) {
+        notify.error(result?.error ?? "Unable to delete domain account.")
+        return
+      }
+
+      setAccounts((current) => current.filter((item) => item.id !== id))
+      setDeleteTarget(null)
+      if (selected?.id === id) setSelected(null)
+      notify.success("Domain account removed.")
+      router.refresh()
+    } catch {
+      notify.error("Unable to delete domain account right now.")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -1356,9 +1267,10 @@ export function DomainsDashboard() {
               </Button>
               <Button
                 type="submit"
-                className="rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
+                disabled={isSaving}
+                className="rounded-xl bg-brand text-brand-foreground hover:bg-brand/90 disabled:opacity-70"
               >
-                Save domain
+                {isSaving ? "Saving..." : "Save domain"}
               </Button>
             </DialogFooter>
           </form>

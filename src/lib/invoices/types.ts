@@ -5,16 +5,33 @@ export type InvoiceLineItemRow =
   Database["public"]["Tables"]["invoice_line_items"]["Row"]
 
 export type InvoiceDocumentType = "invoice" | "quote"
-export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled"
+export type InvoiceStatus =
+  | "draft"
+  | "sent"
+  | "partially_paid"
+  | "paid"
+  | "overdue"
+  | "cancelled"
 export type InvoiceLineItemType = "service" | "discount" | "tax" | "adjustment"
 
 export const INVOICE_STATUSES: InvoiceStatus[] = [
   "draft",
   "sent",
+  "partially_paid",
   "paid",
   "overdue",
   "cancelled",
 ]
+
+export type InvoicePaymentOption = {
+  id: string
+  invoiceNumber: string
+  title: string
+  total: number
+  status: InvoiceStatus
+  amountPaid: number
+  balance: number
+}
 
 export const INVOICE_DOCUMENT_TYPES: InvoiceDocumentType[] = [
   "invoice",

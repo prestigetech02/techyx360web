@@ -8,6 +8,7 @@ import {
   invoicePaymentDefaults,
   invoiceSignatureDefaults,
 } from "@/config/invoice-defaults"
+import { getAllClients } from "@/lib/crm/clients"
 import { isSupabaseConfigured } from "@/lib/supabase"
 
 export const metadata = {
@@ -20,6 +21,7 @@ export const metadata = {
 
 type AdminInvoiceNewPageProps = {
   searchParams: Promise<{
+    clientId?: string
     clientName?: string
     clientEmail?: string
     description?: string
@@ -31,11 +33,27 @@ export default async function AdminInvoiceNewPage({
   searchParams,
 }: AdminInvoiceNewPageProps) {
   const params = await searchParams
-  const clientName = params.clientName?.trim() || ""
-  const clientEmail = params.clientEmail?.trim() || ""
+  const clients = isSupabaseConfigured()
+    ? (await getAllClients().catch(() => [])).map((client) => ({
+        id: client.id,
+        company: client.company,
+        email: client.email,
+        location: client.location,
+      }))
+    : []
+
+  const clientId = params.clientId?.trim() || ""
+  const matchedClient = clientId
+    ? clients.find((client) => client.id === clientId)
+    : undefined
+  const clientName =
+    params.clientName?.trim() || matchedClient?.company || ""
+  const clientEmail =
+    params.clientEmail?.trim() || matchedClient?.email || ""
   const description = params.description?.trim() || ""
   const amountValue = Number(params.amount)
   const hasPrefill =
+    Boolean(clientId) ||
     Boolean(clientName) ||
     Boolean(clientEmail) ||
     Boolean(description) ||
@@ -49,8 +67,9 @@ export default async function AdminInvoiceNewPage({
         title: description ? "Hosting renewal" : "",
         issueDate: new Date().toISOString().slice(0, 10),
         dueDate: "",
+        clientId,
         clientName,
-        clientAddress: "",
+        clientAddress: matchedClient?.location ?? "",
         clientEmail,
         lineItems: [
           {
@@ -101,7 +120,11 @@ export default async function AdminInvoiceNewPage({
         </div>
       ) : (
         <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm sm:p-8">
-          <InvoiceForm mode="create" initialValues={initialValues} />
+          <InvoiceForm
+            mode="create"
+            initialValues={initialValues}
+            clients={clients}
+          />
         </div>
       )}
     </div>

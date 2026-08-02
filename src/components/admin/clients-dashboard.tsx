@@ -65,7 +65,25 @@ import {
   type ClientStatus,
   type ClientView,
 } from "@/lib/crm/client-types"
+import {
+  DEAL_STAGE_LABELS,
+  type DealStage,
+  type DealView,
+} from "@/lib/crm/deal-types"
+import {
+  PAYMENT_METHOD_LABELS,
+  PAYMENT_PURPOSE_LABELS,
+  PAYMENT_STATUS_LABELS,
+  type PaymentMethod,
+  type PaymentPurpose,
+  type PaymentStatus,
+  type PaymentView,
+} from "@/lib/crm/payment-types"
 import type { ProjectView } from "@/lib/crm/project-types"
+import { formatNaira } from "@/lib/invoices/formatting"
+import type { InvoicePaymentOption } from "@/lib/invoices/types"
+import { formatAmountFromNumber, parseAmountInput } from "@/lib/money"
+import { CurrencyInput } from "@/components/ui/currency-input"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
@@ -186,23 +204,732 @@ function SectionHeading({
   )
 }
 
-function ComingSoonSection({
-  title,
-  description,
-  icon,
-}: {
-  title: string
-  description: string
-  icon: React.ComponentType<{ className?: string }>
-}) {
+const dealStageStyles: Record<DealStage, string> = {
+  qualified: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
+  proposal: "bg-violet-500/10 text-violet-700 dark:text-violet-400",
+  negotiation: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  won: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  lost: "bg-red-500/10 text-red-700 dark:text-red-400",
+}
+
+const paymentStatusStyles: Record<PaymentStatus, string> = {
+  completed: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  pending: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  failed: "bg-red-500/10 text-red-700 dark:text-red-400",
+  refunded: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400",
+}
+
+function ClientDealsSection({ client }: { client: ClientView }) {
+  const [deals, setDeals] = useState<DealView[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [title, setTitle] = useState("")
+  const [value, setValue] = useState("")
+  const [stage, setStage] = useState<DealStage>("qualified")
+  const [expectedCloseDate, setExpectedCloseDate] = useState("")
+  const [notes, setNotes] = useState("")
+
+  async function loadDeals() {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/admin/clients/${client.id}/deals`)
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as {
+          error?: string
+        } | null
+        throw new Error(data?.error ?? "Unable to load deals.")
+      }
+
+      const data = (await response.json()) as { deals: DealView[] }
+      setDeals(data.deals)
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error ? loadError.message : "Unable to load deals."
+      )
+      setDeals([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadDeals()
+  }, [client.id])
+
+  function resetForm() {
+    setTitle("")
+    setValue("")
+    setStage("qualified")
+    setExpectedCloseDate("")
+    setNotes("")
+  }
+
+  async function handleAddDeal(event: FormEvent) {
+    event.preventDefault()
+    const parsedValue = parseAmountInput(value)
+
+    if (!title.trim()) {
+      notify.error("Deal title is required.")
+      return
+    }
+    if (parsedValue === null || parsedValue < 0) {
+      notify.error("Enter a valid deal value.")
+      return
+    }
+
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/admin/clients/${client.id}/deals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          value: parsedValue,
+          stage,
+          expectedCloseDate: expectedCloseDate || null,
+          notes: notes.trim(),
+        }),
+      })
+
+      const result = (await response.json().catch(() => null)) as {
+        error?: string
+        deal?: DealView
+      } | null
+
+      if (!response.ok || !result?.deal) {
+        notify.error(result?.error ?? "Unable to save deal.")
+        return
+      }
+
+      setDeals((current) => [result.deal!, ...current])
+      setAddOpen(false)
+      resetForm()
+      notify.success("Deal created.")
+    } catch {
+      notify.error("Unable to save deal right now.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <section>
-      <SectionHeading title={title} description={description} />
-      <EmptySection
-        icon={icon}
-        title="Coming in the next CRM phase"
-        description="This tab will connect to Supabase once deals, projects, and payments are wired up."
-      />
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-bold text-foreground">Deals</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Sales opportunities associated with {client.company}.
+          </p>
+        </div>
+        <Button
+          type="button"
+          onClick={() => setAddOpen(true)}
+          className="h-9 shrink-0 gap-1.5 rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
+        >
+          <Plus className="size-4" aria-hidden />
+          Add deal
+        </Button>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Loading deals…</p>
+      ) : error ? (
+        <EmptySection
+          icon={BriefcaseBusiness}
+          title="Unable to load deals"
+          description={error}
+        />
+      ) : deals.length === 0 ? (
+        <EmptySection
+          icon={BriefcaseBusiness}
+          title="No deals yet"
+          description="Create the first sales opportunity for this client."
+        />
+      ) : (
+        <div className="space-y-3">
+          {deals.map((deal) => (
+            <div
+              key={deal.id}
+              className="rounded-xl border border-border/60 p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-semibold text-foreground">
+                    {deal.title}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatNaira(deal.value)}
+                    {deal.expectedCloseDateLabel
+                      ? ` · Close ${deal.expectedCloseDateLabel}`
+                      : ""}
+                  </p>
+                </div>
+                <Badge
+                  className={cn(
+                    "shrink-0 border-0 font-medium",
+                    dealStageStyles[deal.stage]
+                  )}
+                >
+                  {deal.stageLabel}
+                </Badge>
+              </div>
+              {deal.notes ? (
+                <p className="mt-3 text-sm text-muted-foreground">{deal.notes}</p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog
+        open={addOpen}
+        onOpenChange={(open) => {
+          setAddOpen(open)
+          if (!open) resetForm()
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add deal</DialogTitle>
+            <DialogDescription>
+              Create a sales opportunity for {client.company}.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddDeal} className="space-y-3">
+            <div>
+              <label className={labelClassName} htmlFor="client-deal-title">
+                Title
+              </label>
+              <Input
+                id="client-deal-title"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                className={fieldClassName}
+                required
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className={labelClassName} htmlFor="client-deal-value">
+                  Value (₦)
+                </label>
+                <CurrencyInput
+                  id="client-deal-value"
+                  value={value}
+                  onValueChange={setValue}
+                  className={fieldClassName}
+                  required
+                />
+              </div>
+              <div>
+                <label className={labelClassName} htmlFor="client-deal-stage">
+                  Stage
+                </label>
+                <select
+                  id="client-deal-stage"
+                  value={stage}
+                  onChange={(event) =>
+                    setStage(event.target.value as DealStage)
+                  }
+                  className={cn(fieldClassName, "appearance-none")}
+                >
+                  {(
+                    Object.entries(DEAL_STAGE_LABELS) as Array<[DealStage, string]>
+                  ).map(([stageValue, label]) => (
+                    <option key={stageValue} value={stageValue}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="client-deal-close">
+                Expected close date
+              </label>
+              <Input
+                id="client-deal-close"
+                type="date"
+                value={expectedCloseDate}
+                onChange={(event) => setExpectedCloseDate(event.target.value)}
+                className={fieldClassName}
+              />
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="client-deal-notes">
+                Notes
+              </label>
+              <textarea
+                id="client-deal-notes"
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                className={cn(
+                  fieldClassName,
+                  "min-h-[88px] resize-y py-2.5 leading-relaxed"
+                )}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAddOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={saving}
+                className="rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
+              >
+                {saving ? "Saving..." : "Save deal"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </section>
+  )
+}
+
+function ClientPaymentsSection({ client }: { client: ClientView }) {
+  const [payments, setPayments] = useState<PaymentView[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [amount, setAmount] = useState("")
+  const [invoiceId, setInvoiceId] = useState("")
+  const [invoiceOptions, setInvoiceOptions] = useState<InvoicePaymentOption[]>(
+    []
+  )
+  const [loadingInvoices, setLoadingInvoices] = useState(false)
+  const [method, setMethod] = useState<PaymentMethod>("bank_transfer")
+  const [status, setStatus] = useState<PaymentStatus>("completed")
+  const [purpose, setPurpose] = useState<PaymentPurpose | "">("")
+  const [paidAt, setPaidAt] = useState("")
+  const [reference, setReference] = useState("")
+  const [description, setDescription] = useState("")
+  const [notes, setNotes] = useState("")
+
+  async function loadPayments() {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/admin/clients/${client.id}/payments`)
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as {
+          error?: string
+        } | null
+        throw new Error(data?.error ?? "Unable to load payments.")
+      }
+
+      const data = (await response.json()) as { payments: PaymentView[] }
+      setPayments(data.payments)
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load payments."
+      )
+      setPayments([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadPayments()
+  }, [client.id])
+
+  useEffect(() => {
+    let cancelled = false
+    setLoadingInvoices(true)
+
+    void fetch(`/api/admin/clients/${client.id}/invoices`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Unable to load invoices.")
+        return (await response.json()) as { invoices: InvoicePaymentOption[] }
+      })
+      .then((data) => {
+        if (cancelled) return
+        setInvoiceOptions(data.invoices)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setInvoiceOptions([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingInvoices(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [client.id])
+
+  function resetForm() {
+    setAmount("")
+    setInvoiceId("")
+    setMethod("bank_transfer")
+    setStatus("completed")
+    setPurpose("")
+    setPaidAt("")
+    setReference("")
+    setDescription("")
+    setNotes("")
+  }
+
+  async function handleAddPayment(event: FormEvent) {
+    event.preventDefault()
+    const parsedAmount = parseAmountInput(amount)
+
+    if (!paidAt) {
+      notify.error("Payment date is required.")
+      return
+    }
+    if (!purpose) {
+      notify.error("Payment purpose is required.")
+      return
+    }
+    if (parsedAmount === null || parsedAmount <= 0) {
+      notify.error("Enter a valid payment amount.")
+      return
+    }
+
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/admin/clients/${client.id}/payments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: parsedAmount,
+          invoiceId: invoiceId || null,
+          method,
+          status,
+          purpose,
+          paidAt,
+          reference: reference.trim(),
+          description: description.trim(),
+          notes: notes.trim(),
+          direction: "inbound",
+        }),
+      })
+
+      const result = (await response.json().catch(() => null)) as {
+        error?: string
+        payment?: PaymentView
+      } | null
+
+      if (!response.ok || !result?.payment) {
+        notify.error(result?.error ?? "Unable to save payment.")
+        return
+      }
+
+      setPayments((current) => [result.payment!, ...current])
+      setAddOpen(false)
+      resetForm()
+      notify.success("Payment recorded.")
+    } catch {
+      notify.error("Unable to save payment right now.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <section>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-bold text-foreground">Payments</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Payment history for {client.company}.
+          </p>
+        </div>
+        <Button
+          type="button"
+          onClick={() => setAddOpen(true)}
+          className="h-9 shrink-0 gap-1.5 rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
+        >
+          <Plus className="size-4" aria-hidden />
+          Record payment
+        </Button>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Loading payments…</p>
+      ) : error ? (
+        <EmptySection
+          icon={ReceiptText}
+          title="Unable to load payments"
+          description={error}
+        />
+      ) : payments.length === 0 ? (
+        <EmptySection
+          icon={ReceiptText}
+          title="No payments yet"
+          description="Record the first payment received from this client."
+        />
+      ) : (
+        <div className="space-y-3">
+          {payments.map((payment) => (
+            <div
+              key={payment.id}
+              className="rounded-xl border border-border/60 p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold tabular-nums text-foreground">
+                    {formatNaira(payment.amount)}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {payment.paidAtLabel} · {payment.purposeLabel} ·{" "}
+                    {payment.methodLabel}
+                    {payment.invoiceNumber
+                      ? ` · ${payment.invoiceNumber}`
+                      : ""}
+                    {payment.reference ? ` · ${payment.reference}` : ""}
+                  </p>
+                  {payment.description ? (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {payment.description}
+                    </p>
+                  ) : null}
+                </div>
+                <Badge
+                  className={cn(
+                    "shrink-0 border-0 font-medium",
+                    paymentStatusStyles[payment.status]
+                  )}
+                >
+                  {payment.statusLabel}
+                </Badge>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog
+        open={addOpen}
+        onOpenChange={(open) => {
+          setAddOpen(open)
+          if (!open) resetForm()
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Record payment</DialogTitle>
+            <DialogDescription>
+              Log a payment received from {client.company}.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddPayment} className="space-y-3">
+            <div>
+              <label className={labelClassName} htmlFor="client-pay-invoice">
+                Invoice{" "}
+                <span className="font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </label>
+              <select
+                id="client-pay-invoice"
+                value={invoiceId}
+                onChange={(event) => {
+                  const nextId = event.target.value
+                  setInvoiceId(nextId)
+                  const selected = invoiceOptions.find(
+                    (invoice) => invoice.id === nextId
+                  )
+                  if (selected && !amount.trim()) {
+                    setAmount(formatAmountFromNumber(selected.balance))
+                  }
+                }}
+                className={cn(fieldClassName, "appearance-none")}
+                disabled={loadingInvoices}
+              >
+                <option value="">
+                  {loadingInvoices
+                    ? "Loading invoices..."
+                    : invoiceOptions.length === 0
+                      ? "No open invoices"
+                      : "No invoice link"}
+                </option>
+                {invoiceOptions.map((invoice) => (
+                  <option key={invoice.id} value={invoice.id}>
+                    {invoice.invoiceNumber} · {formatNaira(invoice.balance)} due
+                    · {invoice.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className={labelClassName} htmlFor="client-pay-amount">
+                  Amount (₦)
+                </label>
+                <CurrencyInput
+                  id="client-pay-amount"
+                  value={amount}
+                  onValueChange={setAmount}
+                  className={fieldClassName}
+                  required
+                />
+              </div>
+              <div>
+                <label className={labelClassName} htmlFor="client-pay-date">
+                  Payment date
+                </label>
+                <Input
+                  id="client-pay-date"
+                  type="date"
+                  value={paidAt}
+                  onChange={(event) => setPaidAt(event.target.value)}
+                  className={fieldClassName}
+                  required
+                />
+              </div>
+              <div>
+                <label className={labelClassName} htmlFor="client-pay-method">
+                  Method
+                </label>
+                <select
+                  id="client-pay-method"
+                  value={method}
+                  onChange={(event) =>
+                    setMethod(event.target.value as PaymentMethod)
+                  }
+                  className={cn(fieldClassName, "appearance-none")}
+                >
+                  {(
+                    Object.entries(PAYMENT_METHOD_LABELS) as Array<
+                      [PaymentMethod, string]
+                    >
+                  ).map(([methodValue, label]) => (
+                    <option key={methodValue} value={methodValue}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={labelClassName} htmlFor="client-pay-status">
+                  Status
+                </label>
+                <select
+                  id="client-pay-status"
+                  value={status}
+                  onChange={(event) =>
+                    setStatus(event.target.value as PaymentStatus)
+                  }
+                  className={cn(fieldClassName, "appearance-none")}
+                >
+                  {(
+                    Object.entries(PAYMENT_STATUS_LABELS) as Array<
+                      [PaymentStatus, string]
+                    >
+                  ).map(([statusValue, label]) => (
+                    <option key={statusValue} value={statusValue}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="client-pay-purpose">
+                Purpose
+              </label>
+              <select
+                id="client-pay-purpose"
+                value={purpose}
+                onChange={(event) =>
+                  setPurpose(event.target.value as PaymentPurpose | "")
+                }
+                className={cn(fieldClassName, "appearance-none")}
+                required
+              >
+                <option value="" disabled>
+                  Select purpose
+                </option>
+                {(
+                  Object.entries(PAYMENT_PURPOSE_LABELS) as Array<
+                    [PaymentPurpose, string]
+                  >
+                ).map(([purposeValue, label]) => (
+                  <option key={purposeValue} value={purposeValue}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                className={labelClassName}
+                htmlFor="client-pay-description"
+              >
+                Description
+              </label>
+              <textarea
+                id="client-pay-description"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="What this payment covers..."
+                className={cn(
+                  fieldClassName,
+                  "min-h-[88px] resize-y py-2.5 leading-relaxed"
+                )}
+              />
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="client-pay-ref">
+                Reference
+              </label>
+              <Input
+                id="client-pay-ref"
+                value={reference}
+                onChange={(event) => setReference(event.target.value)}
+                className={fieldClassName}
+              />
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="client-pay-notes">
+                Notes
+              </label>
+              <textarea
+                id="client-pay-notes"
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                className={cn(
+                  fieldClassName,
+                  "min-h-[88px] resize-y py-2.5 leading-relaxed"
+                )}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAddOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={saving}
+                className="rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
+              >
+                {saving ? "Saving..." : "Save payment"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }
@@ -795,11 +1522,7 @@ function ClientDetailContent({
         ) : null}
 
         {activeTab === "deals" ? (
-          <ComingSoonSection
-            title="Deals"
-            description={`Sales opportunities associated with ${client.company}.`}
-            icon={BriefcaseBusiness}
-          />
+          <ClientDealsSection client={client} />
         ) : null}
         {activeTab === "projects" ? (
           <ClientProjectsSection client={client} />
@@ -816,11 +1539,7 @@ function ClientDetailContent({
           />
         ) : null}
         {activeTab === "payments" ? (
-          <ComingSoonSection
-            title="Payments"
-            description="Invoices and payment history for this client."
-            icon={ReceiptText}
-          />
+          <ClientPaymentsSection client={client} />
         ) : null}
       </div>
 
@@ -1168,11 +1887,15 @@ function ClientActionsMenu({
 type ClientsDashboardProps = {
   clients: ClientView[]
   initialClientId?: string | null
+  totalDeals?: number
+  totalRevenue?: number
 }
 
 export function ClientsDashboard({
   clients,
   initialClientId = null,
+  totalDeals = 0,
+  totalRevenue = 0,
 }: ClientsDashboardProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -1516,14 +2239,14 @@ export function ClientsDashboard({
           />
           <StatCard
             label="Total Deals"
-            value="—"
+            value={String(totalDeals)}
             change="—"
             icon={FolderKanban}
             iconClass="bg-emerald-500/10 text-emerald-600"
           />
           <StatCard
             label="Total Revenue"
-            value="—"
+            value={formatNaira(totalRevenue)}
             change="—"
             icon={CircleDollarSign}
             iconClass="bg-orange-500/10 text-orange-600"

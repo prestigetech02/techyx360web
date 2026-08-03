@@ -16,6 +16,11 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   PAYMENT_METHOD_LABELS,
   PAYMENT_PURPOSE_LABELS,
   PAYMENT_STATUS_LABELS,
@@ -140,28 +145,37 @@ export function RecordInvoicePaymentButton({
     }
   }
 
+  const paymentDisabled = disabled || !clientId || balance <= 0
+  const paymentTooltip = !clientId
+    ? "Link a CRM client on the invoice first"
+    : balance <= 0
+      ? "Invoice is already fully paid"
+      : "Record payment"
+
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        className="h-11 gap-2 rounded-xl px-5"
-        disabled={disabled || !clientId || balance <= 0}
-        onClick={() => {
-          resetForm()
-          setOpen(true)
-        }}
-        title={
-          !clientId
-            ? "Link a CRM client on the invoice first"
-            : balance <= 0
-              ? "Invoice is already fully paid"
-              : undefined
-        }
-      >
-        <Banknote className="size-4" aria-hidden />
-        Record payment
-      </Button>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-10 rounded-xl disabled:pointer-events-auto"
+              aria-label={paymentTooltip}
+              disabled={paymentDisabled}
+              onClick={() => {
+                if (paymentDisabled) return
+                resetForm()
+                setOpen(true)
+              }}
+            />
+          }
+        >
+          <Banknote className="size-4" aria-hidden />
+        </TooltipTrigger>
+        <TooltipContent>{paymentTooltip}</TooltipContent>
+      </Tooltip>
 
       <Dialog
         open={open}

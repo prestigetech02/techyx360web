@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Download, Mail, Printer } from "lucide-react"
+import { Download, Loader2, Mail, Printer } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -13,6 +13,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { notify } from "@/lib/toast"
 
 type InvoiceActionsProps = {
@@ -103,36 +108,76 @@ export function InvoiceActions({
     }
   }
 
+  const emailTooltip = emailConfigured
+    ? "Email invoice"
+    : "Email not configured"
+
   return (
     <>
-      <div className="flex flex-wrap gap-3">
-        <Button
-          variant="outline"
-          className="h-11 gap-2 rounded-xl px-5"
-          onClick={() => window.print()}
-        >
-          <Printer className="size-4" aria-hidden />
-          Print
-        </Button>
+      <div className="flex items-center gap-1.5">
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-10 rounded-xl"
+                aria-label="Print invoice"
+                onClick={() => window.print()}
+              />
+            }
+          >
+            <Printer className="size-4" aria-hidden />
+          </TooltipTrigger>
+          <TooltipContent>Print</TooltipContent>
+        </Tooltip>
 
-        <Button
-          variant="outline"
-          className="h-11 gap-2 rounded-xl px-5"
-          disabled={isDownloading}
-          onClick={() => void handleDownloadPdf()}
-        >
-          <Download className="size-4" aria-hidden />
-          {isDownloading ? "Generating…" : "Download PDF"}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-10 rounded-xl"
+                aria-label={isDownloading ? "Generating PDF" : "Download PDF"}
+                disabled={isDownloading}
+                onClick={() => void handleDownloadPdf()}
+              />
+            }
+          >
+            {isDownloading ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <Download className="size-4" aria-hidden />
+            )}
+          </TooltipTrigger>
+          <TooltipContent>
+            {isDownloading ? "Generating…" : "Download PDF"}
+          </TooltipContent>
+        </Tooltip>
 
-        <Button
-          className="h-11 gap-2 rounded-xl bg-brand px-5 text-brand-foreground hover:bg-brand/90"
-          disabled={!emailConfigured}
-          onClick={() => setIsEmailOpen(true)}
-        >
-          <Mail className="size-4" aria-hidden />
-          Email invoice
-        </Button>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                type="button"
+                size="icon"
+                className="size-10 rounded-xl bg-brand text-brand-foreground hover:bg-brand/90 disabled:pointer-events-auto"
+                aria-label={emailTooltip}
+                disabled={!emailConfigured}
+                onClick={() => {
+                  if (!emailConfigured) return
+                  setIsEmailOpen(true)
+                }}
+              />
+            }
+          >
+            <Mail className="size-4" aria-hidden />
+          </TooltipTrigger>
+          <TooltipContent>{emailTooltip}</TooltipContent>
+        </Tooltip>
       </div>
 
       <Dialog open={isEmailOpen} onOpenChange={setIsEmailOpen}>

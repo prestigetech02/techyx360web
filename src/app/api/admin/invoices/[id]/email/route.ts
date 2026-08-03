@@ -6,6 +6,9 @@ import { isInvoiceEmailConfigured } from "@/lib/invoices/email-config"
 import { sendInvoiceEmail } from "@/lib/invoices/send-invoice-email"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 
+export const runtime = "nodejs"
+export const maxDuration = 60
+
 function sanitize(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
 }

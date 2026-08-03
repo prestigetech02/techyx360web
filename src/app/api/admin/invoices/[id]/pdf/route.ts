@@ -5,6 +5,9 @@ import { generateInvoicePdf } from "@/lib/invoices/generate-invoice-pdf"
 import { getInvoiceById } from "@/lib/invoices/queries"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 
+export const runtime = "nodejs"
+export const maxDuration = 60
+
 type RouteContext = {
   params: Promise<{ id: string }>
 }

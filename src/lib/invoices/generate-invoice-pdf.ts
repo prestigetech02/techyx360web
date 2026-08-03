@@ -13,12 +13,29 @@ const WINDOWS_CHROME_PATHS = [
 async function launchWithSparticuz(
   puppeteer: typeof import("puppeteer-core")
 ): Promise<Browser> {
-  const chromium = await import("@sparticuz/chromium")
+  const chromium = (await import("@sparticuz/chromium")).default
 
-  return puppeteer.default.launch({
-    args: chromium.default.args,
-    executablePath: await chromium.default.executablePath(),
-    headless: true,
+  // Graphics are unused for invoice PDFs and reduce cold-start failures.
+  chromium.setGraphicsMode = false
+
+  const executablePath = await chromium.executablePath()
+  const args = await puppeteer.defaultArgs({
+    args: chromium.args,
+    headless: "shell",
+  })
+
+  return puppeteer.launch({
+    args,
+    defaultViewport: {
+      deviceScaleFactor: 1,
+      hasTouch: false,
+      height: 1080,
+      isLandscape: false,
+      isMobile: false,
+      width: 794,
+    },
+    executablePath,
+    headless: "shell",
   })
 }
 
@@ -30,7 +47,7 @@ async function launchWithSystemChrome(
   for (const executablePath of WINDOWS_CHROME_PATHS) {
     if (!existsSync(executablePath)) continue
 
-    return puppeteer.default.launch({
+    return puppeteer.launch({
       executablePath,
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -46,7 +63,10 @@ async function launchBrowser(): Promise<Browser> {
   try {
     return await launchWithSparticuz(puppeteer)
   } catch (error) {
-    console.warn("Sparticuz Chromium launch failed, trying system Chrome", error)
+    console.warn(
+      "Sparticuz Chromium launch failed, trying system Chrome",
+      error
+    )
   }
 
   const systemBrowser = await launchWithSystemChrome(puppeteer)

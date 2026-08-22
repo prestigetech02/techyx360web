@@ -1,6 +1,7 @@
 ﻿import { ContactSubmissionsDashboard } from "@/components/admin/contact-submissions-dashboard"
 import { brand } from "@/config/brand"
-import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase"
+import { getContactSubmissionsPageData } from "@/lib/admin/contact-submissions"
+import { isSupabaseConfigured } from "@/lib/supabase"
 
 export const metadata = {
   title: `Contact | Admin | ${brand.name}`,
@@ -10,7 +11,15 @@ export const metadata = {
   },
 }
 
-export default async function AdminContactPage() {
+type AdminContactPageProps = {
+  searchParams?: Promise<{ page?: string; status?: string }>
+}
+
+export default async function AdminContactPage({
+  searchParams,
+}: AdminContactPageProps) {
+  const params = (await searchParams) ?? {}
+
   if (!isSupabaseConfigured()) {
     return (
       <div className="space-y-4">
@@ -36,12 +45,20 @@ export default async function AdminContactPage() {
     )
   }
 
-  const supabase = createAdminClient()
-  const { data, error } = await supabase
-    .from("contact_submissions")
-    .select("id, first_name, last_name, email, phone, message, status, created_at")
-    .order("created_at", { ascending: false })
-    .limit(100)
+  let loadError: string | null = null
+  let pageData: Awaited<
+    ReturnType<typeof getContactSubmissionsPageData>
+  > | null = null
+
+  try {
+    pageData = await getContactSubmissionsPageData({
+      page: params.page,
+      status: params.status,
+    })
+  } catch {
+    loadError =
+      "Could not load contact submissions. Make sure you have created the `contact_submissions` table in Supabase."
+  }
 
   return (
     <div className="min-w-0 space-y-6">
@@ -57,13 +74,23 @@ export default async function AdminContactPage() {
         </p>
       </div>
 
-      {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-          Could not load contact submissions. Make sure you have created the
-          `contact_submissions` table in Supabase.
+      {loadError || !pageData ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+          {loadError}
         </div>
       ) : (
-        <ContactSubmissionsDashboard submissions={data ?? []} />
+        <ContactSubmissionsDashboard
+          submissions={pageData.submissions}
+          stats={pageData.stats}
+          pagination={pageData.pagination}
+          statusFilter={pageData.statusFilter}
+          pathname="/admin/contact"
+          query={
+            pageData.statusFilter !== "all"
+              ? { status: pageData.statusFilter }
+              : undefined
+          }
+        />
       )}
     </div>
   )

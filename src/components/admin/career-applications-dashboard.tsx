@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import {
   Briefcase,
@@ -12,6 +12,8 @@ import {
   Users,
 } from "lucide-react"
 
+import { AdminStatusFilterTabs } from "@/components/admin/admin-status-filter-tabs"
+import { AdminTablePagination } from "@/components/admin/admin-table-pagination"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,6 +24,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import type {
+  AdminListStats,
+  AdminPaginationMeta,
+  AdminStatusFilter,
+} from "@/lib/admin/pagination"
 import type { Database } from "@/types/database"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -31,16 +38,11 @@ export type CareerApplication =
 
 type CareerApplicationsDashboardProps = {
   applications: CareerApplication[]
-}
-
-type ApplicationStatus = "new" | "read" | "replied"
-
-function isThisWeek(dateString: string) {
-  const date = new Date(dateString)
-  const now = new Date()
-  const weekAgo = new Date(now)
-  weekAgo.setDate(now.getDate() - 7)
-  return date >= weekAgo
+  stats: AdminListStats
+  pagination: AdminPaginationMeta
+  statusFilter: AdminStatusFilter
+  pathname: string
+  query?: Record<string, string | undefined>
 }
 
 function formatDate(dateString: string) {
@@ -100,27 +102,17 @@ function StatCard({
 
 export function CareerApplicationsDashboard({
   applications,
+  stats,
+  pagination,
+  statusFilter,
+  pathname,
+  query = {},
 }: CareerApplicationsDashboardProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [selected, setSelected] = useState<CareerApplication | null>(null)
-  const [filter, setFilter] = useState<"all" | ApplicationStatus>("all")
 
-  const stats = useMemo(() => {
-    return {
-      total: applications.length,
-      newCount: applications.filter((item) => item.status === "new").length,
-      thisWeek: applications.filter((item) => isThisWeek(item.created_at)).length,
-      replied: applications.filter((item) => item.status === "replied").length,
-    }
-  }, [applications])
-
-  const filtered = useMemo(() => {
-    if (filter === "all") return applications
-    return applications.filter((item) => item.status === filter)
-  }, [applications, filter])
-
-  async function updateStatus(id: string, status: ApplicationStatus) {
+  async function updateStatus(id: string, status: "new" | "read" | "replied") {
     startTransition(async () => {
       try {
         const response = await fetch(`/api/admin/career-applications/${id}`, {
@@ -225,23 +217,11 @@ export function CareerApplicationsDashboard({
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {(["all", "new", "read", "replied"] as const).map((status) => (
-          <button
-            key={status}
-            type="button"
-            onClick={() => setFilter(status)}
-            className={cn(
-              "rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors",
-              filter === status
-                ? "bg-brand text-brand-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {status}
-          </button>
-        ))}
-      </div>
+      <AdminStatusFilterTabs
+        active={statusFilter}
+        pathname={pathname}
+        query={query}
+      />
 
       <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
         <div className="overflow-x-auto">
@@ -257,7 +237,7 @@ export function CareerApplicationsDashboard({
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {applications.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -267,7 +247,7 @@ export function CareerApplicationsDashboard({
                   </td>
                 </tr>
               ) : (
-                filtered.map((application) => (
+                applications.map((application) => (
                   <tr
                     key={application.id}
                     className="border-b border-border/50 last:border-0"
@@ -332,6 +312,14 @@ export function CareerApplicationsDashboard({
             </tbody>
           </table>
         </div>
+        <AdminTablePagination
+          pagination={pagination}
+          pathname={pathname}
+          query={{
+            ...query,
+            ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+          }}
+        />
       </div>
 
       <Dialog

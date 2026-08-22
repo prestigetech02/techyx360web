@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import {
@@ -15,6 +15,8 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { AdminStatusFilterTabs } from "@/components/admin/admin-status-filter-tabs"
+import { AdminTablePagination } from "@/components/admin/admin-table-pagination"
 import { useAdminNotifications } from "@/components/admin/admin-notifications-provider"
 import {
   Dialog,
@@ -24,6 +26,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import type { ContactListStats } from "@/lib/admin/contact-submissions"
+import type {
+  AdminPaginationMeta,
+  AdminStatusFilter,
+} from "@/lib/admin/pagination"
 import type { Database } from "@/types/database"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -33,17 +40,14 @@ export type ContactSubmission =
 
 type ContactSubmissionsDashboardProps = {
   submissions: ContactSubmission[]
+  stats: ContactListStats
+  pagination: AdminPaginationMeta
+  statusFilter: AdminStatusFilter
+  pathname: string
+  query?: Record<string, string | undefined>
 }
 
 type SubmissionStatus = "new" | "read" | "replied"
-
-function isThisWeek(dateString: string) {
-  const date = new Date(dateString)
-  const now = new Date()
-  const weekAgo = new Date(now)
-  weekAgo.setDate(now.getDate() - 7)
-  return date >= weekAgo
-}
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleString(undefined, {
@@ -180,6 +184,11 @@ function SubmissionActionsMenu({
 
 export function ContactSubmissionsDashboard({
   submissions,
+  stats,
+  pagination,
+  statusFilter,
+  pathname,
+  query = {},
 }: ContactSubmissionsDashboardProps) {
   const router = useRouter()
   const { refresh: refreshNotifications } = useAdminNotifications()
@@ -190,17 +199,6 @@ export function ContactSubmissionsDashboard({
   const [deleteTarget, setDeleteTarget] = useState<ContactSubmission | null>(
     null
   )
-
-  const stats = useMemo(() => {
-    const total = submissions.length
-    const newCount = submissions.filter((s) => s.status === "new").length
-    const thisWeek = submissions.filter((s) => isThisWeek(s.created_at)).length
-    const responded = submissions.filter(
-      (s) => s.status === "read" || s.status === "replied"
-    ).length
-
-    return { total, newCount, thisWeek, responded }
-  }, [submissions])
 
   async function updateStatus(id: string, status: SubmissionStatus) {
     const response = await fetch(`/api/admin/contact-submissions/${id}`, {
@@ -278,6 +276,12 @@ export function ContactSubmissionsDashboard({
           accent="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
         />
       </div>
+
+      <AdminStatusFilterTabs
+        active={statusFilter}
+        pathname={pathname}
+        query={query}
+      />
 
       <div className="min-w-0 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
         <div className="border-b border-border/60 px-6 py-4">
@@ -357,9 +361,20 @@ export function ContactSubmissionsDashboard({
           </div>
         ) : (
           <div className="px-6 py-12 text-center text-sm text-muted-foreground">
-            No contact submissions yet.
+            {statusFilter === "all"
+              ? "No contact submissions yet."
+              : `No ${statusFilter} submissions.`}
           </div>
         )}
+
+        <AdminTablePagination
+          pagination={pagination}
+          pathname={pathname}
+          query={{
+            ...query,
+            ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+          }}
+        />
       </div>
 
       <Dialog

@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import {
@@ -16,6 +16,8 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { AdminStatusFilterTabs } from "@/components/admin/admin-status-filter-tabs"
+import { AdminTablePagination } from "@/components/admin/admin-table-pagination"
 import { useAdminNotifications } from "@/components/admin/admin-notifications-provider"
 import {
   Dialog,
@@ -25,6 +27,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  REGISTRATION_STATUS_FILTERS,
+  type RegistrationListStats,
+} from "@/lib/admin/course-registrations"
+import type {
+  AdminExtendedStatusFilter,
+  AdminPaginationMeta,
+} from "@/lib/admin/pagination"
 import type { Database } from "@/types/database"
 import { registrationTypeLabel } from "@/lib/admin/notifications"
 import { notify } from "@/lib/toast"
@@ -37,17 +47,14 @@ export type CourseRegistration =
 
 type CourseRegistrationsDashboardProps = {
   registrations: CourseRegistration[]
+  stats: RegistrationListStats
+  pagination: AdminPaginationMeta
+  statusFilter: AdminExtendedStatusFilter
+  pathname: string
+  query?: Record<string, string | undefined>
 }
 
 type RegistrationStatus = "new" | "read" | "replied" | "converted"
-
-function isThisWeek(dateString: string) {
-  const date = new Date(dateString)
-  const now = new Date()
-  const weekAgo = new Date(now)
-  weekAgo.setDate(now.getDate() - 7)
-  return date >= weekAgo
-}
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleString(undefined, {
@@ -200,6 +207,11 @@ function RegistrationActionsMenu({
 
 export function CourseRegistrationsDashboard({
   registrations,
+  stats,
+  pagination,
+  statusFilter,
+  pathname,
+  query = {},
 }: CourseRegistrationsDashboardProps) {
   const router = useRouter()
   const { refresh: refreshNotifications } = useAdminNotifications()
@@ -209,19 +221,6 @@ export function CourseRegistrationsDashboard({
   const [deleteTarget, setDeleteTarget] = useState<CourseRegistration | null>(
     null
   )
-
-  const stats = useMemo(() => {
-    const total = registrations.length
-    const newCount = registrations.filter((item) => item.status === "new").length
-    const thisWeek = registrations.filter((item) =>
-      isThisWeek(item.created_at)
-    ).length
-    const responded = registrations.filter(
-      (item) => item.status === "read" || item.status === "replied"
-    ).length
-
-    return { total, newCount, thisWeek, responded }
-  }, [registrations])
 
   async function updateStatus(id: string, status: RegistrationStatus) {
     const response = await fetch(`/api/admin/course-registrations/${id}`, {
@@ -307,6 +306,13 @@ export function CourseRegistrationsDashboard({
           accent="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
         />
       </div>
+
+      <AdminStatusFilterTabs
+        active={statusFilter}
+        pathname={pathname}
+        query={query}
+        filters={REGISTRATION_STATUS_FILTERS}
+      />
 
       <div className="min-w-0 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
         <div className="border-b border-border/60 px-6 py-4">
@@ -414,9 +420,20 @@ export function CourseRegistrationsDashboard({
           </div>
         ) : (
           <div className="px-6 py-12 text-center text-sm text-muted-foreground">
-            No course registrations yet.
+            {statusFilter === "all"
+              ? "No course registrations yet."
+              : `No ${statusFilter} registrations.`}
           </div>
         )}
+
+        <AdminTablePagination
+          pagination={pagination}
+          pathname={pathname}
+          query={{
+            ...query,
+            ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+          }}
+        />
       </div>
 
       <Dialog

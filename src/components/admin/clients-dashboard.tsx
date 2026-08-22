@@ -42,6 +42,7 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { AdminTablePagination } from "@/components/admin/admin-table-pagination"
 import {
   Dialog,
   DialogContent,
@@ -65,6 +66,13 @@ import {
   type ClientStatus,
   type ClientView,
 } from "@/lib/crm/client-types"
+import type {
+  ClientListStats,
+  ClientStatusFilter,
+  ClientsFilterOptions,
+  ClientsListFilters,
+} from "@/lib/admin/clients-page"
+import type { AdminPaginationMeta } from "@/lib/admin/pagination"
 import {
   DEAL_STAGE_LABELS,
   type DealStage,
@@ -89,12 +97,58 @@ import { cn } from "@/lib/utils"
 
 type DetailTab = "overview" | "deals" | "projects" | "notes" | "payments"
 
-const filterTabs: Array<{ value: "all" | ClientStatus; label: string }> = [
+const filterTabs: Array<{ value: ClientStatusFilter; label: string }> = [
   { value: "all", label: "All Clients" },
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
   { value: "archived", label: "Archived" },
 ]
+
+function buildClientsHref(
+  pathname: string,
+  updates: {
+    status?: ClientStatusFilter
+    page?: number
+    q?: string
+    industry?: string
+    companySize?: string
+    location?: string
+  },
+  current: {
+    statusFilter: ClientStatusFilter
+    listFilters: ClientsListFilters
+    page: number
+  }
+) {
+  const params = new URLSearchParams()
+  const status = updates.status ?? current.statusFilter
+  const q = updates.q !== undefined ? updates.q : current.listFilters.q
+  const industry =
+    updates.industry !== undefined ? updates.industry : current.listFilters.industry
+  const companySize =
+    updates.companySize !== undefined
+      ? updates.companySize
+      : current.listFilters.companySize
+  const location =
+    updates.location !== undefined ? updates.location : current.listFilters.location
+  const filtersChanged =
+    updates.status !== undefined ||
+    updates.q !== undefined ||
+    updates.industry !== undefined ||
+    updates.companySize !== undefined ||
+    updates.location !== undefined
+  const page = updates.page ?? (filtersChanged ? 1 : current.page)
+
+  if (status !== "all") params.set("status", status)
+  if (q.trim()) params.set("q", q.trim())
+  if (industry) params.set("industry", industry)
+  if (companySize) params.set("companySize", companySize)
+  if (location) params.set("location", location)
+  if (page > 1) params.set("page", String(page))
+
+  const search = params.toString()
+  return search ? `${pathname}?${search}` : pathname
+}
 
 const detailTabs: Array<{ value: DetailTab; label: string }> = [
   { value: "overview", label: "Overview" },
@@ -1887,6 +1941,14 @@ function ClientActionsMenu({
 type ClientsDashboardProps = {
   clients: ClientView[]
   initialClientId?: string | null
+  fallbackClient?: ClientView | null
+  stats: ClientListStats
+  pagination: AdminPaginationMeta
+  statusFilter: ClientStatusFilter
+  listFilters: ClientsListFilters
+  filterOptions: ClientsFilterOptions
+  pathname: string
+  query?: Record<string, string | undefined>
   totalDeals?: number
   totalRevenue?: number
 }
@@ -1894,20 +1956,24 @@ type ClientsDashboardProps = {
 export function ClientsDashboard({
   clients,
   initialClientId = null,
+  fallbackClient = null,
+  stats,
+  pagination,
+  statusFilter,
+  listFilters,
+  filterOptions,
+  pathname,
+  query = {},
   totalDeals = 0,
   totalRevenue = 0,
 }: ClientsDashboardProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [activeTab, setActiveTab] = useState<"all" | ClientStatus>("all")
-  const [query, setQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState(listFilters.q)
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [filterIndustry, setFilterIndustry] = useState("")
-  const [filterCompanySize, setFilterCompanySize] = useState("")
-  const [filterLocation, setFilterLocation] = useState("")
-  const [draftIndustry, setDraftIndustry] = useState("")
-  const [draftCompanySize, setDraftCompanySize] = useState("")
-  const [draftLocation, setDraftLocation] = useState("")
+  const [draftIndustry, setDraftIndustry] = useState(listFilters.industry)
+  const [draftCompanySize, setDraftCompanySize] = useState(listFilters.companySize)
+  const [draftLocation, setDraftLocation] = useState(listFilters.location)
   const [selectedClientId, setSelectedClientId] = useState<string | null>(
     initialClientId
   )
@@ -1932,118 +1998,135 @@ export function ClientsDashboard({
     }
   }, [initialClientId])
 
-  const selectedClient = useMemo(
-    () => clients.find((client) => client.id === selectedClientId) ?? null,
-    [clients, selectedClientId]
-  )
+  useEffect(() => {
+    setSearchQuery(listFilters.q)
+    setDraftIndustry(listFilters.industry)
+    setDraftCompanySize(listFilters.companySize)
+    setDraftLocation(listFilters.location)
+  }, [listFilters])
+
+  useEffect(() => {
+    const trimmed = searchQuery.trim()
+    if (trimmed === listFilters.q.trim()) return
+
+    const timeout = window.setTimeout(() => {
+      startTransition(() => {
+        router.push(
+          buildClientsHref(
+            pathname,
+            { q: trimmed },
+            {
+              statusFilter,
+              listFilters,
+              page: pagination.page,
+            }
+          )
+        )
+      })
+    }, 350)
+
+    return () => window.clearTimeout(timeout)
+  }, [
+    listFilters,
+    pagination.page,
+    pathname,
+    router,
+    searchQuery,
+    startTransition,
+    statusFilter,
+  ])
+
+  const selectedClient = useMemo(() => {
+    if (!selectedClientId) return null
+    return (
+      clients.find((client) => client.id === selectedClientId) ??
+      (fallbackClient?.id === selectedClientId ? fallbackClient : null)
+    )
+  }, [clients, fallbackClient, selectedClientId])
 
   useEffect(() => {
     if (
       selectedClientId &&
-      !clients.some((client) => client.id === selectedClientId)
+      !clients.some((client) => client.id === selectedClientId) &&
+      fallbackClient?.id !== selectedClientId
     ) {
       setSelectedClientId(null)
     }
-  }, [clients, selectedClientId])
+  }, [clients, fallbackClient, selectedClientId])
 
-  const statusCounts = useMemo(
-    () => ({
-      all: clients.length,
-      active: clients.filter((client) => client.status === "active").length,
-      inactive: clients.filter((client) => client.status === "inactive").length,
-      archived: clients.filter((client) => client.status === "archived").length,
-    }),
-    [clients]
-  )
+  const statusCounts = {
+    all: stats.total,
+    active: stats.active,
+    inactive: stats.inactive,
+    archived: stats.archived,
+  }
 
-  const industryOptions = useMemo(() => {
-    const values = new Set<string>()
-    for (const client of clients) {
-      const industry = client.industry.trim()
-      if (industry) values.add(industry)
-    }
-    return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [clients])
-
-  const locationOptions = useMemo(() => {
-    const values = new Set<string>()
-    for (const client of clients) {
-      const location = client.location.trim()
-      if (location) values.add(location)
-    }
-    return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [clients])
+  const industryOptions = filterOptions.industries
+  const locationOptions = filterOptions.locations
 
   const activeFilterCount = useMemo(() => {
     let count = 0
-    if (filterIndustry) count += 1
-    if (filterCompanySize) count += 1
-    if (filterLocation) count += 1
+    if (listFilters.industry) count += 1
+    if (listFilters.companySize) count += 1
+    if (listFilters.location) count += 1
     return count
-  }, [filterCompanySize, filterIndustry, filterLocation])
+  }, [listFilters.companySize, listFilters.industry, listFilters.location])
 
-  const filteredClients = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-
-    return clients.filter((client) => {
-      const matchesStatus = activeTab === "all" || client.status === activeTab
-      const matchesSearch =
-        !normalizedQuery ||
-        [
-          client.company,
-          client.contact,
-          client.email,
-          client.phone,
-          client.industry,
-          client.location,
-          client.product,
-        ].some((value) => value.toLowerCase().includes(normalizedQuery))
-      const matchesIndustry =
-        !filterIndustry || client.industry === filterIndustry
-      const matchesSize =
-        !filterCompanySize || client.companySize === filterCompanySize
-      const matchesLocation =
-        !filterLocation || client.location === filterLocation
-
-      return (
-        matchesStatus &&
-        matchesSearch &&
-        matchesIndustry &&
-        matchesSize &&
-        matchesLocation
-      )
-    })
-  }, [
-    activeTab,
-    clients,
-    filterCompanySize,
-    filterIndustry,
-    filterLocation,
-    query,
-  ])
+  const paginationQuery = {
+    ...query,
+    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+    ...(listFilters.q ? { q: listFilters.q } : {}),
+    ...(listFilters.industry ? { industry: listFilters.industry } : {}),
+    ...(listFilters.companySize ? { companySize: listFilters.companySize } : {}),
+    ...(listFilters.location ? { location: listFilters.location } : {}),
+  }
 
   function openFiltersDialog() {
-    setDraftIndustry(filterIndustry)
-    setDraftCompanySize(filterCompanySize)
-    setDraftLocation(filterLocation)
+    setDraftIndustry(listFilters.industry)
+    setDraftCompanySize(listFilters.companySize)
+    setDraftLocation(listFilters.location)
     setFiltersOpen(true)
   }
 
   function applyFilters() {
-    setFilterIndustry(draftIndustry)
-    setFilterCompanySize(draftCompanySize)
-    setFilterLocation(draftLocation)
+    startTransition(() => {
+      router.push(
+        buildClientsHref(
+          pathname,
+          {
+            industry: draftIndustry,
+            companySize: draftCompanySize,
+            location: draftLocation,
+          },
+          {
+            statusFilter,
+            listFilters,
+            page: pagination.page,
+          }
+        )
+      )
+    })
     setFiltersOpen(false)
   }
 
   function clearFilters() {
-    setFilterIndustry("")
-    setFilterCompanySize("")
-    setFilterLocation("")
     setDraftIndustry("")
     setDraftCompanySize("")
     setDraftLocation("")
     setFiltersOpen(false)
+    startTransition(() => {
+      router.push(
+        buildClientsHref(
+          pathname,
+          { industry: "", companySize: "", location: "" },
+          {
+            statusFilter,
+            listFilters,
+            page: pagination.page,
+          }
+        )
+      )
+    })
   }
 
   function refreshClients() {
@@ -2257,19 +2340,26 @@ export function ClientsDashboard({
           <div className="flex flex-col gap-3 border-b border-border/60 px-4 pt-3 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 gap-1 overflow-x-auto">
               {filterTabs.map((tab) => (
-                <button
+                <Link
                   key={tab.value}
-                  type="button"
-                  onClick={() => setActiveTab(tab.value)}
+                  href={buildClientsHref(
+                    pathname,
+                    { status: tab.value },
+                    {
+                      statusFilter,
+                      listFilters,
+                      page: pagination.page,
+                    }
+                  )}
                   className={cn(
                     "shrink-0 border-b-2 px-3 py-3 text-xs font-semibold transition-colors sm:text-sm",
-                    activeTab === tab.value
+                    statusFilter === tab.value
                       ? "border-brand text-brand"
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {tab.label} ({statusCounts[tab.value]})
-                </button>
+                </Link>
               ))}
             </div>
 
@@ -2297,8 +2387,8 @@ export function ClientsDashboard({
                   aria-hidden
                 />
                 <Input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search clients..."
                   className="h-10 rounded-xl pl-9"
                 />
@@ -2319,7 +2409,7 @@ export function ClientsDashboard({
                 </tr>
               </thead>
               <tbody>
-                {filteredClients.map((client) => (
+                {clients.map((client) => (
                   <tr
                     key={client.id}
                     role="button"
@@ -2394,25 +2484,26 @@ export function ClientsDashboard({
             </table>
           </div>
 
-          {filteredClients.length === 0 ? (
+          {clients.length === 0 ? (
             <div className="px-6 py-12 text-center">
               <Search className="mx-auto size-8 text-muted-foreground/50" />
               <p className="mt-3 font-medium text-foreground">No clients found</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {clients.length === 0
+                {stats.total === 0 &&
+                !listFilters.q &&
+                activeFilterCount === 0 &&
+                statusFilter === "all"
                   ? "Add your first client or convert a lead."
                   : "Try another search term or status."}
               </p>
             </div>
           ) : null}
 
-          <div className="border-t border-border/60 px-5 py-4 text-xs text-muted-foreground">
-            Showing {filteredClients.length} matching client
-            {filteredClients.length === 1 ? "" : "s"}
-            {activeFilterCount > 0 || query.trim()
-              ? " with current search/filters"
-              : ""}
-          </div>
+          <AdminTablePagination
+            pagination={pagination}
+            pathname={pathname}
+            query={paginationQuery}
+          />
         </section>
       </div>
 

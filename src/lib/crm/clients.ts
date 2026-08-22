@@ -111,26 +111,15 @@ export function mapClientRowToView(
   }
 }
 
-const CLIENT_SELECT =
+export const CLIENT_SELECT =
   "id, company, contact_name, email, phone, industry, product, role, website, location, company_size, status, last_activity_at, avatar_url, created_at, updated_at"
 
-export async function getAllClients(): Promise<ClientView[]> {
-  if (!isSupabaseConfigured()) return []
-
-  const supabase = createAdminClient()
-  const { data, error } = await supabase
-    .from("crm_clients")
-    .select(CLIENT_SELECT)
-    .order("created_at", { ascending: false })
-
-  if (error) {
-    console.error("Failed to load CRM clients", error)
-    throw error
-  }
-
-  const clients = data ?? []
+export async function attachNotesToClients(
+  clients: CrmClientRow[]
+): Promise<ClientView[]> {
   if (clients.length === 0) return []
 
+  const supabase = createAdminClient()
   const ids = clients.map((client) => client.id)
   const notesResult = await supabase
     .from("crm_client_notes")
@@ -152,6 +141,23 @@ export async function getAllClients(): Promise<ClientView[]> {
   return clients.map((client) =>
     mapClientRowToView(client, notesByClient.get(client.id) ?? [])
   )
+}
+
+export async function getAllClients(): Promise<ClientView[]> {
+  if (!isSupabaseConfigured()) return []
+
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from("crm_clients")
+    .select(CLIENT_SELECT)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Failed to load CRM clients", error)
+    throw error
+  }
+
+  return attachNotesToClients(data ?? [])
 }
 
 export async function getClientById(id: string): Promise<ClientView | null> {

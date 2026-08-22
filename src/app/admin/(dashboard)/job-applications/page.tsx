@@ -1,6 +1,7 @@
 import { CareerApplicationsDashboard } from "@/components/admin/career-applications-dashboard"
 import { brand } from "@/config/brand"
-import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase"
+import { getCareerApplicationsPageData } from "@/lib/admin/career-applications"
+import { isSupabaseConfigured } from "@/lib/supabase"
 
 export const metadata = {
   title: `Job Applications | Admin | ${brand.name}`,
@@ -10,7 +11,15 @@ export const metadata = {
   },
 }
 
-export default async function AdminJobApplicationsPage() {
+type AdminJobApplicationsPageProps = {
+  searchParams?: Promise<{ page?: string; status?: string }>
+}
+
+export default async function AdminJobApplicationsPage({
+  searchParams,
+}: AdminJobApplicationsPageProps) {
+  const params = (await searchParams) ?? {}
+
   if (!isSupabaseConfigured()) {
     return (
       <div className="space-y-4">
@@ -36,14 +45,19 @@ export default async function AdminJobApplicationsPage() {
     )
   }
 
-  const supabase = createAdminClient()
-  const { data, error } = await supabase
-    .from("career_applications")
-    .select(
-      "id, position_id, position_title, full_name, email, phone, location, linkedin_url, github_url, portfolio_url, cv_path, years_of_experience, expected_salary, cover_letter, availability, status, created_at"
-    )
-    .order("created_at", { ascending: false })
-    .limit(100)
+  let loadError: string | null = null
+  let pageData: Awaited<ReturnType<typeof getCareerApplicationsPageData>> | null =
+    null
+
+  try {
+    pageData = await getCareerApplicationsPageData({
+      page: params.page,
+      status: params.status,
+    })
+  } catch {
+    loadError =
+      "Could not load job applications. Make sure you have created the `career_applications` table in Supabase."
+  }
 
   return (
     <div className="min-w-0 space-y-6">
@@ -59,13 +73,23 @@ export default async function AdminJobApplicationsPage() {
         </p>
       </div>
 
-      {error ? (
+      {loadError || !pageData ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
-          Could not load job applications. Make sure you have created the
-          `career_applications` table in Supabase.
+          {loadError}
         </div>
       ) : (
-        <CareerApplicationsDashboard applications={data ?? []} />
+        <CareerApplicationsDashboard
+          applications={pageData.applications}
+          stats={pageData.stats}
+          pagination={pageData.pagination}
+          statusFilter={pageData.statusFilter}
+          pathname="/admin/job-applications"
+          query={
+            pageData.statusFilter !== "all"
+              ? { status: pageData.statusFilter }
+              : undefined
+          }
+        />
       )}
     </div>
   )

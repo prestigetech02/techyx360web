@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import {
   CheckCircle2,
@@ -11,6 +11,8 @@ import {
   Users,
 } from "lucide-react"
 
+import { AdminStatusFilterTabs } from "@/components/admin/admin-status-filter-tabs"
+import { AdminTablePagination } from "@/components/admin/admin-table-pagination"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -21,6 +23,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import type {
+  AdminListStats,
+  AdminPaginationMeta,
+  AdminStatusFilter,
+} from "@/lib/admin/pagination"
 import type { Database } from "@/types/database"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -30,16 +37,11 @@ export type TalentPoolSubmission =
 
 type TalentPoolDashboardProps = {
   submissions: TalentPoolSubmission[]
-}
-
-type SubmissionStatus = "new" | "read" | "replied"
-
-function isThisWeek(dateString: string) {
-  const date = new Date(dateString)
-  const now = new Date()
-  const weekAgo = new Date(now)
-  weekAgo.setDate(now.getDate() - 7)
-  return date >= weekAgo
+  stats: AdminListStats
+  pagination: AdminPaginationMeta
+  statusFilter: AdminStatusFilter
+  pathname: string
+  query?: Record<string, string | undefined>
 }
 
 function formatDate(dateString: string) {
@@ -97,27 +99,19 @@ function StatCard({
   )
 }
 
-export function TalentPoolDashboard({ submissions }: TalentPoolDashboardProps) {
+export function TalentPoolDashboard({
+  submissions,
+  stats,
+  pagination,
+  statusFilter,
+  pathname,
+  query = {},
+}: TalentPoolDashboardProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [selected, setSelected] = useState<TalentPoolSubmission | null>(null)
-  const [filter, setFilter] = useState<"all" | SubmissionStatus>("all")
 
-  const stats = useMemo(() => {
-    return {
-      total: submissions.length,
-      newCount: submissions.filter((item) => item.status === "new").length,
-      thisWeek: submissions.filter((item) => isThisWeek(item.created_at)).length,
-      replied: submissions.filter((item) => item.status === "replied").length,
-    }
-  }, [submissions])
-
-  const filtered = useMemo(() => {
-    if (filter === "all") return submissions
-    return submissions.filter((item) => item.status === filter)
-  }, [submissions, filter])
-
-  async function updateStatus(id: string, status: SubmissionStatus) {
+  async function updateStatus(id: string, status: "new" | "read" | "replied") {
     startTransition(async () => {
       try {
         const response = await fetch(`/api/admin/talent-pool/${id}`, {
@@ -224,23 +218,11 @@ export function TalentPoolDashboard({ submissions }: TalentPoolDashboardProps) {
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {(["all", "new", "read", "replied"] as const).map((status) => (
-          <button
-            key={status}
-            type="button"
-            onClick={() => setFilter(status)}
-            className={cn(
-              "rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors",
-              filter === status
-                ? "bg-brand text-brand-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {status}
-          </button>
-        ))}
-      </div>
+      <AdminStatusFilterTabs
+        active={statusFilter}
+        pathname={pathname}
+        query={query}
+      />
 
       <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
         <div className="overflow-x-auto">
@@ -256,7 +238,7 @@ export function TalentPoolDashboard({ submissions }: TalentPoolDashboardProps) {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {submissions.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -266,7 +248,7 @@ export function TalentPoolDashboard({ submissions }: TalentPoolDashboardProps) {
                   </td>
                 </tr>
               ) : (
-                filtered.map((submission) => (
+                submissions.map((submission) => (
                   <tr
                     key={submission.id}
                     className="border-b border-border/50 last:border-0"
@@ -333,6 +315,14 @@ export function TalentPoolDashboard({ submissions }: TalentPoolDashboardProps) {
             </tbody>
           </table>
         </div>
+        <AdminTablePagination
+          pagination={pagination}
+          pathname={pathname}
+          query={{
+            ...query,
+            ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+          }}
+        />
       </div>
 
       <Dialog

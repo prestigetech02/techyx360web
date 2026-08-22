@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import {
@@ -16,6 +16,8 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { AdminStatusFilterTabs } from "@/components/admin/admin-status-filter-tabs"
+import { AdminTablePagination } from "@/components/admin/admin-table-pagination"
 import { useAdminNotifications } from "@/components/admin/admin-notifications-provider"
 import {
   Dialog,
@@ -25,6 +27,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import type { PifListStats } from "@/lib/admin/pif-applications"
+import type {
+  AdminPaginationMeta,
+  AdminStatusFilter,
+} from "@/lib/admin/pagination"
 import type { Database } from "@/types/database"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -36,17 +43,14 @@ export type PifApplication =
 
 type PifApplicationsDashboardProps = {
   applications: PifApplication[]
+  stats: PifListStats
+  pagination: AdminPaginationMeta
+  statusFilter: AdminStatusFilter
+  pathname: string
+  query?: Record<string, string | undefined>
 }
 
 type ApplicationStatus = "new" | "read" | "replied"
-
-function isThisWeek(dateString: string) {
-  const date = new Date(dateString)
-  const now = new Date()
-  const weekAgo = new Date(now)
-  weekAgo.setDate(now.getDate() - 7)
-  return date >= weekAgo
-}
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleString(undefined, {
@@ -183,6 +187,11 @@ function ApplicationActionsMenu({
 
 export function PifApplicationsDashboard({
   applications,
+  stats,
+  pagination,
+  statusFilter,
+  pathname,
+  query = {},
 }: PifApplicationsDashboardProps) {
   const router = useRouter()
   const { refresh: refreshNotifications } = useAdminNotifications()
@@ -191,19 +200,6 @@ export function PifApplicationsDashboard({
     null
   )
   const [deleteTarget, setDeleteTarget] = useState<PifApplication | null>(null)
-
-  const stats = useMemo(() => {
-    const total = applications.length
-    const newCount = applications.filter((item) => item.status === "new").length
-    const thisWeek = applications.filter((item) =>
-      isThisWeek(item.created_at)
-    ).length
-    const responded = applications.filter(
-      (item) => item.status === "read" || item.status === "replied"
-    ).length
-
-    return { total, newCount, thisWeek, responded }
-  }, [applications])
 
   async function updateStatus(id: string, status: ApplicationStatus) {
     const response = await fetch(`/api/admin/pif-applications/${id}`, {
@@ -276,11 +272,17 @@ export function PifApplicationsDashboard({
         />
         <StatCard
           label="Reviewed"
-          value={stats.responded}
+          value={stats.reviewed}
           icon={CheckCircle2}
           accent="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
         />
       </div>
+
+      <AdminStatusFilterTabs
+        active={statusFilter}
+        pathname={pathname}
+        query={query}
+      />
 
       <div className="min-w-0 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
         <div className="border-b border-border/60 px-6 py-4">
@@ -366,9 +368,20 @@ export function PifApplicationsDashboard({
           </div>
         ) : (
           <div className="px-6 py-12 text-center text-sm text-muted-foreground">
-            No PIF applications yet.
+            {statusFilter === "all"
+              ? "No PIF applications yet."
+              : `No ${statusFilter} applications.`}
           </div>
         )}
+
+        <AdminTablePagination
+          pagination={pagination}
+          pathname={pathname}
+          query={{
+            ...query,
+            ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+          }}
+        />
       </div>
 
       <Dialog

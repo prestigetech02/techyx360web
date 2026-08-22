@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import {
@@ -17,6 +17,8 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { AdminStatusFilterTabs } from "@/components/admin/admin-status-filter-tabs"
+import { AdminTablePagination } from "@/components/admin/admin-table-pagination"
 import {
   Dialog,
   DialogContent,
@@ -25,23 +27,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import type { TalentRequestRow } from "@/lib/talent-requests"
+import type {
+  TalentRequestListStats,
+  TalentRequestRow,
+} from "@/lib/admin/talent-requests"
+import type {
+  AdminPaginationMeta,
+  AdminStatusFilter,
+} from "@/lib/admin/pagination"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 type TalentRequestsDashboardProps = {
   requests: TalentRequestRow[]
+  stats: TalentRequestListStats
+  pagination: AdminPaginationMeta
+  statusFilter: AdminStatusFilter
+  pathname: string
+  query?: Record<string, string | undefined>
 }
 
 type RequestStatus = "new" | "read" | "replied"
-
-function isThisWeek(dateString: string) {
-  const date = new Date(dateString)
-  const now = new Date()
-  const weekAgo = new Date(now)
-  weekAgo.setDate(now.getDate() - 7)
-  return date >= weekAgo
-}
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleString(undefined, {
@@ -175,6 +181,11 @@ function RequestActionsMenu({
 
 export function TalentRequestsDashboard({
   requests,
+  stats,
+  pagination,
+  statusFilter,
+  pathname,
+  query = {},
 }: TalentRequestsDashboardProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -182,17 +193,6 @@ export function TalentRequestsDashboard({
   const [deleteTarget, setDeleteTarget] = useState<TalentRequestRow | null>(
     null
   )
-
-  const stats = useMemo(() => {
-    const total = requests.length
-    const newCount = requests.filter((item) => item.status === "new").length
-    const thisWeek = requests.filter((item) =>
-      isThisWeek(item.created_at)
-    ).length
-    const headcount = requests.reduce((sum, item) => sum + item.headcount, 0)
-
-    return { total, newCount, thisWeek, headcount }
-  }, [requests])
 
   async function updateStatus(id: string, status: RequestStatus) {
     const response = await fetch(`/api/admin/talent-requests/${id}`, {
@@ -266,6 +266,12 @@ export function TalentRequestsDashboard({
           accent="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
         />
       </div>
+
+      <AdminStatusFilterTabs
+        active={statusFilter}
+        pathname={pathname}
+        query={query}
+      />
 
       <div className="min-w-0 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
         <div className="border-b border-border/60 px-6 py-4">
@@ -352,9 +358,20 @@ export function TalentRequestsDashboard({
           </div>
         ) : (
           <div className="px-6 py-12 text-center text-sm text-muted-foreground">
-            No talent requests yet.
+            {statusFilter === "all"
+              ? "No talent requests yet."
+              : `No ${statusFilter} requests.`}
           </div>
         )}
+
+        <AdminTablePagination
+          pagination={pagination}
+          pathname={pathname}
+          query={{
+            ...query,
+            ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+          }}
+        />
       </div>
 
       <Dialog

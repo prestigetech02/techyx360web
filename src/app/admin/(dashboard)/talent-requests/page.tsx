@@ -1,6 +1,6 @@
 import { TalentRequestsDashboard } from "@/components/admin/talent-requests-dashboard"
 import { brand } from "@/config/brand"
-import { getAllTalentRequests } from "@/lib/talent-requests"
+import { getTalentRequestsPageData } from "@/lib/admin/talent-requests"
 import { isSupabaseConfigured } from "@/lib/supabase"
 
 export const metadata = {
@@ -11,7 +11,15 @@ export const metadata = {
   },
 }
 
-export default async function AdminTalentRequestsPage() {
+type AdminTalentRequestsPageProps = {
+  searchParams?: Promise<{ page?: string; status?: string }>
+}
+
+export default async function AdminTalentRequestsPage({
+  searchParams,
+}: AdminTalentRequestsPageProps) {
+  const params = (await searchParams) ?? {}
+
   if (!isSupabaseConfigured()) {
     return (
       <div className="space-y-4">
@@ -38,11 +46,15 @@ export default async function AdminTalentRequestsPage() {
     )
   }
 
-  let requests: Awaited<ReturnType<typeof getAllTalentRequests>> = []
   let loadError: string | null = null
+  let pageData: Awaited<ReturnType<typeof getTalentRequestsPageData>> | null =
+    null
 
   try {
-    requests = await getAllTalentRequests()
+    pageData = await getTalentRequestsPageData({
+      page: params.page,
+      status: params.status,
+    })
   } catch {
     loadError =
       "Could not load talent requests. Make sure you have created the `talent_requests` table in Supabase."
@@ -63,12 +75,23 @@ export default async function AdminTalentRequestsPage() {
         </p>
       </div>
 
-      {loadError ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+      {loadError || !pageData ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
           {loadError}
         </div>
       ) : (
-        <TalentRequestsDashboard requests={requests} />
+        <TalentRequestsDashboard
+          requests={pageData.requests}
+          stats={pageData.stats}
+          pagination={pageData.pagination}
+          statusFilter={pageData.statusFilter}
+          pathname="/admin/talent-requests"
+          query={
+            pageData.statusFilter !== "all"
+              ? { status: pageData.statusFilter }
+              : undefined
+          }
+        />
       )}
     </div>
   )

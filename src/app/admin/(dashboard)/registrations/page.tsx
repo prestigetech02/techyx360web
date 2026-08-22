@@ -1,7 +1,7 @@
 import { CourseRegistrationsDashboard } from "@/components/admin/course-registrations-dashboard"
 import { brand } from "@/config/brand"
-import { getRegistrationReceiptSignedUrl } from "@/lib/registrations/receipt-upload"
-import { createAdminClient, isSupabaseConfigured } from "@/lib/supabase"
+import { getCourseRegistrationsPageData } from "@/lib/admin/course-registrations"
+import { isSupabaseConfigured } from "@/lib/supabase"
 
 export const metadata = {
   title: `Course Registrations | Admin | ${brand.name}`,
@@ -11,7 +11,15 @@ export const metadata = {
   },
 }
 
-export default async function AdminRegistrationsPage() {
+type AdminRegistrationsPageProps = {
+  searchParams?: Promise<{ page?: string; status?: string }>
+}
+
+export default async function AdminRegistrationsPage({
+  searchParams,
+}: AdminRegistrationsPageProps) {
+  const params = (await searchParams) ?? {}
+
   if (!isSupabaseConfigured()) {
     return (
       <div className="space-y-4">
@@ -37,28 +45,20 @@ export default async function AdminRegistrationsPage() {
     )
   }
 
-  const supabase = createAdminClient()
-  const { data, error } = await supabase
-    .from("course_registrations")
-    .select(
-      "id, first_name, last_name, email, phone, school_id, school_name, course_slug, course_title, course_key, message, registration_type, status, location, has_working_computer, can_devote_6_hours_weekly, payment_receipt_path, created_at"
-    )
-    .order("created_at", { ascending: false })
-    .limit(100)
+  let loadError: string | null = null
+  let pageData: Awaited<
+    ReturnType<typeof getCourseRegistrationsPageData>
+  > | null = null
 
-  const registrations = await Promise.all(
-    (data ?? []).map(async (registration) => {
-      if (!registration.payment_receipt_path) {
-        return { ...registration, payment_receipt_url: null }
-      }
-
-      const payment_receipt_url = await getRegistrationReceiptSignedUrl(
-        registration.payment_receipt_path
-      )
-
-      return { ...registration, payment_receipt_url }
+  try {
+    pageData = await getCourseRegistrationsPageData({
+      page: params.page,
+      status: params.status,
     })
-  )
+  } catch {
+    loadError =
+      "Could not load course registrations. Make sure you have created the `course_registrations` table in Supabase."
+  }
 
   return (
     <div className="min-w-0 space-y-6">
@@ -74,13 +74,23 @@ export default async function AdminRegistrationsPage() {
         </p>
       </div>
 
-      {error ? (
+      {loadError || !pageData ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
-          Could not load course registrations. Make sure you have created the
-          `course_registrations` table in Supabase.
+          {loadError}
         </div>
       ) : (
-        <CourseRegistrationsDashboard registrations={registrations} />
+        <CourseRegistrationsDashboard
+          registrations={pageData.registrations}
+          stats={pageData.stats}
+          pagination={pageData.pagination}
+          statusFilter={pageData.statusFilter}
+          pathname="/admin/registrations"
+          query={
+            pageData.statusFilter !== "all"
+              ? { status: pageData.statusFilter }
+              : undefined
+          }
+        />
       )}
     </div>
   )

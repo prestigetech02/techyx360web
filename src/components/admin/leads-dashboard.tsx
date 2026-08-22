@@ -28,6 +28,7 @@ import {
   Pencil,
   Phone,
   Plus,
+  RotateCcw,
   Search,
   Sparkles,
   Star,
@@ -42,6 +43,7 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { AdminTablePagination } from "@/components/admin/admin-table-pagination"
 import {
   Dialog,
   DialogContent,
@@ -68,6 +70,12 @@ import {
   type LeadStatus,
   type LeadView,
 } from "@/lib/crm/lead-types"
+import type {
+  LeadListStats,
+  LeadStatusFilter,
+  LeadsListFilters,
+} from "@/lib/admin/leads-page"
+import type { AdminPaginationMeta } from "@/lib/admin/pagination"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
@@ -78,7 +86,7 @@ const fieldClassName =
 const labelClassName = "mb-1.5 block text-xs font-medium text-foreground"
 const selectClassName = cn(fieldClassName, "appearance-none")
 
-const filterTabs: Array<{ value: "all" | LeadStatus; label: string }> = [
+const filterTabs: Array<{ value: LeadStatusFilter; label: string }> = [
   { value: "all", label: "All Leads" },
   { value: "new", label: "New" },
   { value: "contacted", label: "Contacted" },
@@ -86,6 +94,54 @@ const filterTabs: Array<{ value: "all" | LeadStatus; label: string }> = [
   { value: "converted", label: "Converted" },
   { value: "lost", label: "Lost" },
 ]
+
+function buildLeadsHref(
+  pathname: string,
+  updates: {
+    status?: LeadStatusFilter
+    page?: number
+    q?: string
+    source?: string
+    assigned?: string
+    minScore?: string
+  },
+  current: {
+    statusFilter: LeadStatusFilter
+    listFilters: LeadsListFilters
+    page: number
+  }
+) {
+  const params = new URLSearchParams()
+  const status = updates.status ?? current.statusFilter
+  const q = updates.q !== undefined ? updates.q : current.listFilters.q
+  const source =
+    updates.source !== undefined ? updates.source : current.listFilters.source
+  const assigned =
+    updates.assigned !== undefined
+      ? updates.assigned
+      : current.listFilters.assigned
+  const minScore =
+    updates.minScore !== undefined
+      ? updates.minScore
+      : current.listFilters.minScore
+  const filtersChanged =
+    updates.status !== undefined ||
+    updates.q !== undefined ||
+    updates.source !== undefined ||
+    updates.assigned !== undefined ||
+    updates.minScore !== undefined
+  const page = updates.page ?? (filtersChanged ? 1 : current.page)
+
+  if (status !== "all") params.set("status", status)
+  if (q.trim()) params.set("q", q.trim())
+  if (source) params.set("source", source)
+  if (assigned) params.set("assigned", assigned)
+  if (minScore.trim()) params.set("minScore", minScore.trim())
+  if (page > 1) params.set("page", String(page))
+
+  const search = params.toString()
+  return search ? `${pathname}?${search}` : pathname
+}
 
 export type LeadAssigneeOption = {
   id: string
@@ -369,6 +425,7 @@ function LeadActionsMenu({
   onMarkContacted,
   onQualify,
   onConvert,
+  onRevertConversion,
   onViewClient,
   onMarkLost,
   onDelete,
@@ -378,6 +435,7 @@ function LeadActionsMenu({
   onMarkContacted: () => void
   onQualify: () => void
   onConvert: () => void
+  onRevertConversion: () => void
   onViewClient: () => void
   onMarkLost: () => void
   onDelete: () => void
@@ -446,6 +504,16 @@ function LeadActionsMenu({
               >
                 <ExternalLink className="size-4" aria-hidden />
                 View client
+              </MenuPrimitive.Item>
+            ) : null}
+
+            {lead.status === "converted" && lead.clientId ? (
+              <MenuPrimitive.Item
+                className={menuItemClassName}
+                onClick={onRevertConversion}
+              >
+                <RotateCcw className="size-4" aria-hidden />
+                Revert conversion
               </MenuPrimitive.Item>
             ) : null}
 
@@ -536,6 +604,7 @@ function LeadDetailSheet({
   open,
   onOpenChange,
   onConvert,
+  onRevertConversion,
   onAddNote,
   onUpdate,
   assignees,
@@ -545,6 +614,7 @@ function LeadDetailSheet({
   open: boolean
   onOpenChange: (open: boolean) => void
   onConvert: (id: string) => void
+  onRevertConversion: (id: string) => void
   onAddNote: (id: string, content: string) => Promise<void>
   onUpdate: (
     id: string,
@@ -565,6 +635,7 @@ function LeadDetailSheet({
             key={lead.id}
             lead={lead}
             onConvert={onConvert}
+            onRevertConversion={onRevertConversion}
             onAddNote={onAddNote}
             onUpdate={onUpdate}
             assignees={assignees}
@@ -579,6 +650,7 @@ function LeadDetailSheet({
 function LeadDetailContent({
   lead,
   onConvert,
+  onRevertConversion,
   onAddNote,
   onUpdate,
   assignees,
@@ -586,6 +658,7 @@ function LeadDetailContent({
 }: {
   lead: LeadView
   onConvert: (id: string) => void
+  onRevertConversion: (id: string) => void
   onAddNote: (id: string, content: string) => Promise<void>
   onUpdate: (
     id: string,
@@ -963,16 +1036,27 @@ function LeadDetailContent({
         </section>
       </div>
 
-      <div className="shrink-0 border-t border-border/60 p-4">
+      <div className="shrink-0 space-y-2 border-t border-border/60 p-4">
         {lead.clientId ? (
-          <Button
-            className="h-11 w-full gap-2 rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
-            render={<Link href={`/admin/clients?client=${lead.clientId}`} />}
-          >
-            <ExternalLink className="size-4" aria-hidden />
-            View client
-            <ChevronRight className="ml-auto size-4" aria-hidden />
-          </Button>
+          <>
+            <Button
+              className="h-11 w-full gap-2 rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
+              render={<Link href={`/admin/clients?client=${lead.clientId}`} />}
+            >
+              <ExternalLink className="size-4" aria-hidden />
+              View client
+              <ChevronRight className="ml-auto size-4" aria-hidden />
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 w-full gap-2 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              disabled={isPending}
+              onClick={() => onRevertConversion(lead.id)}
+            >
+              <RotateCcw className="size-4" aria-hidden />
+              Revert conversion
+            </Button>
+          </>
         ) : (
           <Button
             className="h-11 w-full gap-2 rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
@@ -1334,25 +1418,34 @@ function LeadDetailContent({
 type LeadsDashboardProps = {
   leads: LeadView[]
   assignees?: LeadAssigneeOption[]
+  stats: LeadListStats
+  pagination: AdminPaginationMeta
+  statusFilter: LeadStatusFilter
+  listFilters: LeadsListFilters
+  pathname: string
+  query?: Record<string, string | undefined>
 }
 
 export function LeadsDashboard({
   leads,
   assignees = [],
+  stats,
+  pagination,
+  statusFilter,
+  listFilters,
+  pathname,
+  query = {},
 }: LeadsDashboardProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [activeTab, setActiveTab] = useState<"all" | LeadStatus>("all")
-  const [query, setQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState(listFilters.q)
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [filterSource, setFilterSource] = useState("")
-  const [filterAssignedTo, setFilterAssignedTo] = useState("")
-  const [filterMinScore, setFilterMinScore] = useState("")
-  const [draftSource, setDraftSource] = useState("")
-  const [draftAssignedTo, setDraftAssignedTo] = useState("")
-  const [draftMinScore, setDraftMinScore] = useState("")
+  const [draftSource, setDraftSource] = useState(listFilters.source)
+  const [draftAssignedTo, setDraftAssignedTo] = useState(listFilters.assigned)
+  const [draftMinScore, setDraftMinScore] = useState(listFilters.minScore)
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<LeadView | null>(null)
+  const [revertTarget, setRevertTarget] = useState<LeadView | null>(null)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [name, setName] = useState("")
@@ -1376,6 +1469,44 @@ export function LeadsDashboard({
 
   const showFollowersField = isSocialLeadSource(source)
 
+  useEffect(() => {
+    setSearchQuery(listFilters.q)
+    setDraftSource(listFilters.source)
+    setDraftAssignedTo(listFilters.assigned)
+    setDraftMinScore(listFilters.minScore)
+  }, [listFilters])
+
+  useEffect(() => {
+    const trimmed = searchQuery.trim()
+    if (trimmed === listFilters.q.trim()) return
+
+    const timeout = window.setTimeout(() => {
+      startTransition(() => {
+        router.push(
+          buildLeadsHref(
+            pathname,
+            { q: trimmed },
+            {
+              statusFilter,
+              listFilters,
+              page: pagination.page,
+            }
+          )
+        )
+      })
+    }, 350)
+
+    return () => window.clearTimeout(timeout)
+  }, [
+    listFilters,
+    pagination.page,
+    pathname,
+    router,
+    searchQuery,
+    startTransition,
+    statusFilter,
+  ])
+
   const selectedLead = useMemo(
     () => leads.find((lead) => lead.id === selectedLeadId) ?? null,
     [leads, selectedLeadId]
@@ -1387,107 +1518,82 @@ export function LeadsDashboard({
     }
   }, [leads, selectedLeadId])
 
-  const statusCounts = useMemo(
-    () => ({
-      all: leads.length,
-      new: leads.filter((lead) => lead.status === "new").length,
-      contacted: leads.filter((lead) => lead.status === "contacted").length,
-      qualified: leads.filter((lead) => lead.status === "qualified").length,
-      converted: leads.filter((lead) => lead.status === "converted").length,
-      lost: leads.filter((lead) => lead.status === "lost").length,
-    }),
-    [leads]
-  )
+  const statusCounts = {
+    all: stats.total,
+    new: stats.newCount,
+    contacted: stats.contacted,
+    qualified: stats.qualified,
+    converted: stats.converted,
+    lost: stats.lost,
+  }
 
   const assigneeOptions = useMemo(() => {
-    const values = new Set<string>()
-    for (const member of assignees) {
-      values.add(member.fullName)
-    }
-    for (const lead of leads) {
-      const assignee = lead.assignedTo.trim()
-      if (assignee && assignee !== "Unassigned") values.add(assignee)
-    }
-    return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [assignees, leads])
+    return assignees.map((member) => member.fullName).sort((a, b) => a.localeCompare(b))
+  }, [assignees])
 
   const activeFilterCount = useMemo(() => {
     let count = 0
-    if (filterSource) count += 1
-    if (filterAssignedTo) count += 1
-    if (filterMinScore.trim()) count += 1
+    if (listFilters.source) count += 1
+    if (listFilters.assigned) count += 1
+    if (listFilters.minScore.trim()) count += 1
     return count
-  }, [filterAssignedTo, filterMinScore, filterSource])
+  }, [listFilters.assigned, listFilters.minScore, listFilters.source])
 
-  const filteredLeads = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-    const minScore = filterMinScore.trim()
-      ? Number(filterMinScore)
-      : null
-
-    return leads.filter((lead) => {
-      const matchesStatus = activeTab === "all" || lead.status === activeTab
-      const matchesSearch =
-        !normalizedQuery ||
-        [
-          lead.name,
-          lead.email,
-          lead.company,
-          lead.address,
-          lead.source,
-          lead.phone,
-          lead.assignedTo,
-          lead.nicheHashtag,
-          lead.gapFound,
-          lead.profileLink,
-        ].some((value) => value.toLowerCase().includes(normalizedQuery))
-      const matchesSource = !filterSource || lead.source === filterSource
-      const matchesAssignee =
-        !filterAssignedTo || lead.assignedTo === filterAssignedTo
-      const matchesScore =
-        minScore == null ||
-        !Number.isFinite(minScore) ||
-        lead.score >= minScore
-
-      return (
-        matchesStatus &&
-        matchesSearch &&
-        matchesSource &&
-        matchesAssignee &&
-        matchesScore
-      )
-    })
-  }, [
-    activeTab,
-    filterAssignedTo,
-    filterMinScore,
-    filterSource,
-    leads,
-    query,
-  ])
+  const paginationQuery = {
+    ...query,
+    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+    ...(listFilters.q ? { q: listFilters.q } : {}),
+    ...(listFilters.source ? { source: listFilters.source } : {}),
+    ...(listFilters.assigned ? { assigned: listFilters.assigned } : {}),
+    ...(listFilters.minScore ? { minScore: listFilters.minScore } : {}),
+  }
 
   function openFiltersDialog() {
-    setDraftSource(filterSource)
-    setDraftAssignedTo(filterAssignedTo)
-    setDraftMinScore(filterMinScore)
+    setDraftSource(listFilters.source)
+    setDraftAssignedTo(listFilters.assigned)
+    setDraftMinScore(listFilters.minScore)
     setFiltersOpen(true)
   }
 
   function applyFilters() {
-    setFilterSource(draftSource)
-    setFilterAssignedTo(draftAssignedTo)
-    setFilterMinScore(draftMinScore.trim())
+    startTransition(() => {
+      router.push(
+        buildLeadsHref(
+          pathname,
+          {
+            source: draftSource,
+            assigned: draftAssignedTo,
+            minScore: draftMinScore.trim(),
+          },
+          {
+            statusFilter,
+            listFilters,
+            page: pagination.page,
+          }
+        )
+      )
+    })
     setFiltersOpen(false)
   }
 
   function clearFilters() {
-    setFilterSource("")
-    setFilterAssignedTo("")
-    setFilterMinScore("")
     setDraftSource("")
     setDraftAssignedTo("")
     setDraftMinScore("")
     setFiltersOpen(false)
+    startTransition(() => {
+      router.push(
+        buildLeadsHref(
+          pathname,
+          { source: "", assigned: "", minScore: "" },
+          {
+            statusFilter,
+            listFilters,
+            page: pagination.page,
+          }
+        )
+      )
+    })
   }
 
   function refreshLeads() {
@@ -1661,6 +1767,23 @@ export function LeadsDashboard({
     }
   }
 
+  async function revertLeadConversion(id: string) {
+    const response = await fetch(`/api/admin/leads/${id}/revert-conversion`, {
+      method: "POST",
+    })
+
+    if (!response.ok) {
+      notify.error(
+        await readErrorMessage(response, "Unable to revert conversion.")
+      )
+      return
+    }
+
+    setRevertTarget(null)
+    notify.success("Conversion reverted. Lead restored to qualified.")
+    refreshLeads()
+  }
+
   async function deleteLead(id: string) {
     const response = await fetch(`/api/admin/leads/${id}`, {
       method: "DELETE",
@@ -1756,19 +1879,26 @@ export function LeadsDashboard({
           <div className="flex flex-col gap-3 border-b border-border/60 px-4 pt-3 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 gap-1 overflow-x-auto">
               {filterTabs.map((tab) => (
-                <button
+                <Link
                   key={tab.value}
-                  type="button"
-                  onClick={() => setActiveTab(tab.value)}
+                  href={buildLeadsHref(
+                    pathname,
+                    { status: tab.value },
+                    {
+                      statusFilter,
+                      listFilters,
+                      page: pagination.page,
+                    }
+                  )}
                   className={cn(
                     "shrink-0 border-b-2 px-3 py-3 text-xs font-semibold transition-colors sm:text-sm",
-                    activeTab === tab.value
+                    statusFilter === tab.value
                       ? "border-brand text-brand"
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {tab.label} ({statusCounts[tab.value]})
-                </button>
+                </Link>
               ))}
             </div>
 
@@ -1796,8 +1926,8 @@ export function LeadsDashboard({
                   aria-hidden
                 />
                 <Input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search leads..."
                   className="h-10 rounded-xl pl-9"
                 />
@@ -1817,7 +1947,7 @@ export function LeadsDashboard({
                 </tr>
               </thead>
               <tbody>
-                {filteredLeads.map((lead) => (
+                {leads.map((lead) => (
                   <tr
                     key={lead.id}
                     role="button"
@@ -1881,6 +2011,7 @@ export function LeadsDashboard({
                           onConvert={() => {
                             void convertLead(lead.id)
                           }}
+                          onRevertConversion={() => setRevertTarget(lead)}
                           onViewClient={() => {
                             if (lead.clientId) {
                               router.push(
@@ -1901,27 +2032,26 @@ export function LeadsDashboard({
             </table>
           </div>
 
-          {filteredLeads.length === 0 ? (
+          {leads.length === 0 ? (
             <div className="px-6 py-12 text-center">
               <Search className="mx-auto size-8 text-muted-foreground/50" />
               <p className="mt-3 font-medium text-foreground">No leads found</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {leads.length === 0
+                {stats.total === 0 &&
+                !listFilters.q &&
+                activeFilterCount === 0 &&
+                statusFilter === "all"
                   ? "Add your first lead to get started."
                   : "Try another search term or status."}
               </p>
             </div>
           ) : null}
 
-          <div className="border-t border-border/60 px-5 py-4 text-xs text-muted-foreground">
-            <p>
-              Showing {filteredLeads.length} matching lead
-              {filteredLeads.length === 1 ? "" : "s"}
-              {activeFilterCount > 0 || query.trim()
-                ? " with current search/filters"
-                : ""}
-            </p>
-          </div>
+          <AdminTablePagination
+            pagination={pagination}
+            pathname={pathname}
+            query={paginationQuery}
+          />
         </section>
       </div>
 
@@ -1933,6 +2063,10 @@ export function LeadsDashboard({
         }}
         onConvert={(id) => {
           void convertLead(id)
+        }}
+        onRevertConversion={(id) => {
+          const lead = leads.find((item) => item.id === id) ?? selectedLead
+          if (lead) setRevertTarget(lead)
         }}
         onAddNote={addNote}
         onUpdate={updateLead}
@@ -2027,6 +2161,54 @@ export function LeadsDashboard({
                 Apply filters
               </Button>
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={revertTarget != null}
+        onOpenChange={(open) => {
+          if (!open) setRevertTarget(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Revert conversion?</DialogTitle>
+            <DialogDescription>
+              {revertTarget ? (
+                <>
+                  This removes the linked client record for{" "}
+                  <span className="font-medium text-foreground">
+                    {revertTarget.company}
+                  </span>{" "}
+                  and restores{" "}
+                  <span className="font-medium text-foreground">
+                    {revertTarget.name}
+                  </span>{" "}
+                  to qualified status. It only works if that client has no
+                  deals, projects, payments, expenses, or invoices yet.
+                </>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => setRevertTarget(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="rounded-xl"
+              disabled={!revertTarget || isPending}
+              onClick={() => {
+                if (revertTarget) void revertLeadConversion(revertTarget.id)
+              }}
+            >
+              Revert conversion
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

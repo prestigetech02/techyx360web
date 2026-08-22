@@ -119,26 +119,15 @@ export function mapLeadRowToView(
   }
 }
 
-const LEAD_SELECT =
+export const LEAD_SELECT =
   "id, full_name, email, phone, company, address, source, status, assigned_to, score, followers, niche_hashtag, gap_found, profile_link, contact_date, opened, replied, follow_up_date, client_id, created_at, updated_at"
 
-export async function getAllLeads(): Promise<LeadView[]> {
-  if (!isSupabaseConfigured()) return []
-
-  const supabase = createAdminClient()
-  const { data, error } = await supabase
-    .from("crm_leads")
-    .select(LEAD_SELECT)
-    .order("created_at", { ascending: false })
-
-  if (error) {
-    console.error("Failed to load CRM leads", error)
-    throw error
-  }
-
-  const leads = data ?? []
+export async function attachNotesAndActivitiesToLeads(
+  leads: CrmLeadRow[]
+): Promise<LeadView[]> {
   if (leads.length === 0) return []
 
+  const supabase = createAdminClient()
   const ids = leads.map((lead) => lead.id)
 
   const [notesResult, activitiesResult] = await Promise.all([
@@ -182,6 +171,23 @@ export async function getAllLeads(): Promise<LeadView[]> {
       activitiesByLead.get(lead.id) ?? []
     )
   )
+}
+
+export async function getAllLeads(): Promise<LeadView[]> {
+  if (!isSupabaseConfigured()) return []
+
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from("crm_leads")
+    .select(LEAD_SELECT)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Failed to load CRM leads", error)
+    throw error
+  }
+
+  return attachNotesAndActivitiesToLeads(data ?? [])
 }
 
 export async function getLeadById(id: string): Promise<LeadView | null> {

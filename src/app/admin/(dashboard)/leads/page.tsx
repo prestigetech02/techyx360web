@@ -1,6 +1,6 @@
 import { LeadsDashboard } from "@/components/admin/leads-dashboard"
 import { brand } from "@/config/brand"
-import { getAllLeads } from "@/lib/crm/leads"
+import { getLeadsPageData } from "@/lib/admin/leads-page"
 import { getAllTeamMembers } from "@/lib/team/members"
 import { isSupabaseConfigured } from "@/lib/supabase"
 
@@ -12,7 +12,22 @@ export const metadata = {
   },
 }
 
-export default async function AdminLeadsPage() {
+type AdminLeadsPageProps = {
+  searchParams?: Promise<{
+    page?: string
+    status?: string
+    q?: string
+    source?: string
+    assigned?: string
+    minScore?: string
+  }>
+}
+
+export default async function AdminLeadsPage({
+  searchParams,
+}: AdminLeadsPageProps) {
+  const params = (await searchParams) ?? {}
+
   if (!isSupabaseConfigured()) {
     return (
       <div className="min-w-0 space-y-5">
@@ -38,8 +53,15 @@ export default async function AdminLeadsPage() {
   }
 
   try {
-    const [leads, teamMembers] = await Promise.all([
-      getAllLeads(),
+    const [pageData, teamMembers] = await Promise.all([
+      getLeadsPageData({
+        page: params.page,
+        status: params.status,
+        q: params.q,
+        source: params.source,
+        assigned: params.assigned,
+        minScore: params.minScore,
+      }),
       getAllTeamMembers().catch(() => []),
     ])
 
@@ -55,7 +77,34 @@ export default async function AdminLeadsPage() {
         accent: member.accent,
       }))
 
-    return <LeadsDashboard leads={leads} assignees={assignees} />
+    const listQuery = {
+      ...(pageData.statusFilter !== "all"
+        ? { status: pageData.statusFilter }
+        : {}),
+      ...(pageData.listFilters.q ? { q: pageData.listFilters.q } : {}),
+      ...(pageData.listFilters.source
+        ? { source: pageData.listFilters.source }
+        : {}),
+      ...(pageData.listFilters.assigned
+        ? { assigned: pageData.listFilters.assigned }
+        : {}),
+      ...(pageData.listFilters.minScore
+        ? { minScore: pageData.listFilters.minScore }
+        : {}),
+    }
+
+    return (
+      <LeadsDashboard
+        leads={pageData.leads}
+        assignees={assignees}
+        stats={pageData.stats}
+        pagination={pageData.pagination}
+        statusFilter={pageData.statusFilter}
+        listFilters={pageData.listFilters}
+        pathname="/admin/leads"
+        query={Object.keys(listQuery).length > 0 ? listQuery : undefined}
+      />
+    )
   } catch {
     return (
       <div className="min-w-0 space-y-5">
@@ -71,20 +120,12 @@ export default async function AdminLeadsPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
           Could not load leads. Make sure you have run{" "}
-          <code className="rounded bg-red-100 px-1.5 py-0.5 text-xs">
+          <code className="rounded bg-red-100 px-1.5 py-0.5 text-xs dark:bg-red-950/50">
             supabase/crm-leads.sql
           </code>{" "}
-          and{" "}
-          <code className="rounded bg-red-100 px-1.5 py-0.5 text-xs">
-            supabase/crm-leads-address-migration.sql
-          </code>
-          , and{" "}
-          <code className="rounded bg-red-100 px-1.5 py-0.5 text-xs">
-            supabase/crm-leads-outreach-migration.sql
-          </code>{" "}
-          in Supabase.
+          and related CRM migrations in Supabase.
         </div>
       </div>
     )

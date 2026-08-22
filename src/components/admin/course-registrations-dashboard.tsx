@@ -29,11 +29,9 @@ import {
 } from "@/components/ui/dialog"
 import {
   REGISTRATION_STATUS_FILTERS,
+  type AdminExtendedStatusFilter,
+  type AdminPaginationMeta,
   type RegistrationListStats,
-} from "@/lib/admin/course-registrations"
-import type {
-  AdminExtendedStatusFilter,
-  AdminPaginationMeta,
 } from "@/lib/admin/pagination"
 import type { Database } from "@/types/database"
 import { registrationTypeLabel } from "@/lib/admin/notifications"

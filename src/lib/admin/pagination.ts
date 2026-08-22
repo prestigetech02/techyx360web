@@ -32,6 +32,21 @@ export function parseAdminStatusFilter(value: string | undefined): AdminStatusFi
 
 export type AdminExtendedStatusFilter = AdminStatusFilter | "converted"
 
+export type RegistrationListStats = {
+  total: number
+  newCount: number
+  thisWeek: number
+  responded: number
+}
+
+export const REGISTRATION_STATUS_FILTERS: readonly AdminExtendedStatusFilter[] = [
+  "all",
+  "new",
+  "read",
+  "replied",
+  "converted",
+]
+
 const EXTENDED_STATUS_FILTERS = new Set<AdminExtendedStatusFilter>([
   "all",
   "new",

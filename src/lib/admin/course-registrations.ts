@@ -9,6 +9,7 @@ import {
   parseAdminPage,
   type AdminExtendedStatusFilter,
   type AdminPaginationMeta,
+  type RegistrationListStats,
 } from "@/lib/admin/pagination"
 import { getRegistrationReceiptSignedUrl } from "@/lib/registrations/receipt-upload"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -24,12 +25,7 @@ export type CourseRegistrationWithReceipt = CourseRegistrationRow & {
 const SELECT_COLUMNS =
   "id, first_name, last_name, email, phone, school_id, school_name, course_slug, course_title, course_key, message, registration_type, status, location, has_working_computer, can_devote_6_hours_weekly, payment_receipt_path, created_at"
 
-export type RegistrationListStats = {
-  total: number
-  newCount: number
-  thisWeek: number
-  responded: number
-}
+export type { RegistrationListStats } from "@/lib/admin/pagination"
 
 export type CourseRegistrationsPageData = {
   registrations: CourseRegistrationWithReceipt[]
@@ -37,16 +33,6 @@ export type CourseRegistrationsPageData = {
   stats: RegistrationListStats
   statusFilter: AdminExtendedStatusFilter
 }
-
-const REGISTRATION_STATUS_FILTERS = [
-  "all",
-  "new",
-  "read",
-  "replied",
-  "converted",
-] as const
-
-export { REGISTRATION_STATUS_FILTERS }
 
 async function getCourseRegistrationStats(): Promise<RegistrationListStats> {
   const supabase = createAdminClient()

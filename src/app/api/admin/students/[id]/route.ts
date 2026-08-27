@@ -40,7 +40,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const student = await updateStudent(id, {
-      status: statusValue ? statusValue : undefined,
+      status: statusValue && isStudentStatus(statusValue) ? statusValue : undefined,
       notes,
       enrolledAt: enrolledAt || undefined,
     })

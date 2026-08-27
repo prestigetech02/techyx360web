@@ -109,6 +109,69 @@ export type Database = {
         }
         Relationships: []
       }
+      academy_students: {
+        Row: {
+          id: string
+          first_name: string
+          last_name: string
+          email: string
+          phone: string
+          course_slug: string
+          course_title: string
+          course_key: string
+          registration_type: string
+          school_name: string
+          location: string
+          course_registration_id: string | null
+          pif_application_id: string | null
+          status: string
+          enrolled_at: string
+          notes: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          first_name: string
+          last_name: string
+          email: string
+          phone?: string
+          course_slug?: string
+          course_title?: string
+          course_key?: string
+          registration_type?: string
+          school_name?: string
+          location?: string
+          course_registration_id?: string | null
+          pif_application_id?: string | null
+          status?: string
+          enrolled_at?: string
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          first_name?: string
+          last_name?: string
+          email?: string
+          phone?: string
+          course_slug?: string
+          course_title?: string
+          course_key?: string
+          registration_type?: string
+          school_name?: string
+          location?: string
+          course_registration_id?: string | null
+          pif_application_id?: string | null
+          status?: string
+          enrolled_at?: string
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           id: string

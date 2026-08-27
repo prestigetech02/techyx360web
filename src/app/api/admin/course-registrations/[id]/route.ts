@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { requireAdmin } from "@/lib/admin/require-admin"
+import { createStudentFromCourseRegistration } from "@/lib/academy/students"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 
@@ -33,6 +34,18 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Invalid status." }, { status: 400 })
     }
 
+    let student = null
+    if (status === "converted") {
+      try {
+        student = await createStudentFromCourseRegistration(id)
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Unable to create student."
+        console.error("Failed to create student from registration", error)
+        return NextResponse.json({ error: message }, { status: 500 })
+      }
+    }
+
     const supabase = createAdminClient()
     const { data, error } = await supabase
       .from("course_registrations")
@@ -49,7 +62,11 @@ export async function PATCH(request: Request, context: RouteContext) {
       )
     }
 
-    return NextResponse.json({ success: true, registration: data })
+    return NextResponse.json({
+      success: true,
+      registration: data,
+      student,
+    })
   } catch (error) {
     console.error("Unexpected course registration update error", error)
     return NextResponse.json(

@@ -242,7 +242,7 @@ export function CourseRegistrationsDashboard({
       status === "read"
         ? "Registration marked as read."
         : status === "converted"
-          ? "Converted to student."
+          ? "Converted to student. They now appear under Academy → Students."
           : "Registration marked as replied."
     )
 

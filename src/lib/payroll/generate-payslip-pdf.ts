@@ -1,0 +1,100 @@
+import "server-only"
+
+import type { Browser } from "puppeteer-core"
+
+import type { PayrollItemView, PayrollRunView } from "@/lib/payroll/payroll-types"
+import { renderPayslipHtml } from "@/lib/payroll/render-payslip-html"
+
+const WINDOWS_CHROME_PATHS = [
+  process.env.CHROME_PATH,
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+].filter(Boolean) as string[]
+
+async function launchWithSparticuz(
+  puppeteer: typeof import("puppeteer-core")
+): Promise<Browser> {
+  const chromium = (await import("@sparticuz/chromium")).default
+  chromium.setGraphicsMode = false
+
+  const executablePath = await chromium.executablePath()
+  const args = await puppeteer.defaultArgs({
+    args: chromium.args,
+    headless: "shell",
+  })
+
+  return puppeteer.launch({
+    args,
+    defaultViewport: {
+      deviceScaleFactor: 1,
+      hasTouch: false,
+      height: 1080,
+      isLandscape: false,
+      isMobile: false,
+      width: 794,
+    },
+    executablePath,
+    headless: "shell",
+  })
+}
+
+async function launchWithSystemChrome(
+  puppeteer: typeof import("puppeteer-core")
+): Promise<Browser | null> {
+  const { existsSync } = await import("node:fs")
+
+  for (const executablePath of WINDOWS_CHROME_PATHS) {
+    if (!existsSync(executablePath)) continue
+    return puppeteer.launch({
+      executablePath,
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    })
+  }
+
+  return null
+}
+
+async function launchBrowser(): Promise<Browser> {
+  const puppeteer = await import("puppeteer-core")
+
+  try {
+    return await launchWithSparticuz(puppeteer)
+  } catch (error) {
+    console.warn("Sparticuz Chromium launch failed, trying system Chrome", error)
+  }
+
+  const systemBrowser = await launchWithSystemChrome(puppeteer)
+  if (systemBrowser) return systemBrowser
+
+  throw new Error(
+    "No Chromium runtime available for PDF generation. Install Google Chrome locally or set CHROME_PATH."
+  )
+}
+
+export async function generatePayslipPdf(
+  item: PayrollItemView,
+  run: PayrollRunView
+) {
+  const html = renderPayslipHtml(item, run)
+  const browser = await launchBrowser()
+
+  try {
+    const page = await browser.newPage()
+    await page.setContent(html, { waitUntil: "load" })
+    const pdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: {
+        top: "12mm",
+        right: "12mm",
+        bottom: "12mm",
+        left: "12mm",
+      },
+    })
+    await page.close()
+    return Buffer.from(pdf)
+  } finally {
+    await browser.close()
+  }
+}

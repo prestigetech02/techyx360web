@@ -1,5 +1,4 @@
 import {
-  BarChart3,
   BriefcaseBusiness,
   FolderKanban,
   GraduationCap,
@@ -141,6 +140,14 @@ export const adminNavItems: AdminNavItem[] = [
     icon: Wallet,
     children: [
       {
+        label: "Reports",
+        href: "/admin/reports",
+      },
+      {
+        label: "Payroll",
+        href: "/admin/payroll",
+      },
+      {
         label: "Invoices",
         href: "/admin/invoices",
       },
@@ -181,11 +188,6 @@ export const adminNavItems: AdminNavItem[] = [
         href: "/admin/blog",
       },
     ],
-  },
-  {
-    label: "Reports",
-    icon: BarChart3,
-    comingSoon: true,
   },
   {
     label: "Settings",

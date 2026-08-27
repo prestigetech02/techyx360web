@@ -811,6 +811,7 @@ export type Database = {
           description: string
           notes: string
           receipt_url: string
+          payroll_run_id: string | null
           created_at: string
           updated_at: string
         }
@@ -829,6 +830,7 @@ export type Database = {
           description?: string
           notes?: string
           receipt_url?: string
+          payroll_run_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -847,6 +849,7 @@ export type Database = {
           description?: string
           notes?: string
           receipt_url?: string
+          payroll_run_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -1254,6 +1257,144 @@ export type Database = {
           doc_type?: string
           notes?: string
           created_at?: string
+        }
+        Relationships: []
+      }
+      payroll_runs: {
+        Row: {
+          id: string
+          period_year: number
+          period_month: number
+          label: string
+          status: string
+          currency: string
+          gross_total: number
+          bonus_total: number
+          deductions_total: number
+          net_total: number
+          employee_count: number
+          paid_at: string | null
+          payment_reference: string
+          notes: string
+          expense_id: string | null
+          created_by: string
+          approved_by: string | null
+          approved_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          period_year: number
+          period_month: number
+          label: string
+          status?: string
+          currency?: string
+          gross_total?: number
+          bonus_total?: number
+          deductions_total?: number
+          net_total?: number
+          employee_count?: number
+          paid_at?: string | null
+          payment_reference?: string
+          notes?: string
+          expense_id?: string | null
+          created_by?: string
+          approved_by?: string | null
+          approved_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          period_year?: number
+          period_month?: number
+          label?: string
+          status?: string
+          currency?: string
+          gross_total?: number
+          bonus_total?: number
+          deductions_total?: number
+          net_total?: number
+          employee_count?: number
+          paid_at?: string | null
+          payment_reference?: string
+          notes?: string
+          expense_id?: string | null
+          created_by?: string
+          approved_by?: string | null
+          approved_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payroll_items: {
+        Row: {
+          id: string
+          run_id: string
+          team_member_id: string | null
+          employee_name: string
+          employee_email: string
+          role: string
+          department: string
+          bank_name: string
+          account_name: string
+          account_number: string
+          gross_amount: number
+          bonus_amount: number
+          deduction_amount: number
+          deduction_note: string
+          net_amount: number
+          currency: string
+          payslip_number: string
+          notes: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          run_id: string
+          team_member_id?: string | null
+          employee_name: string
+          employee_email?: string
+          role?: string
+          department?: string
+          bank_name?: string
+          account_name?: string
+          account_number?: string
+          gross_amount?: number
+          bonus_amount?: number
+          deduction_amount?: number
+          deduction_note?: string
+          net_amount?: number
+          currency?: string
+          payslip_number: string
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          run_id?: string
+          team_member_id?: string | null
+          employee_name?: string
+          employee_email?: string
+          role?: string
+          department?: string
+          bank_name?: string
+          account_name?: string
+          account_number?: string
+          gross_amount?: number
+          bonus_amount?: number
+          deduction_amount?: number
+          deduction_note?: string
+          net_amount?: number
+          currency?: string
+          payslip_number?: string
+          notes?: string
+          created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }

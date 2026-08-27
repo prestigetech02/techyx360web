@@ -1398,6 +1398,54 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_reconciliations: {
+        Row: {
+          id: string
+          period_year: number
+          period_month: number
+          opening_balance: number
+          closing_balance: number
+          income_total: number
+          expense_total: number
+          expected_closing: number
+          difference: number
+          status: string
+          notes: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          period_year: number
+          period_month: number
+          opening_balance?: number
+          closing_balance?: number
+          income_total?: number
+          expense_total?: number
+          expected_closing?: number
+          difference?: number
+          status?: string
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          period_year?: number
+          period_month?: number
+          opening_balance?: number
+          closing_balance?: number
+          income_total?: number
+          expense_total?: number
+          expected_closing?: number
+          difference?: number
+          status?: string
+          notes?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {

@@ -744,6 +744,8 @@ export type Database = {
           client_id: string | null
           invoice_id: string | null
           deal_id: string | null
+          course_registration_id: string | null
+          pif_application_id: string | null
           amount: number
           currency: string
           direction: string
@@ -762,6 +764,8 @@ export type Database = {
           client_id?: string | null
           invoice_id?: string | null
           deal_id?: string | null
+          course_registration_id?: string | null
+          pif_application_id?: string | null
           amount: number
           currency?: string
           direction?: string
@@ -780,6 +784,8 @@ export type Database = {
           client_id?: string | null
           invoice_id?: string | null
           deal_id?: string | null
+          course_registration_id?: string | null
+          pif_application_id?: string | null
           amount?: number
           currency?: string
           direction?: string

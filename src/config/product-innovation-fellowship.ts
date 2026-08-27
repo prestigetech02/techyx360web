@@ -15,6 +15,7 @@ export const pifLearningTracks = [
 
 export const pifPricing = {
   currentPrice: "₦50,000",
+  currentPriceAmount: 50_000,
   regularPrice: "₦120,000",
 }
 

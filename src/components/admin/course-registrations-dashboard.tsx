@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { AdminStatusFilterTabs } from "@/components/admin/admin-status-filter-tabs"
 import { AdminTablePagination } from "@/components/admin/admin-table-pagination"
 import { useAdminNotifications } from "@/components/admin/admin-notifications-provider"
+import { RecordTrainingPaymentButton } from "@/components/admin/record-training-payment-button"
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { evaPricing } from "@/config/executive-virtual-assistance"
 import {
   REGISTRATION_STATUS_FILTERS,
   type AdminExtendedStatusFilter,
@@ -41,6 +43,7 @@ import { cn } from "@/lib/utils"
 export type CourseRegistration =
   Database["public"]["Tables"]["course_registrations"]["Row"] & {
     payment_receipt_url?: string | null
+    finance_payment_id?: string | null
   }
 
 type CourseRegistrationsDashboardProps = {
@@ -565,6 +568,26 @@ export function CourseRegistrationsDashboard({
               </div>
 
               <DialogFooter className="flex-col gap-2 sm:flex-col">
+                <RecordTrainingPaymentButton
+                  source="course_registration"
+                  sourceId={viewRegistration.id}
+                  personName={`${viewRegistration.first_name} ${viewRegistration.last_name}`.trim()}
+                  programLabel={viewRegistration.course_title}
+                  purposeLabel="Training"
+                  defaultAmount={evaPricing.currentPriceAmount}
+                  financePaymentId={viewRegistration.finance_payment_id ?? null}
+                  hasReceipt={Boolean(
+                    viewRegistration.payment_receipt_path ||
+                      viewRegistration.payment_receipt_url
+                  )}
+                  onRecorded={(paymentId) =>
+                    setViewRegistration((current) =>
+                      current
+                        ? { ...current, finance_payment_id: paymentId }
+                        : current
+                    )
+                  }
+                />
                 <Button
                   className="w-full gap-2 rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
                   disabled={

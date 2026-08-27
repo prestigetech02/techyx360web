@@ -183,6 +183,7 @@ export const evaAdditionalRoles =
 
 export const evaPricing = {
   currentPrice: "₦50,000",
+  currentPriceAmount: 50_000,
   regularPrice: "₦180,000",
   description:
     "A one-time fee for the complete 10-week Executive Virtual Assistance program.",

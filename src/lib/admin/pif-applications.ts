@@ -11,6 +11,7 @@ import {
   type AdminStatusFilter,
 } from "@/lib/admin/pagination"
 import { getRegistrationReceiptSignedUrl } from "@/lib/registrations/receipt-upload"
+import { getFinancePaymentIdsForPifApplications } from "@/lib/crm/record-training-payment"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { Database } from "@/types/database"
 
@@ -19,6 +20,7 @@ export type PifApplicationRow =
 
 export type PifApplicationWithReceipt = PifApplicationRow & {
   payment_receipt_url: string | null
+  finance_payment_id: string | null
 }
 
 const SELECT_COLUMNS =
@@ -76,17 +78,27 @@ async function getPifApplicationStats(): Promise<PifListStats> {
 async function attachReceiptUrls(
   rows: PifApplicationRow[]
 ): Promise<PifApplicationWithReceipt[]> {
+  const financeIds = await getFinancePaymentIdsForPifApplications(
+    rows.map((row) => row.id)
+  )
+
   return Promise.all(
     rows.map(async (application) => {
+      const finance_payment_id = financeIds.get(application.id) ?? null
+
       if (!application.payment_receipt_path) {
-        return { ...application, payment_receipt_url: null }
+        return {
+          ...application,
+          payment_receipt_url: null,
+          finance_payment_id,
+        }
       }
 
       const payment_receipt_url = await getRegistrationReceiptSignedUrl(
         application.payment_receipt_path
       )
 
-      return { ...application, payment_receipt_url }
+      return { ...application, payment_receipt_url, finance_payment_id }
     })
   )
 }

@@ -12,6 +12,7 @@ import {
   type RegistrationListStats,
 } from "@/lib/admin/pagination"
 import { getRegistrationReceiptSignedUrl } from "@/lib/registrations/receipt-upload"
+import { getFinancePaymentIdsForCourseRegistrations } from "@/lib/crm/record-training-payment"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { Database } from "@/types/database"
 
@@ -20,6 +21,7 @@ export type CourseRegistrationRow =
 
 export type CourseRegistrationWithReceipt = CourseRegistrationRow & {
   payment_receipt_url: string | null
+  finance_payment_id: string | null
 }
 
 const SELECT_COLUMNS =
@@ -72,17 +74,27 @@ async function getCourseRegistrationStats(): Promise<RegistrationListStats> {
 async function attachReceiptUrls(
   rows: CourseRegistrationRow[]
 ): Promise<CourseRegistrationWithReceipt[]> {
+  const financeIds = await getFinancePaymentIdsForCourseRegistrations(
+    rows.map((row) => row.id)
+  )
+
   return Promise.all(
     rows.map(async (registration) => {
+      const finance_payment_id = financeIds.get(registration.id) ?? null
+
       if (!registration.payment_receipt_path) {
-        return { ...registration, payment_receipt_url: null }
+        return {
+          ...registration,
+          payment_receipt_url: null,
+          finance_payment_id,
+        }
       }
 
       const payment_receipt_url = await getRegistrationReceiptSignedUrl(
         registration.payment_receipt_path
       )
 
-      return { ...registration, payment_receipt_url }
+      return { ...registration, payment_receipt_url, finance_payment_id }
     })
   )
 }

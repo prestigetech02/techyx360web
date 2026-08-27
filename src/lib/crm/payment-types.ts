@@ -43,6 +43,8 @@ export type PaymentView = {
   invoiceNumber: string | null
   dealId: string | null
   dealTitle: string | null
+  courseRegistrationId: string | null
+  pifApplicationId: string | null
   amount: number
   currency: string
   direction: PaymentDirection

@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { AdminStatusFilterTabs } from "@/components/admin/admin-status-filter-tabs"
 import { AdminTablePagination } from "@/components/admin/admin-table-pagination"
 import { useAdminNotifications } from "@/components/admin/admin-notifications-provider"
+import { RecordTrainingPaymentButton } from "@/components/admin/record-training-payment-button"
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { pifPricing } from "@/config/product-innovation-fellowship"
 import type { PifListStats } from "@/lib/admin/pif-applications"
 import type {
   AdminPaginationMeta,
@@ -39,6 +41,7 @@ import { cn } from "@/lib/utils"
 export type PifApplication =
   Database["public"]["Tables"]["pif_applications"]["Row"] & {
     payment_receipt_url?: string | null
+    finance_payment_id?: string | null
   }
 
 type PifApplicationsDashboardProps = {
@@ -530,19 +533,44 @@ export function PifApplicationsDashboard({
                 ) : null}
               </div>
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setViewApplication(null)}>
-                  Close
-                </Button>
-                <Button
-                  render={
-                    <a
-                      href={`mailto:${viewApplication.email}?subject=${encodeURIComponent("Re: Your Product Innovation Fellowship application")}`}
-                    />
+              <DialogFooter className="flex-col gap-2 sm:flex-col">
+                <RecordTrainingPaymentButton
+                  source="pif_application"
+                  sourceId={viewApplication.id}
+                  personName={`${viewApplication.first_name} ${viewApplication.last_name}`.trim()}
+                  programLabel={`PIF · ${viewApplication.preferred_track}`}
+                  purposeLabel="PIF"
+                  defaultAmount={pifPricing.currentPriceAmount}
+                  financePaymentId={viewApplication.finance_payment_id ?? null}
+                  hasReceipt={Boolean(
+                    viewApplication.payment_receipt_path ||
+                      viewApplication.payment_receipt_url
+                  )}
+                  onRecorded={(paymentId) =>
+                    setViewApplication((current) =>
+                      current
+                        ? { ...current, finance_payment_id: paymentId }
+                        : current
+                    )
                   }
-                >
-                  Reply via email
-                </Button>
+                />
+                <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setViewApplication(null)}
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    render={
+                      <a
+                        href={`mailto:${viewApplication.email}?subject=${encodeURIComponent("Re: Your Product Innovation Fellowship application")}`}
+                      />
+                    }
+                  >
+                    Reply via email
+                  </Button>
+                </div>
               </DialogFooter>
             </>
           ) : null}

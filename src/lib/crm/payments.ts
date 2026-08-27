@@ -45,6 +45,8 @@ function mapPaymentRow(
     invoiceNumber: extras.invoiceNumber,
     dealId: row.deal_id,
     dealTitle: extras.dealTitle,
+    courseRegistrationId: row.course_registration_id ?? null,
+    pifApplicationId: row.pif_application_id ?? null,
     amount: Number(row.amount),
     currency: row.currency,
     direction,
@@ -192,6 +194,8 @@ export type CreatePaymentInput = {
   clientId?: string | null
   invoiceId?: string | null
   dealId?: string | null
+  courseRegistrationId?: string | null
+  pifApplicationId?: string | null
   amount: number
   direction?: PaymentDirection
   method: PaymentMethod
@@ -207,23 +211,32 @@ export async function createPayment(input: CreatePaymentInput) {
   const supabase = createAdminClient()
   const now = new Date().toISOString()
 
+  const insert: Database["public"]["Tables"]["crm_payments"]["Insert"] = {
+    client_id: input.clientId || null,
+    invoice_id: input.invoiceId || null,
+    deal_id: input.dealId || null,
+    amount: input.amount,
+    direction: input.direction ?? "inbound",
+    method: input.method,
+    status: input.status,
+    purpose: input.purpose,
+    paid_at: input.paidAt,
+    reference: input.reference ?? "",
+    description: input.description ?? "",
+    notes: input.notes ?? "",
+    updated_at: now,
+  }
+
+  if (input.courseRegistrationId) {
+    insert.course_registration_id = input.courseRegistrationId
+  }
+  if (input.pifApplicationId) {
+    insert.pif_application_id = input.pifApplicationId
+  }
+
   const { data, error } = await supabase
     .from("crm_payments")
-    .insert({
-      client_id: input.clientId || null,
-      invoice_id: input.invoiceId || null,
-      deal_id: input.dealId || null,
-      amount: input.amount,
-      direction: input.direction ?? "inbound",
-      method: input.method,
-      status: input.status,
-      purpose: input.purpose,
-      paid_at: input.paidAt,
-      reference: input.reference ?? "",
-      description: input.description ?? "",
-      notes: input.notes ?? "",
-      updated_at: now,
-    })
+    .insert(insert)
     .select("*")
     .single()
 

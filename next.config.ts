@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
     "/api/admin/invoices/[id]/email": [
       "./node_modules/@sparticuz/chromium/bin/**/*",
     ],
+    "/api/admin/payroll/items/[id]/payslip": [
+      "./node_modules/@sparticuz/chromium/bin/**/*",
+    ],
   },
   // Allow LAN devices (e.g. phone on Wi-Fi) to load dev client bundles / HMR.
   // Add your phone's LAN IP if it changes.

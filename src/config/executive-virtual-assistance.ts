@@ -34,7 +34,7 @@ export const evaHero = {
   title: "Work Remotely. Gain In-Demand Skills. Launch Your EVA Career.",
   description:
     "Executives everywhere need skilled virtual support — and they're paying for it. Learn the tools, workflows, and client-ready skills to build a flexible remote career in just 10 weeks.",
-  image: "/vahero.png",
+  image: "/vahero.webp",
   imageAlt: "Techyx360 virtual assistant professional with headset and laptop",
 }
 

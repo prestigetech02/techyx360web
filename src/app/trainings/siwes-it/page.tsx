@@ -13,7 +13,7 @@ import { siteMetadata } from "@/config/brand"
 import { createPageMetadata } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
-const heroImage = "/77033d0b-9ed4-49d8-86fe-1fdc7865e835.png"
+const heroImage = "/siwes-hero.webp"
 
 export const metadata: Metadata = createPageMetadata({
   title: "SIWES & Industrial Training Program | Techyx360 Technologies",
@@ -90,7 +90,7 @@ export default function SiwesItPage() {
                 src={heroImage}
                 alt="SIWES and industrial training program"
                 fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
+                sizes="(max-width: 1023px) 90vw, 42vw"
                 className="object-cover object-top"
                 priority
               />

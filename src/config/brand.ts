@@ -5,7 +5,7 @@ export const brand = {
     light: "/techyx360-logo-black.webp",
     dark: "/techyx360-logo-white.png",
   },
-  heroArrow: "/hero-arrow.png",
+  heroArrow: "/hero-arrow.webp",
   location: "Nigeria",
 } as const
 

@@ -15,8 +15,7 @@ import { getOpenJobOpenings } from "@/lib/careers/openings"
 import { getCareersListingStructuredData } from "@/lib/careers/seo"
 import { createPageMetadata } from "@/lib/seo"
 
-export const revalidate = 0
-export const dynamic = "force-dynamic"
+export const revalidate = 60
 
 export const metadata: Metadata = createPageMetadata({
   title: `Careers at ${brand.name} | Tech Jobs in Lagos & Remote Nigeria`,
@@ -58,7 +57,7 @@ export default async function CareersPage() {
             className="pointer-events-none absolute inset-0 overflow-hidden"
           >
             <Image
-              src="/careers-hero.png"
+              src="/careers-hero.webp"
               alt=""
               fill
               priority

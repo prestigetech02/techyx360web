@@ -16,7 +16,6 @@ export function Logo({ className }: LogoProps) {
         alt={brand.name}
         width={200}
         height={50}
-        priority
         className="h-9 w-auto md:h-11 dark:hidden"
       />
       <Image
@@ -24,7 +23,6 @@ export function Logo({ className }: LogoProps) {
         alt={brand.name}
         width={200}
         height={50}
-        priority
         className="hidden h-10 w-auto md:h-12 dark:block"
       />
       <span className="sr-only">{brand.name}</span>

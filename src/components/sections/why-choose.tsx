@@ -37,19 +37,19 @@ const whyChooseItems = [
 const slides = [
   {
     image:
-      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1600&q=80",
+      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=70",
     title: "Digital Transformation",
     subtitle: "Software, Web & Mobile",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1600&q=80",
+      "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=800&q=70",
     title: "IT Consulting",
     subtitle: "Strategy & Implementation",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1600&q=80",
+      "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=70",
     title: "Business Growth",
     subtitle: "Development, Marketing",
   },
@@ -115,7 +115,6 @@ function WhyChooseSpotlight() {
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 60vw"
-              priority={index === 0}
             />
           </motion.div>
         </AnimatePresence>

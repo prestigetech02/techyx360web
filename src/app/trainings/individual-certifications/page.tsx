@@ -55,7 +55,7 @@ export default function IndividualCertificationsPage() {
                 src={heroImage}
                 alt="Individual tech certification training"
                 fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
+                sizes="(max-width: 1023px) 90vw, 42vw"
                 className="-scale-x-100 object-cover object-top"
                 priority
               />

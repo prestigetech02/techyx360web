@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { ConditionalSiteShell } from "@/components/layout/conditional-site-shell";
-import { RecaptchaProvider } from "@/components/recaptcha/recaptcha-provider";
+import { DeferredSiteChrome } from "@/components/layout/deferred-site-chrome";
+import { Footer } from "@/components/layout/footer";
+import { Header } from "@/components/layout/header";
+import { TopBar } from "@/components/layout/top-bar";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SiteSchemas } from "@/components/seo/site-schemas";
 import { Toaster } from "@/components/ui/sonner";
@@ -14,11 +17,15 @@ import "./globals.css";
 const geistSans = Geist({
   variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
+  preload: true,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -60,8 +67,22 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ConditionalSiteShell>{children}</ConditionalSiteShell>
-          <RecaptchaProvider />
+          <ConditionalSiteShell
+            top={
+              <>
+                <TopBar />
+                <Header />
+              </>
+            }
+            bottom={
+              <>
+                <Footer />
+                <DeferredSiteChrome />
+              </>
+            }
+          >
+            {children}
+          </ConditionalSiteShell>
           <Toaster />
         </ThemeProvider>
       </body>

@@ -264,10 +264,10 @@ export default function ProductInnovationFellowshipPage() {
 
             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-3xl lg:aspect-[2/1]">
               <Image
-                src="/pil2.png"
+                src="/pil2.webp"
                 alt="Product Innovation Fellowship team collaborating on research, design, development, and launch"
                 fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
+                sizes="(max-width: 1023px) 90vw, 42vw"
                 className="object-cover object-center"
               />
             </div>

@@ -89,7 +89,7 @@ export default function BootcampsPage() {
                 src={heroImage}
                 alt="Techyx360 bootcamp training illustration"
                 fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
+                sizes="(max-width: 1023px) 28rem, 42vw"
                 className="object-contain object-center"
                 priority
               />

@@ -27,6 +27,20 @@ const heroAssets = [
   },
 ]
 
+const photoAssets = [
+  { input: "careers-hero.png", output: "careers-hero.webp", width: 1600, quality: 72 },
+  { input: "vahero.png", output: "vahero.webp", width: 1200, quality: 72 },
+  { input: "pil.png", output: "pil.webp", width: 1600, quality: 70 },
+  { input: "pil2.png", output: "pil2.webp", width: 1400, quality: 70 },
+  {
+    input: "77033d0b-9ed4-49d8-86fe-1fdc7865e835.png",
+    output: "siwes-hero.webp",
+    width: 1200,
+    quality: 72,
+  },
+  { input: "hero-arrow.png", output: "hero-arrow.webp", width: 680, quality: 80 },
+]
+
 async function fileExists(filePath) {
   try {
     await fs.access(filePath)
@@ -36,18 +50,10 @@ async function fileExists(filePath) {
   }
 }
 
-async function optimizeFromFile(inputPath, outputPath, width) {
-  const isSvg = inputPath.endsWith(".svg")
-  const pipeline = isSvg
-    ? sharp(inputPath, { density: 150 })
-    : sharp(inputPath)
-
+async function writeWebp(pipeline, outputPath, width, quality = 82) {
   await pipeline
-    .resize(width, width, {
-      fit: "inside",
-      withoutEnlargement: true,
-    })
-    .webp({ quality: 82, effort: 6 })
+    .resize({ width, withoutEnlargement: true })
+    .webp({ quality, effort: 6 })
     .toFile(outputPath)
 
   const stats = await sharp(outputPath).metadata()
@@ -56,6 +62,15 @@ async function optimizeFromFile(inputPath, outputPath, width) {
   console.log(
     `  ${path.basename(outputPath)}: ${Math.round(size / 1024)} KB (${stats.width}x${stats.height})`
   )
+}
+
+async function optimizeFromFile(inputPath, outputPath, width, quality = 82) {
+  const isSvg = inputPath.endsWith(".svg")
+  const pipeline = isSvg
+    ? sharp(inputPath, { density: 150 })
+    : sharp(inputPath)
+
+  await writeWebp(pipeline, outputPath, width, quality)
 }
 
 async function optimizeFromUrl(url, outputPath, width) {
@@ -67,25 +82,12 @@ async function optimizeFromUrl(url, outputPath, width) {
 
   const buffer = Buffer.from(await response.arrayBuffer())
 
-  await sharp(buffer)
-    .resize(width, width, {
-      fit: "inside",
-      withoutEnlargement: true,
-    })
-    .webp({ quality: 82, effort: 6 })
-    .toFile(outputPath)
-
-  const stats = await sharp(outputPath).metadata()
-  const { size } = await fs.stat(outputPath)
-
-  console.log(
-    `  ${path.basename(outputPath)}: ${Math.round(size / 1024)} KB (${stats.width}x${stats.height})`
-  )
+  await writeWebp(sharp(buffer), outputPath, width)
 }
 
 const force = process.env.FORCE_HERO_IMAGES === "1"
 
-for (const asset of heroAssets) {
+for (const asset of [...heroAssets, ...photoAssets]) {
   const inputPath = path.join(publicDir, asset.input)
   const outputPath = path.join(publicDir, asset.output)
   const hasOutput = await fileExists(outputPath)
@@ -100,7 +102,7 @@ for (const asset of heroAssets) {
 
   try {
     if (hasInput) {
-      await optimizeFromFile(inputPath, outputPath, asset.width)
+      await optimizeFromFile(inputPath, outputPath, asset.width, asset.quality)
       continue
     }
 

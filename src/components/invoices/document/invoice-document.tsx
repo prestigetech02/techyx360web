@@ -1,3 +1,5 @@
+import "@/styles/invoice-document.css"
+
 import {
   InvoiceHeader,
   type InvoiceDocumentType,

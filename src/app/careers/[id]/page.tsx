@@ -35,8 +35,7 @@ import {
 import { createPageMetadata } from "@/lib/seo"
 
 export const dynamicParams = true
-export const revalidate = 0
-export const dynamic = "force-dynamic"
+export const revalidate = 60
 
 export async function generateStaticParams() {
   const openings = await getOpenJobOpenings()

@@ -1,11 +1,19 @@
 import type { Metadata } from "next"
+import dynamic from "next/dynamic"
 
 import { AboutHero } from "@/components/sections/about-hero"
-import { AboutPrinciples } from "@/components/sections/about-principles"
-import { AboutProcess } from "@/components/sections/about-process"
-import { AboutStats } from "@/components/sections/about-stats"
 import { brand, siteMetadata } from "@/config/brand"
 import { createPageMetadata } from "@/lib/seo"
+
+const AboutPrinciples = dynamic(() =>
+  import("@/components/sections/about-principles").then((mod) => mod.AboutPrinciples)
+)
+const AboutProcess = dynamic(() =>
+  import("@/components/sections/about-process").then((mod) => mod.AboutProcess)
+)
+const AboutStats = dynamic(() =>
+  import("@/components/sections/about-stats").then((mod) => mod.AboutStats)
+)
 
 export const metadata: Metadata = createPageMetadata({
   title: `About Us | ${brand.name} - IT Solutions Company in Nigeria`,

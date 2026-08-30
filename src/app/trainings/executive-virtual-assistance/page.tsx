@@ -135,7 +135,7 @@ export default function ExecutiveVirtualAssistancePage() {
                 src={evaHero.image}
                 alt={evaHero.imageAlt}
                 fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
+                sizes="(max-width: 1023px) 90vw, 42vw"
                 className="object-cover object-center"
                 priority
               />

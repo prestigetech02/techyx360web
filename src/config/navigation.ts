@@ -15,6 +15,11 @@ export const navigation: NavItem[] = [
         description: "Learn about Techyx360 and what we do",
       },
       {
+        label: "Our Portfolio",
+        href: "/portfolio",
+        description: "Selected work for businesses we have partnered with",
+      },
+      {
         label: "Contact Us",
         href: "/contact",
         description: "Get in touch with our team",

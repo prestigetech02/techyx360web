@@ -102,6 +102,46 @@ export function getBreadcrumbSchema(items: BreadcrumbItem[]) {
   }
 }
 
+export function getPortfolioSchema(
+  items: { name: string; category: string; src: string }[]
+) {
+  const pageUrl = absoluteUrl("/portfolio")
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#collection`,
+    name: "Techyx360 Portfolio",
+    description:
+      "Selected websites, mobile apps, WordPress sites, and UI/UX work delivered by Techyx360 for businesses in Nigeria.",
+    url: pageUrl,
+    isPartOf: {
+      "@id": `${siteUrl}/#website`,
+    },
+    about: {
+      "@id": organization.id,
+    },
+    mainEntity: {
+      "@type": "ItemList",
+      name: "Featured projects",
+      numberOfItems: items.length,
+      itemListElement: items.map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        item: {
+          "@type": "CreativeWork",
+          name: item.name,
+          genre: item.category,
+          image: absoluteUrl(item.src.replaceAll(" ", "%20")),
+          creator: {
+            "@id": organization.id,
+          },
+        },
+      })),
+    },
+  }
+}
+
 export function getFaqSchema(faqs: FaqItem[]) {
   return {
     "@context": "https://schema.org",

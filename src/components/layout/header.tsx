@@ -80,7 +80,7 @@ function DesktopNav() {
                     "grid gap-1 p-2",
                     item.label === "Services" || item.label === "Trainings"
                       ? "w-[480px] grid-cols-2"
-                      : "w-[200px]"
+                      : "w-[240px]"
                   )}
                 >
                   {item.href && (

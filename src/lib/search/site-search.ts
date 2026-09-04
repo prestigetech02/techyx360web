@@ -21,6 +21,13 @@ const staticPages: SearchResult[] = [
     category: "Page",
   },
   {
+    id: "page-portfolio",
+    title: "Our Portfolio",
+    description: "Selected work and clients Techyx360 has partnered with",
+    href: "/portfolio",
+    category: "Page",
+  },
+  {
     id: "page-contact",
     title: "Contact",
     description: "Get in touch with the Techyx360 team",
@@ -85,7 +92,12 @@ function getNavigationResults(): SearchResult[] {
           title: child.label,
           description: child.description ?? child.label,
           href: child.href,
-          category: item.label === "Services" ? "Service" : "Training",
+          category:
+            item.label === "Services"
+              ? "Service"
+              : item.label === "Trainings"
+                ? "Training"
+                : "Page",
         })
       }
     }

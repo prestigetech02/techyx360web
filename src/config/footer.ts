@@ -5,6 +5,7 @@ export const footerDescription =
 
 export const footerCompanyLinks = [
   { label: "About Us", href: "/about" },
+  { label: "Our Portfolio", href: "/portfolio" },
   { label: "Our Services", href: "/services/web-development" },
   { label: "Trainings", href: "/trainings/register" },
   { label: "Careers", href: "/careers" },

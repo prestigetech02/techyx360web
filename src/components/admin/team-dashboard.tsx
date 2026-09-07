@@ -215,7 +215,11 @@ function statusLabel(status: StaffStatus) {
 function formatDisplayDate(value: string) {
   const date = new Date(`${value}T00:00:00`)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString(undefined, { dateStyle: "medium" })
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })
 }
 
 function buildMemberPayload(form: MemberFormState, includeDocuments: boolean) {
@@ -1360,8 +1364,12 @@ function TeamMemberDetail({
                         <p className="mt-2 text-xs text-muted-foreground">
                           Added{" "}
                           {new Date(document.createdAt).toLocaleDateString(
-                            undefined,
-                            { dateStyle: "medium" }
+                            "en-GB",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            }
                           )}
                         </p>
                       </div>

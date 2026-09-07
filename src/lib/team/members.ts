@@ -12,6 +12,11 @@ import {
   type TeamMemberDocumentView,
   type TeamMemberView,
 } from "@/lib/team/team-types"
+import {
+  isDashboardAccessRole,
+  normalizeStaffModules,
+  parseModuleList,
+} from "@/lib/admin/access"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 import type { Database } from "@/types/database"
@@ -44,7 +49,7 @@ export type TeamMemberDocumentRow =
   Database["public"]["Tables"]["team_member_documents"]["Row"]
 
 const MEMBER_SELECT =
-  "id, full_name, email, phone, role, department, status, joined_at, gender, address, date_of_birth, base_salary, salary_currency, payment_frequency, bank_name, account_name, account_number, created_at, updated_at"
+  "id, full_name, email, phone, role, department, status, joined_at, gender, address, date_of_birth, base_salary, salary_currency, payment_frequency, bank_name, account_name, account_number, access_role, modules, created_at, updated_at"
 
 const DOCUMENT_SELECT = "id, member_id, title, doc_type, notes, created_at"
 
@@ -95,6 +100,13 @@ export function mapTeamMemberRowToView(
     bankName: row.bank_name?.trim() || "",
     accountName: row.account_name?.trim() || "",
     accountNumber: row.account_number?.trim() || "",
+    accessRole: isDashboardAccessRole(row.access_role)
+      ? row.access_role
+      : "admin",
+    modules:
+      row.access_role === "staff"
+        ? normalizeStaffModules(parseModuleList(row.modules ?? []))
+        : parseModuleList(row.modules ?? []),
     documents: documents.map(mapTeamMemberDocumentRow),
     initials: getStaffInitials(row.full_name),
     accent: getStaffAccentClass(row.id),

@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const results = await searchAdminDashboard(query)
+    const results = await searchAdminDashboard(query, auth.access)
     return NextResponse.json({ query, results })
   } catch (error) {
     console.error("Admin search error", error)

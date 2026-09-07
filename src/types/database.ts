@@ -1236,6 +1236,81 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_tasks: {
+        Row: {
+          id: string
+          title: string
+          notes: string
+          assignee_id: string | null
+          status: string
+          priority: string
+          scheduled_on: string | null
+          sort_order: number
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          notes?: string
+          assignee_id?: string | null
+          status?: string
+          priority?: string
+          scheduled_on?: string | null
+          sort_order?: number
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          notes?: string
+          assignee_id?: string | null
+          status?: string
+          priority?: string
+          scheduled_on?: string | null
+          sort_order?: number
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      staff_daily_logs: {
+        Row: {
+          id: string
+          member_id: string
+          log_date: string
+          summary: string
+          hours_spent: number | null
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          member_id: string
+          log_date: string
+          summary?: string
+          hours_spent?: number | null
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          member_id?: string
+          log_date?: string
+          summary?: string
+          hours_spent?: number | null
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       team_members: {
         Row: {
           id: string
@@ -1255,6 +1330,8 @@ export type Database = {
           bank_name: string
           account_name: string
           account_number: string
+          access_role: string
+          modules: string[]
           created_at: string
           updated_at: string
         }
@@ -1276,6 +1353,8 @@ export type Database = {
           bank_name?: string
           account_name?: string
           account_number?: string
+          access_role?: string
+          modules?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -1297,6 +1376,8 @@ export type Database = {
           bank_name?: string
           account_name?: string
           account_number?: string
+          access_role?: string
+          modules?: string[]
           created_at?: string
           updated_at?: string
         }

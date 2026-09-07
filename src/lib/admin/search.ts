@@ -4,6 +4,11 @@ import { adminNavItems } from "@/config/admin-nav"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 import type { AdminSearchResult } from "@/types/admin-search"
+import {
+  hasModule,
+  moduleForPath,
+  type DashboardAccess,
+} from "@/lib/admin/access"
 
 const PER_SOURCE_LIMIT = 4
 const MAX_RESULTS = 20
@@ -21,11 +26,26 @@ function matchesText(query: string, ...parts: Array<string | null | undefined>) 
   return needle.split(/\s+/).every((word) => haystack.includes(word))
 }
 
-function getAdminPageResults(query: string): AdminSearchResult[] {
+function canSearchHref(href: string, access?: DashboardAccess | null) {
+  if (!access || access.kind === "admin") return true
+  const module = moduleForPath(href)
+  if (!module) return false
+  return hasModule(access, module)
+}
+
+function getAdminPageResults(
+  query: string,
+  access?: DashboardAccess | null
+): AdminSearchResult[] {
   const results: AdminSearchResult[] = []
 
   for (const item of adminNavItems) {
-    if (item.href && !item.comingSoon && matchesText(query, item.label, "admin")) {
+    if (
+      item.href &&
+      !item.comingSoon &&
+      canSearchHref(item.href, access) &&
+      matchesText(query, item.label, "admin")
+    ) {
       results.push({
         id: `page-${item.href}`,
         title: item.label,
@@ -39,6 +59,7 @@ function getAdminPageResults(query: string): AdminSearchResult[] {
       if (
         child.href &&
         !child.comingSoon &&
+        canSearchHref(child.href, access) &&
         matchesText(query, child.label, item.label)
       ) {
         results.push({
@@ -54,6 +75,7 @@ function getAdminPageResults(query: string): AdminSearchResult[] {
         if (
           leaf.href &&
           !leaf.comingSoon &&
+          canSearchHref(leaf.href, access) &&
           matchesText(query, leaf.label, child.label, item.label)
         ) {
           results.push({
@@ -72,14 +94,15 @@ function getAdminPageResults(query: string): AdminSearchResult[] {
 }
 
 export async function searchAdminDashboard(
-  query: string
+  query: string,
+  access?: DashboardAccess | null
 ): Promise<AdminSearchResult[]> {
   const trimmed = query.trim()
   if (trimmed.length < 2) {
     return []
   }
 
-  const pageResults = getAdminPageResults(trimmed)
+  const pageResults = getAdminPageResults(trimmed, access)
 
   if (!isSupabaseConfigured()) {
     return pageResults.slice(0, MAX_RESULTS)
@@ -98,6 +121,7 @@ export async function searchAdminDashboard(
     careersResult,
     talentResult,
     teamResult,
+    workResult,
     projectsResult,
     invoicesResult,
     blogResult,
@@ -159,6 +183,11 @@ export async function searchAdminDashboard(
       )
       .limit(PER_SOURCE_LIMIT),
     supabase
+      .from("staff_tasks")
+      .select("id, title, notes, status, priority, assignee_id")
+      .or(`title.ilike.${p},notes.ilike.${p}`)
+      .limit(PER_SOURCE_LIMIT),
+    supabase
       .from("crm_projects")
       .select("id, name, category, description, status")
       .or(`name.ilike.${p},category.ilike.${p},description.ilike.${p}`)
@@ -188,6 +217,7 @@ export async function searchAdminDashboard(
     careersResult,
     talentResult,
     teamResult,
+    workResult,
     projectsResult,
     invoicesResult,
     blogResult,
@@ -271,6 +301,22 @@ export async function searchAdminDashboard(
     category: "Team",
   }))
 
+  const work: AdminSearchResult[] = (workResult.data ?? [])
+    .filter((row) => {
+      if (!access || access.kind === "admin") return true
+      return row.assignee_id === access.memberId
+    })
+    .map((row) => ({
+    id: `work:${row.id}`,
+    title: row.title,
+    description: [row.status, row.priority, row.notes]
+      .filter(Boolean)
+      .join(" · ")
+      .slice(0, 120),
+    href: `/admin/work?task=${row.id}`,
+    category: "Tasks",
+  }))
+
   const projects: AdminSearchResult[] = (projectsResult.data ?? []).map(
     (row) => ({
       id: `project:${row.id}`,
@@ -314,8 +360,11 @@ export async function searchAdminDashboard(
     ...careers,
     ...talent,
     ...team,
+    ...work,
     ...projects,
     ...invoices,
     ...blog,
-  ].slice(0, MAX_RESULTS)
+  ]
+    .filter((result) => canSearchHref(result.href, access))
+    .slice(0, MAX_RESULTS)
 }

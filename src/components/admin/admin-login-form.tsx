@@ -200,7 +200,7 @@ export function AdminLoginForm() {
               Sign In
             </h1>
             <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-              Access the Techyx360 dashboard to manage content and submissions.
+              Sign in to manage your work and assigned dashboard modules.
             </p>
           </div>
 
@@ -295,7 +295,7 @@ export function AdminLoginForm() {
           </form>
 
           <p className="mt-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-            Not an admin?{" "}
+            Looking for the website?{" "}
             <Link
               href="/"
               className="font-medium text-brand transition-colors hover:text-[#eaaa33]"

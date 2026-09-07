@@ -14,7 +14,7 @@ export async function GET() {
     )
   }
 
-  const auth = await requireAdmin()
+  const auth = await requireAdmin("team")
   if (!auth.authorized) {
     return auth.response
   }
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const auth = await requireAdmin()
+  const auth = await requireAdmin("team")
   if (!auth.authorized) {
     return auth.response
   }

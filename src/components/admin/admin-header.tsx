@@ -14,17 +14,20 @@ import { AdminNotificationsBell } from "@/components/admin/admin-notifications-b
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { AdminThemeToggle } from "@/components/admin/admin-theme-toggle"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
+import type { DashboardAccess } from "@/lib/admin/access"
 import { createClient } from "@/lib/supabase/client"
 import { notify } from "@/lib/toast"
 
 type AdminHeaderProps = {
   userEmail?: string | null
+  access?: DashboardAccess | null
   sidebarCollapsed: boolean
   onToggleSidebar: () => void
 }
 
 export function AdminHeader({
   userEmail,
+  access,
   sidebarCollapsed,
   onToggleSidebar,
 }: AdminHeaderProps) {
@@ -147,7 +150,10 @@ export function AdminHeader({
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="h-dvh w-72 p-0">
           <SheetTitle className="sr-only">Admin navigation</SheetTitle>
-          <AdminSidebar onNavigate={() => setMobileOpen(false)} />
+          <AdminSidebar
+            access={access}
+            onNavigate={() => setMobileOpen(false)}
+          />
         </SheetContent>
       </Sheet>
     </>

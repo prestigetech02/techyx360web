@@ -5,14 +5,16 @@ import { useState } from "react"
 import { AdminHeader } from "@/components/admin/admin-header"
 import { AdminNotificationsProvider } from "@/components/admin/admin-notifications-provider"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import type { DashboardAccess } from "@/lib/admin/access"
 import { cn } from "@/lib/utils"
 
 type AdminShellProps = {
   children: React.ReactNode
   userEmail?: string | null
+  access?: DashboardAccess | null
 }
 
-export function AdminShell({ children, userEmail }: AdminShellProps) {
+export function AdminShell({ children, userEmail, access }: AdminShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   return (
@@ -25,7 +27,7 @@ export function AdminShell({ children, userEmail }: AdminShellProps) {
               sidebarCollapsed ? "lg:w-0" : "lg:w-72"
             )}
           >
-            <AdminSidebar />
+            <AdminSidebar access={access} />
           </div>
 
           <div
@@ -37,6 +39,7 @@ export function AdminShell({ children, userEmail }: AdminShellProps) {
             <div className="admin-print-chrome print:hidden">
               <AdminHeader
                 userEmail={userEmail}
+                access={access}
                 sidebarCollapsed={sidebarCollapsed}
                 onToggleSidebar={() =>
                   setSidebarCollapsed((collapsed) => !collapsed)

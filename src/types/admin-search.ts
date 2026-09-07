@@ -8,6 +8,7 @@ export type AdminSearchCategory =
   | "Career"
   | "Talent"
   | "Team"
+  | "Tasks"
   | "Project"
   | "Invoice"
   | "Blog"

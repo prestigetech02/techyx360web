@@ -1,3 +1,9 @@
+import type { AdminModuleKey, DashboardAccessRole } from "@/lib/admin/access"
+import {
+  isDashboardAccessRole,
+  isAdminModuleKey,
+  normalizeStaffModules,
+} from "@/lib/admin/access"
 import {
   isDocumentType,
   isPaymentFrequency,
@@ -39,6 +45,8 @@ export type CreateTeamMemberInput = {
   bank_name: string
   account_name: string
   account_number: string
+  access_role: DashboardAccessRole
+  modules: AdminModuleKey[]
   documents: TeamMemberDocumentInput[]
 }
 
@@ -59,6 +67,8 @@ export type UpdateTeamMemberInput = Partial<{
   bank_name: string
   account_name: string
   account_number: string
+  access_role: DashboardAccessRole
+  modules: AdminModuleKey[]
 }>
 
 function asTrimmedString(value: unknown) {
@@ -260,6 +270,34 @@ function parseSharedProfileFields(body: Record<string, unknown>):
   }
 }
 
+function parseAccessFields(body: Record<string, unknown>):
+  | ParseOk<{ access_role: DashboardAccessRole; modules: AdminModuleKey[] }>
+  | ParseErr {
+  const roleRaw =
+    asTrimmedString(body.access_role ?? body.accessRole) || "admin"
+  if (!isDashboardAccessRole(roleRaw)) {
+    return { ok: false, error: "Invalid dashboard access role.", status: 400 }
+  }
+
+  const modulesRaw = body.modules
+  let modules: AdminModuleKey[] = []
+  if (Array.isArray(modulesRaw)) {
+    modules = modulesRaw
+      .filter((item): item is string => typeof item === "string")
+      .map((item) => item.trim())
+      .filter(isAdminModuleKey)
+  }
+
+  return {
+    ok: true,
+    data: {
+      access_role: roleRaw,
+      modules:
+        roleRaw === "staff" ? normalizeStaffModules(modules) : [],
+    },
+  }
+}
+
 export function parseCreateTeamMemberBody(
   body: Record<string, unknown>
 ): ParseOk<CreateTeamMemberInput> | ParseErr {
@@ -306,6 +344,9 @@ export function parseCreateTeamMemberBody(
   const documents = parseDocuments(body.documents)
   if (!documents.ok) return documents
 
+  const access = parseAccessFields(body)
+  if (!access.ok) return access
+
   return {
     ok: true,
     data: {
@@ -317,6 +358,7 @@ export function parseCreateTeamMemberBody(
       status: statusRaw,
       joined_at,
       ...profile.data,
+      ...access.data,
       documents: documents.data,
     },
   }
@@ -449,6 +491,16 @@ export function parseUpdateTeamMemberBody(
     data.account_number = asTrimmedString(
       body.account_number ?? body.accountNumber
     )
+  }
+
+  if (body.access_role !== undefined || body.accessRole !== undefined || body.modules !== undefined) {
+    const access = parseAccessFields({
+      access_role: body.access_role ?? body.accessRole ?? data.access_role,
+      modules: body.modules,
+    })
+    if (!access.ok) return access
+    data.access_role = access.data.access_role
+    data.modules = access.data.modules
   }
 
   if (Object.keys(data).length === 0) {

@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 import type { Database } from "@/types/database"
+import { canAccessPath, firstAllowedPath } from "@/lib/admin/access"
+import { resolveStaffAccess } from "@/lib/admin/resolve-access"
 import { getSupabasePublicEnv } from "@/lib/supabase/env"
 
 export async function updateSession(request: NextRequest) {
@@ -33,7 +35,44 @@ export async function updateSession(request: NextRequest) {
   })
 
   // Refresh the auth session when present.
-  await supabase.auth.getClaims()
+  const { data } = await supabase.auth.getClaims()
+  const path = request.nextUrl.pathname
+  const isAdminPage = path === "/admin" || path.startsWith("/admin/")
+  const isAdminApi = path.startsWith("/api/admin")
 
-  return supabaseResponse
+  if (!isAdminPage && !isAdminApi) {
+    return supabaseResponse
+  }
+
+  if (
+    path === "/admin/login" ||
+    path.startsWith("/admin/login/") ||
+    path === "/admin/accept-invite" ||
+    path.startsWith("/admin/accept-invite/")
+  ) {
+    return supabaseResponse
+  }
+
+  const email =
+    typeof data?.claims?.email === "string" ? data.claims.email.trim() : ""
+
+  if (!data?.claims || !email) {
+    return supabaseResponse
+  }
+
+  const access = await resolveStaffAccess(email)
+  if (canAccessPath(access, path)) {
+    return supabaseResponse
+  }
+
+  if (isAdminApi) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  const destination = firstAllowedPath(access)
+  if (destination === path) {
+    return supabaseResponse
+  }
+
+  return NextResponse.redirect(new URL(destination, request.url))
 }

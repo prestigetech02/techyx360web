@@ -15,11 +15,17 @@ import {
   type AdminNavItem,
   type AdminNavLeafItem,
 } from "@/config/admin-nav"
+import {
+  filterAdminNav,
+  firstAllowedPath,
+  type DashboardAccess,
+} from "@/lib/admin/access"
 import { cn } from "@/lib/utils"
 
 type AdminSidebarProps = {
   onNavigate?: () => void
   className?: string
+  access?: DashboardAccess | null
 }
 
 type BadgeCounts = Record<AdminNavBadgeKey, number>
@@ -284,7 +290,7 @@ function AdminNavGroup({
   )
 }
 
-export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
+export function AdminSidebar({ onNavigate, className, access }: AdminSidebarProps) {
   const pathname = usePathname()
   const { contactCount, registrationCount, pifCount, careerCount } =
     useAdminNotifications()
@@ -299,6 +305,12 @@ export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
     [contactCount, registrationCount, pifCount, careerCount]
   )
 
+  const items = useMemo(
+    () => (access ? filterAdminNav(adminNavItems, access) : adminNavItems),
+    [access]
+  )
+  const homeHref = access ? firstAllowedPath(access) : "/admin"
+
   return (
     <aside
       className={cn(
@@ -307,7 +319,7 @@ export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
       )}
     >
       <div className="shrink-0 border-b border-sidebar-border px-4 py-3">
-        <Link href="/admin" onClick={onNavigate} className="inline-flex">
+        <Link href={homeHref} onClick={onNavigate} className="inline-flex">
           <Image
             src={brand.logo.light}
             alt={brand.name}
@@ -326,7 +338,7 @@ export function AdminSidebar({ onNavigate, className }: AdminSidebarProps) {
       </div>
 
       <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-3 py-3">
-        {adminNavItems.map((item) => {
+        {items.map((item) => {
           if (item.children?.length) {
             return (
               <AdminNavGroup

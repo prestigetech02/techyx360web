@@ -25,6 +25,8 @@ import {
   Phone,
   Plus,
   Search,
+  Send,
+  Shield,
   Trash2,
   UserRound,
   Users,
@@ -50,6 +52,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import {
+  ADMIN_MODULE_OPTIONS,
+  type AdminModuleKey,
+  type DashboardAccessRole,
+} from "@/lib/admin/access"
 import {
   DOCUMENT_TYPES,
   PAYMENT_FREQUENCIES,
@@ -98,6 +105,8 @@ type MemberFormState = {
   bankName: string
   accountName: string
   accountNumber: string
+  accessRole: DashboardAccessRole
+  modules: AdminModuleKey[]
   documents: DraftDocument[]
 }
 
@@ -139,6 +148,8 @@ const emptyFormState = (): MemberFormState => ({
   bankName: "",
   accountName: "",
   accountNumber: "",
+  accessRole: "staff",
+  modules: ["work"],
   documents: [],
 })
 
@@ -161,6 +172,13 @@ function formStateFromMember(member: TeamMemberView): MemberFormState {
     bankName: member.bankName,
     accountName: member.accountName,
     accountNumber: member.accountNumber,
+    accessRole: member.accessRole,
+    modules:
+      member.accessRole === "staff"
+        ? member.modules.includes("work")
+          ? member.modules
+          : ["work", ...member.modules]
+        : ["work"],
     documents: [],
   }
 }
@@ -218,6 +236,11 @@ function buildMemberPayload(form: MemberFormState, includeDocuments: boolean) {
     bank_name: form.bankName.trim() || null,
     account_name: form.accountName.trim() || null,
     account_number: form.accountNumber.trim() || null,
+    access_role: form.accessRole,
+    modules:
+      form.accessRole === "staff"
+        ? [...new Set(["work" as const, ...form.modules])]
+        : [],
     ...(includeDocuments
       ? {
           documents: form.documents
@@ -505,6 +528,85 @@ function MemberFormFields({
       </section>
 
       <section className="space-y-3 border-t border-border/60 pt-5">
+        <h3 className={sectionTitleClassName}>Dashboard access</h3>
+        <div>
+          <label htmlFor={`${idPrefix}-access-role`} className={labelClassName}>
+            Login type
+          </label>
+          <select
+            id={`${idPrefix}-access-role`}
+            value={form.accessRole}
+            onChange={(event) => {
+              const accessRole = event.target.value as DashboardAccessRole
+              setForm((current) => ({
+                ...current,
+                accessRole,
+                modules:
+                  accessRole === "staff"
+                    ? current.modules.includes("work")
+                      ? current.modules
+                      : ["work", ...current.modules]
+                    : current.modules,
+              }))
+            }}
+            className={selectClassName}
+            disabled={disabled}
+          >
+            <option value="admin">Full admin</option>
+            <option value="staff">Employee</option>
+          </select>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Full admins see every module. Employees only see assigned modules
+            and their own tasks.
+          </p>
+        </div>
+        {form.accessRole === "staff" ? (
+          <div>
+            <p className={labelClassName}>Assigned modules</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {ADMIN_MODULE_OPTIONS.map((option) => {
+                const locked = option.key === "work"
+                const checked =
+                  locked || form.modules.includes(option.key)
+                return (
+                  <label
+                    key={option.key}
+                    className="flex items-center gap-2 rounded-xl border border-border/60 px-3 py-2 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={disabled || locked}
+                      onChange={() => {
+                        setForm((current) => {
+                          const has = current.modules.includes(option.key)
+                          return {
+                            ...current,
+                            modules: has
+                              ? current.modules.filter(
+                                  (module) => module !== option.key
+                                )
+                              : [...current.modules, option.key],
+                          }
+                        })
+                      }}
+                      className="size-4 rounded border-border text-brand focus:ring-brand/30"
+                    />
+                    <span>{option.label}</span>
+                    {locked ? (
+                      <span className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                        Always
+                      </span>
+                    ) : null}
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="space-y-3 border-t border-border/60 pt-5">
         <h3 className={sectionTitleClassName}>Birthday</h3>
         <div>
           <label htmlFor={`${idPrefix}-dob`} className={labelClassName}>
@@ -783,6 +885,7 @@ function TeamMemberDetail({
   const [docType, setDocType] = useState<DocumentType>("Contract")
   const [docNotes, setDocNotes] = useState("")
   const [addingDocument, setAddingDocument] = useState(false)
+  const [inviting, setInviting] = useState(false)
   const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(
     null
   )
@@ -828,6 +931,30 @@ function TeamMemberDetail({
       onUpdated()
     } finally {
       setSavingEdit(false)
+    }
+  }
+
+  async function inviteLogin() {
+    if (inviting) return
+    setInviting(true)
+    try {
+      const response = await fetch(
+        `/api/admin/team-members/${member.id}/invite`,
+        { method: "POST" }
+      )
+      const data = (await response.json().catch(() => null)) as {
+        error?: string
+        message?: string
+      } | null
+
+      if (!response.ok) {
+        notify.error(data?.error ?? "Unable to send login invite.")
+        return
+      }
+
+      notify.success(data?.message ?? "Login invite sent.")
+    } finally {
+      setInviting(false)
     }
   }
 
@@ -919,16 +1046,35 @@ function TeamMemberDetail({
               {member.role} · {member.department}
             </SheetDescription>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={openEditDialog}
-            className="h-9 shrink-0 gap-1.5 rounded-xl"
-          >
-            <Pencil className="size-3.5" aria-hidden />
-            Edit
-          </Button>
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            {member.status === "active" ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void inviteLogin()}
+                disabled={inviting}
+                className="h-9 shrink-0 gap-1.5 rounded-xl"
+              >
+                {inviting ? (
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                ) : (
+                  <Send className="size-3.5" aria-hidden />
+                )}
+                Invite login
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={openEditDialog}
+              className="h-9 shrink-0 gap-1.5 rounded-xl"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              Edit
+            </Button>
+          </div>
         </div>
       </SheetHeader>
 
@@ -1021,6 +1167,44 @@ function TeamMemberDetail({
                 <p className="mt-1 text-sm font-semibold text-foreground">
                   {formatDisplayDate(member.joinedAt)}
                 </p>
+              </div>
+              <div className="rounded-xl border border-border/60 p-3 sm:col-span-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Shield className="size-3.5" aria-hidden />
+                      Dashboard access
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      {member.accessRole === "admin"
+                        ? "Full admin"
+                        : "Employee"}
+                    </p>
+                    {member.accessRole === "staff" ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {ADMIN_MODULE_OPTIONS.filter((option) =>
+                          member.modules.includes(option.key)
+                        )
+                          .map((option) => option.label)
+                          .join(", ") || "Tasks"}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Sees every module. Change this in Edit → Login type.
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={openEditDialog}
+                    className="h-8 shrink-0 gap-1.5 rounded-lg"
+                  >
+                    <Pencil className="size-3.5" aria-hidden />
+                    Change
+                  </Button>
+                </div>
               </div>
             </section>
           </>
@@ -1293,7 +1477,8 @@ function TeamMemberDetail({
           <DialogHeader>
             <DialogTitle>Edit team member</DialogTitle>
             <DialogDescription>
-              Update bio data, birthday, and salary details for {member.fullName}.
+              Update bio data, login type, modules, birthday, and salary
+              details for {member.fullName}.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={(event) => void saveMember(event)} className="space-y-3">
@@ -1470,7 +1655,7 @@ export function TeamDashboard({ members }: TeamDashboardProps) {
             Team
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage internal staff, roles, and team directory.
+            Manage internal staff, login access, and assigned dashboard modules.
           </p>
         </div>
 
@@ -1583,7 +1768,10 @@ export function TeamDashboard({ members }: TeamDashboardProps) {
                             {member.fullName}
                           </p>
                           <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                            Joined {formatDisplayDate(member.joinedAt)}
+                            {member.accessRole === "admin"
+                              ? "Full admin"
+                              : "Employee"}{" "}
+                            · Joined {formatDisplayDate(member.joinedAt)}
                           </p>
                         </div>
                       </div>
@@ -1672,8 +1860,8 @@ export function TeamDashboard({ members }: TeamDashboardProps) {
           <DialogHeader>
             <DialogTitle>Add team member</DialogTitle>
             <DialogDescription>
-              Capture bio data, birthday, documents, and salary details for the
-              new employee.
+              Capture bio data, login access, birthday, documents, and salary
+              details for the new employee.
             </DialogDescription>
           </DialogHeader>
           <form

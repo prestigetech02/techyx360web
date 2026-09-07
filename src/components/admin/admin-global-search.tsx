@@ -28,6 +28,7 @@ const categoryStyles: Record<AdminSearchCategory, string> = {
   Career: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
   Talent: "bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300",
   Team: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300",
+  Tasks: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
   Project: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",
   Invoice: "bg-orange-500/10 text-orange-700 dark:text-orange-300",
   Blog: "bg-lime-500/10 text-lime-800 dark:text-lime-300",

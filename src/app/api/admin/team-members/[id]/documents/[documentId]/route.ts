@@ -17,7 +17,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     )
   }
 
-  const auth = await requireAdmin()
+  const auth = await requireAdmin("team")
   if (!auth.authorized) {
     return auth.response
   }

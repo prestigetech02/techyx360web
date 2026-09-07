@@ -18,7 +18,7 @@ export async function POST(request: Request, context: RouteContext) {
     )
   }
 
-  const auth = await requireAdmin()
+  const auth = await requireAdmin("team")
   if (!auth.authorized) {
     return auth.response
   }

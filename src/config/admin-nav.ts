@@ -1,5 +1,6 @@
 import {
   BriefcaseBusiness,
+  ClipboardList,
   FolderKanban,
   GraduationCap,
   LayoutDashboard,
@@ -106,6 +107,11 @@ export const adminNavItems: AdminNavItem[] = [
     label: "Team",
     href: "/admin/team",
     icon: UsersRound,
+  },
+  {
+    label: "Tasks",
+    href: "/admin/work",
+    icon: ClipboardList,
   },
   {
     label: "Recruitment",

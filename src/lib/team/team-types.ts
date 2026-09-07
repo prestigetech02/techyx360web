@@ -1,3 +1,5 @@
+import type { AdminModuleKey, DashboardAccessRole } from "@/lib/admin/access"
+
 export type StaffStatus = "active" | "on_leave" | "inactive"
 
 export type StaffRole =
@@ -52,6 +54,8 @@ export type TeamMemberView = {
   bankName: string
   accountName: string
   accountNumber: string
+  accessRole: DashboardAccessRole
+  modules: AdminModuleKey[]
   documents: TeamMemberDocumentView[]
   initials: string
   accent: string

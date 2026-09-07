@@ -5,12 +5,12 @@ import { brand } from "@/config/brand"
 import { createPageMetadata } from "@/lib/seo"
 
 export const metadata: Metadata = createPageMetadata({
-  title: `Accept invite | ${brand.name}`,
-  description: "Accept your Techyx360 staff invitation and set a password.",
-  path: "/admin/accept-invite",
+  title: `Reset password | ${brand.name}`,
+  description: "Choose a new password for your Techyx360 staff login.",
+  path: "/admin/reset-password",
   noIndex: true,
 })
 
-export default function AdminAcceptInvitePage() {
-  return <AdminAcceptInviteForm mode="invite" />
+export default function AdminResetPasswordPage() {
+  return <AdminAcceptInviteForm mode="reset" />
 }

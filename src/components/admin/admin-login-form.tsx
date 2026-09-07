@@ -3,13 +3,17 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
-import { FormEvent, useState } from "react"
+import { FormEvent, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { BrandCtaButton } from "@/components/ui/brand-cta-button"
 import { Input } from "@/components/ui/input"
 import { brand } from "@/config/brand"
 import { testimonials } from "@/config/testimonials"
+import {
+  ADMIN_FORGOT_PASSWORD_PATH,
+  getPasswordResetCallbackPath,
+} from "@/lib/admin/auth-callback"
 import { createClient } from "@/lib/supabase/client"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 import { notify } from "@/lib/toast"
@@ -28,12 +32,17 @@ export function AdminLoginForm() {
   const [rememberMe, setRememberMe] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const nextPath = getPasswordResetCallbackPath()
+    if (nextPath) {
+      window.location.replace(nextPath)
+    }
+  }, [])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
-    setMessage(null)
 
     if (!isSupabaseConfigured()) {
       const message =
@@ -70,53 +79,9 @@ export function AdminLoginForm() {
     }
   }
 
-  const handleForgotPassword = async () => {
-    setError(null)
-    setMessage(null)
-
-    if (!email) {
-      const message = "Enter your email address first, then click Forgot password."
-      setError(message)
-      notify.error(message)
-      return
-    }
-
-    if (!isSupabaseConfigured()) {
-      const message =
-        "Supabase is not configured yet. Add your project keys to .env.local."
-      setError(message)
-      notify.error(message)
-      return
-    }
-
-    setIsSubmitting(true)
-
-    try {
-      const supabase = createClient()
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email,
-        {
-          redirectTo: `${window.location.origin}/admin/login`,
-        }
-      )
-
-      if (resetError) {
-        setError(resetError.message)
-        notify.error(resetError.message)
-        return
-      }
-
-      const message = "Password reset link sent. Check your inbox."
-      setMessage(message)
-      notify.success(message)
-    } catch {
-      const message = "Unable to send reset email right now. Please try again."
-      setError(message)
-      notify.error(message)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+  const forgotPasswordHref = email.trim()
+    ? `${ADMIN_FORGOT_PASSWORD_PATH}?email=${encodeURIComponent(email.trim())}`
+    : ADMIN_FORGOT_PASSWORD_PATH
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
@@ -264,25 +229,17 @@ export function AdminLoginForm() {
                 Remember me
               </label>
 
-              <button
-                type="button"
-                onClick={handleForgotPassword}
-                disabled={isSubmitting}
-                className="font-medium text-brand transition-colors hover:text-[#eaaa33] disabled:opacity-50"
+              <Link
+                href={forgotPasswordHref}
+                className="font-medium text-brand transition-colors hover:text-[#eaaa33]"
               >
                 Forgot password?
-              </button>
+              </Link>
             </div>
 
             {error ? (
               <p role="alert" className="text-sm text-red-600">
                 {error}
-              </p>
-            ) : null}
-
-            {message ? (
-              <p role="status" className="text-sm text-brand">
-                {message}
               </p>
             ) : null}
 

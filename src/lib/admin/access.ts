@@ -3,6 +3,7 @@ import type {
   AdminNavItem,
   AdminNavLeafItem,
 } from "@/config/admin-nav"
+import { isPublicAdminAuthPath } from "@/lib/admin/auth-callback"
 
 export type AdminModuleKey =
   | "dashboard"
@@ -169,14 +170,7 @@ export function hasModule(
 }
 
 export function canAccessPath(access: DashboardAccess, path: string) {
-  if (
-    path === "/admin/login" ||
-    path.startsWith("/admin/login/") ||
-    path === "/admin/accept-invite" ||
-    path.startsWith("/admin/accept-invite/") ||
-    path === "/auth" ||
-    path.startsWith("/auth/")
-  ) {
+  if (isPublicAdminAuthPath(path)) {
     return true
   }
 

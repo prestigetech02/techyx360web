@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server"
 
 import type { Database } from "@/types/database"
 import { canAccessPath, firstAllowedPath } from "@/lib/admin/access"
+import { isPublicAdminAuthPath } from "@/lib/admin/auth-callback"
 import { resolveStaffAccess } from "@/lib/admin/resolve-access"
 import { getSupabasePublicEnv } from "@/lib/supabase/env"
 
@@ -44,12 +45,7 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse
   }
 
-  if (
-    path === "/admin/login" ||
-    path.startsWith("/admin/login/") ||
-    path === "/admin/accept-invite" ||
-    path.startsWith("/admin/accept-invite/")
-  ) {
+  if (isPublicAdminAuthPath(path)) {
     return supabaseResponse
   }
 

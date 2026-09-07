@@ -14,13 +14,31 @@ import { createClient } from "@/lib/supabase/client"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import type { EmailOtpType } from "@supabase/supabase-js"
 
 const fieldClassName =
   "h-12 rounded-xl border-border/80 bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:border-brand focus-visible:ring-brand/20 dark:bg-white dark:text-zinc-900"
 
 const featuredTestimonial = testimonials[0]
 
-export function AdminAcceptInviteForm() {
+function resolveOtpType(value: string, mode: "invite" | "reset"): EmailOtpType {
+  if (
+    value === "recovery" ||
+    value === "invite" ||
+    value === "email" ||
+    value === "magiclink" ||
+    value === "signup"
+  ) {
+    return value
+  }
+  return mode === "reset" ? "recovery" : "invite"
+}
+
+export function AdminAcceptInviteForm({
+  mode = "invite",
+}: {
+  mode?: "invite" | "reset"
+}) {
   const router = useRouter()
   const [checking, setChecking] = useState(true)
   const [hasSession, setHasSession] = useState(false)
@@ -45,7 +63,14 @@ export function AdminAcceptInviteForm() {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""))
     const code = search.get("code")
     const tokenHash = search.get("token_hash") || hash.get("token_hash")
-    const otpType = search.get("type") || hash.get("type") || "invite"
+    const otpType = resolveOtpType(
+      search.get("type") || hash.get("type") || "",
+      mode
+    )
+    const expiredMessage =
+      mode === "reset"
+        ? "This reset link is invalid or has expired. Request a new one from the forgot password page."
+        : "This invite link is invalid or has expired. Ask an admin to send a new invite."
     const urlError =
       search.get("error_description") ||
       search.get("error") ||
@@ -62,14 +87,11 @@ export function AdminAcceptInviteForm() {
 
       if (tokenHash) {
         const { error: otpError } = await supabase.auth.verifyOtp({
-          type: otpType === "recovery" ? "recovery" : "invite",
+          type: otpType,
           token_hash: tokenHash,
         })
         if (otpError) {
-          setInviteError(
-            otpError.message ||
-              "This invite link is invalid or has expired. Ask an admin to send a new invite."
-          )
+          setInviteError(otpError.message || expiredMessage)
           setChecking(false)
           return
         }
@@ -124,15 +146,13 @@ export function AdminAcceptInviteForm() {
 
       setHasSession(Boolean(session))
       if (!session) {
-        setInviteError(
-          "This invite link is invalid or has expired. Ask an admin to send a new invite."
-        )
+        setInviteError(expiredMessage)
       }
       setChecking(false)
     }
 
     void establishSession()
-  }, [])
+  }, [mode])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -165,7 +185,9 @@ export function AdminAcceptInviteForm() {
         return
       }
 
-      notify.success("Password saved. Welcome in.")
+      notify.success(
+        mode === "reset" ? "Password updated. You are signed in." : "Password saved. Welcome in."
+      )
       router.push("/admin")
       router.refresh()
     } catch {
@@ -240,21 +262,28 @@ export function AdminAcceptInviteForm() {
               Staff workspace
             </p>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-[#0b2c66] dark:text-white">
-              Set your password
+              {mode === "reset" ? "Reset your password" : "Set your password"}
             </h1>
             <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-              Accept your invitation and choose a password to sign in.
+              {mode === "reset"
+                ? "Choose a new password to sign back in to your workspace."
+                : "Accept your invitation and choose a password to sign in."}
             </p>
           </div>
 
           {checking ? (
             <p className="mt-8 text-center text-sm text-zinc-500">
-              Checking your invite...
+              {mode === "reset"
+                ? "Checking your reset link..."
+                : "Checking your invite..."}
             </p>
           ) : !hasSession ? (
             <div className="mt-8 space-y-4 text-center">
               <p role="alert" className="text-sm text-red-600">
-                {inviteError ?? "This invite link is invalid or has expired."}
+                {inviteError ??
+                  (mode === "reset"
+                    ? "This reset link is invalid or has expired."
+                    : "This invite link is invalid or has expired.")}
               </p>
               <Link
                 href="/admin/login"
@@ -279,7 +308,9 @@ export function AdminAcceptInviteForm() {
                     minLength={8}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Create a password"
+                    placeholder={
+                      mode === "reset" ? "New password" : "Create a password"
+                    }
                     className={cn(fieldClassName, "pr-12")}
                   />
                   <button
@@ -328,7 +359,11 @@ export function AdminAcceptInviteForm() {
                   isSubmitting && "pointer-events-none opacity-70"
                 )}
               >
-                {isSubmitting ? "Saving..." : "Save password and continue"}
+                {isSubmitting
+                  ? "Saving..."
+                  : mode === "reset"
+                    ? "Update password"
+                    : "Save password and continue"}
               </BrandCtaButton>
             </form>
           )}

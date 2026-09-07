@@ -4,7 +4,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
+  compareStartTime,
   formatDayHeading,
+  formatTaskTimeRange,
   formatWeekRange,
   isOverdueTask,
   weekDates,
@@ -90,7 +92,7 @@ export function WorkWeekView({
         {days.map((iso) => {
           const dayTasks = tasks
             .filter((task) => task.scheduledOn === iso)
-            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .sort((a, b) => compareStartTime(a.startTime, b.startTime) || a.sortOrder - b.sortOrder)
           const loggedCount = logs.filter(
             (log) => log.logDate === iso && hasLoggedWork(log)
           ).length
@@ -156,6 +158,11 @@ export function WorkWeekView({
                           <p className="text-sm font-medium text-foreground">
                             {task.title}
                           </p>
+                          {formatTaskTimeRange(task.startTime, task.endTime) ? (
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              {formatTaskTimeRange(task.startTime, task.endTime)}
+                            </p>
+                          ) : null}
                           <div className="mt-2 flex items-center justify-between gap-2">
                             <span className="truncate text-[11px] text-muted-foreground">
                               {task.assignee?.fullName ?? "Unassigned"}

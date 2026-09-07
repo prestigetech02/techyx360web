@@ -44,9 +44,13 @@ import { cn } from "@/lib/utils"
 import {
   addDaysIso,
   addMonthsIso,
+  formatDurationMinutes,
   formatTaskDate,
+  formatTaskTimeRange,
   isIsoDate,
   isOverdueTask,
+  minutesBetweenTimes,
+  parseTimeOfDay,
   startOfMonth,
   startOfWeekMonday,
   todayIso,
@@ -73,6 +77,8 @@ type TaskFormState = {
   status: StaffTaskStatus
   priority: StaffTaskPriority
   scheduledOn: string
+  startTime: string
+  endTime: string
 }
 
 const fieldClassName =
@@ -125,6 +131,8 @@ function emptyFormState(
     status: "todo",
     priority: "medium",
     scheduledOn,
+    startTime: "",
+    endTime: "",
   }
 }
 
@@ -136,6 +144,8 @@ function formStateFromTask(task: StaffTaskView): TaskFormState {
     status: task.status,
     priority: task.priority,
     scheduledOn: task.scheduledOn ?? "",
+    startTime: parseTimeOfDay(task.startTime) ?? "",
+    endTime: parseTimeOfDay(task.endTime) ?? "",
   }
 }
 
@@ -270,6 +280,44 @@ function TaskFormFields({
           />
         </div>
         <div>
+          <label htmlFor={`${idPrefix}-start`} className={labelClassName}>
+            Start time
+          </label>
+          <Input
+            id={`${idPrefix}-start`}
+            type="time"
+            value={form.startTime}
+            onChange={(event) => onChange({ startTime: event.target.value })}
+            className={fieldClassName}
+            disabled={disabled}
+          />
+        </div>
+        <div>
+          <label htmlFor={`${idPrefix}-end`} className={labelClassName}>
+            End time
+          </label>
+          <Input
+            id={`${idPrefix}-end`}
+            type="time"
+            value={form.endTime}
+            onChange={(event) => onChange({ endTime: event.target.value })}
+            className={fieldClassName}
+            disabled={disabled}
+          />
+        </div>
+        <div>
+          <p className={labelClassName}>Duration</p>
+          <p className="flex h-10 items-center rounded-xl border border-dashed border-border/70 px-3 text-sm text-muted-foreground">
+            {form.startTime && form.endTime
+              ? minutesBetweenTimes(form.startTime, form.endTime) != null
+                ? formatDurationMinutes(
+                    minutesBetweenTimes(form.startTime, form.endTime)
+                  )
+                : "End must be after start"
+              : "Set start and end time"}
+          </p>
+        </div>
+        <div>
           <label htmlFor={`${idPrefix}-status`} className={labelClassName}>
             Status
           </label>
@@ -378,6 +426,9 @@ function TaskCard({
           >
             {overdue ? "Overdue · " : ""}
             {formatTaskDate(task.scheduledOn)}
+            {formatTaskTimeRange(task.startTime, task.endTime)
+              ? ` · ${formatTaskTimeRange(task.startTime, task.endTime)}`
+              : ""}
           </span>
         </div>
       </button>
@@ -601,6 +652,8 @@ export function WorkDashboard({
           status: createForm.status,
           priority: createForm.priority,
           scheduled_on: createForm.scheduledOn || null,
+          start_time: createForm.startTime || null,
+          end_time: createForm.endTime || null,
           sort_order: nextSortOrder(tasks, createForm.status),
         }),
       })
@@ -641,6 +694,8 @@ export function WorkDashboard({
           status: editForm.status,
           priority: editForm.priority,
           scheduled_on: editForm.scheduledOn || null,
+          start_time: editForm.startTime || null,
+          end_time: editForm.endTime || null,
         }),
       })
 
@@ -1063,13 +1118,14 @@ export function WorkDashboard({
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold">Priority</th>
                 <th className="px-4 py-3 font-semibold">Scheduled</th>
+                <th className="px-4 py-3 font-semibold">Time</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-10 text-center text-sm text-muted-foreground"
                   >
                     No tasks match these filters.
@@ -1110,6 +1166,9 @@ export function WorkDashboard({
                       )}
                     >
                       {formatTaskDate(task.scheduledOn)}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {formatTaskTimeRange(task.startTime, task.endTime) ?? "—"}
                     </td>
                   </tr>
                 ))

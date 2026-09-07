@@ -12,6 +12,8 @@ create table if not exists public.staff_tasks (
   priority text not null default 'medium'
     check (priority in ('low', 'medium', 'high')),
   scheduled_on date,
+  start_time time,
+  end_time time,
   sort_order integer not null default 0,
   created_by text not null default '',
   created_at timestamptz not null default now(),
@@ -26,6 +28,20 @@ create index if not exists staff_tasks_status_sort_idx
 
 create index if not exists staff_tasks_scheduled_on_idx
   on public.staff_tasks (scheduled_on);
+
+alter table public.staff_tasks
+  drop constraint if exists staff_tasks_time_range_check;
+
+alter table public.staff_tasks
+  add constraint staff_tasks_time_range_check
+  check (
+    (start_time is null and end_time is null)
+    or (
+      start_time is not null
+      and end_time is not null
+      and end_time > start_time
+    )
+  );
 
 alter table public.staff_tasks enable row level security;
 

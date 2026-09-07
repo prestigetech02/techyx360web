@@ -229,7 +229,7 @@ export function InvoiceActions({
 
             {!emailConfigured ? (
               <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
-                Add `RESEND_API_KEY` and `INVOICE_FROM_EMAIL` to enable email
+                Add `ZEPTOMAIL_TOKEN` and `ZEPTOMAIL_FROM_EMAIL` to enable email
                 delivery.
               </p>
             ) : null}

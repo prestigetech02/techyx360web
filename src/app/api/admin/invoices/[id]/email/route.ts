@@ -29,7 +29,7 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json(
       {
         error:
-          "Email is not configured. Add RESEND_API_KEY and INVOICE_FROM_EMAIL to your environment variables.",
+          "Email is not configured. Add ZEPTOMAIL_TOKEN and ZEPTOMAIL_FROM_EMAIL to your environment variables.",
       },
       { status: 500 }
     )

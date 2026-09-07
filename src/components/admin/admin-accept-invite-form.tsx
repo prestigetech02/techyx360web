@@ -41,34 +41,89 @@ export function AdminAcceptInviteForm() {
     }
 
     const supabase = createClient()
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get("code")
+    const search = new URLSearchParams(window.location.search)
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""))
+    const code = search.get("code")
+    const tokenHash = search.get("token_hash") || hash.get("token_hash")
+    const otpType = search.get("type") || hash.get("type") || "invite"
     const urlError =
-      params.get("error_description") || params.get("error") || null
+      search.get("error_description") ||
+      search.get("error") ||
+      hash.get("error_description") ||
+      hash.get("error") ||
+      null
 
     async function establishSession() {
-      if (urlError) {
+      if (urlError && urlError !== "invalid") {
         setInviteError(urlError.replace(/\+/g, " "))
         setChecking(false)
         return
       }
 
-      if (code) {
-        const { error: exchangeError } =
-          await supabase.auth.exchangeCodeForSession(code)
-        if (exchangeError) {
+      if (tokenHash) {
+        const { error: otpError } = await supabase.auth.verifyOtp({
+          type: otpType === "recovery" ? "recovery" : "invite",
+          token_hash: tokenHash,
+        })
+        if (otpError) {
           setInviteError(
-            exchangeError.message ||
-              "This invite link is invalid or has expired."
+            otpError.message ||
+              "This invite link is invalid or has expired. Ask an admin to send a new invite."
           )
           setChecking(false)
           return
         }
+      } else {
+        const accessToken = hash.get("access_token")
+        const refreshToken = hash.get("refresh_token")
+        if (accessToken && refreshToken) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          if (sessionError) {
+            console.error("Failed to restore invite session", sessionError)
+          }
+        } else if (code) {
+          const { error: exchangeError } =
+            await supabase.auth.exchangeCodeForSession(code)
+          if (exchangeError) {
+            console.error("Invite code exchange failed", exchangeError)
+          }
+        }
       }
 
-      const { data } = await supabase.auth.getSession()
-      setHasSession(Boolean(data.session))
-      if (!data.session) {
+      let session = (await supabase.auth.getSession()).data.session
+      if (!session) {
+        session = await new Promise((resolve) => {
+          const {
+            data: { subscription },
+          } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+            if (nextSession) {
+              subscription.unsubscribe()
+              resolve(nextSession)
+            }
+          })
+          window.setTimeout(() => {
+            subscription.unsubscribe()
+            resolve(null)
+          }, 1200)
+        })
+      }
+
+      if (session && (window.location.hash || tokenHash || code)) {
+        const clean = `${window.location.pathname}${window.location.search}`
+          .replace(/[?&]code=[^&]+/g, "")
+          .replace(/[?&]token_hash=[^&]+/g, "")
+          .replace(/[?&]type=[^&]+/g, "")
+          .replace(/[?&]error=[^&]+/g, "")
+          .replace(/\?&/, "?")
+          .replace(/\?$/, "")
+        window.history.replaceState({}, "", clean || window.location.pathname)
+      }
+
+      setHasSession(Boolean(session))
+      if (!session) {
         setInviteError(
           "This invite link is invalid or has expired. Ask an admin to send a new invite."
         )

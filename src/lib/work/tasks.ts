@@ -9,6 +9,10 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 import type { Database } from "@/types/database"
 import {
+  minutesBetweenTimes,
+  parseTimeOfDay,
+} from "@/lib/work/dates"
+import {
   isStaffTaskPriority,
   isStaffTaskStatus,
   type StaffTaskView,
@@ -39,7 +43,7 @@ type TeamMemberLiteRow = Pick<
 >
 
 const TASK_SELECT =
-  "id, title, notes, assignee_id, status, priority, scheduled_on, sort_order, created_by, created_at, updated_at"
+  "id, title, notes, assignee_id, status, priority, scheduled_on, start_time, end_time, sort_order, created_by, created_at, updated_at"
 
 const ASSIGNEE_SELECT = "id, full_name, email, role, department, status"
 
@@ -72,6 +76,9 @@ function mapTaskRow(
     status: isStaffTaskStatus(row.status) ? row.status : "todo",
     priority: isStaffTaskPriority(row.priority) ? row.priority : "medium",
     scheduledOn: row.scheduled_on,
+    startTime: parseTimeOfDay(row.start_time),
+    endTime: parseTimeOfDay(row.end_time),
+    durationMinutes: minutesBetweenTimes(row.start_time, row.end_time),
     sortOrder: row.sort_order,
     assigneeId: row.assignee_id,
     assignee,

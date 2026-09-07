@@ -1,23 +1,11 @@
 import "server-only"
 
-import { Resend } from "resend"
-
 import { organization, siteUrl } from "@/config/site"
+import {
+  isTransactionalEmailConfigured,
+  sendTransactionalEmail,
+} from "@/lib/email/zeptomail"
 import type { InvoiceWithItems } from "@/lib/invoices/types"
-
-function getResendClient() {
-  const apiKey = process.env.RESEND_API_KEY?.trim()
-  if (!apiKey) return null
-  return new Resend(apiKey)
-}
-
-function getFromEmail() {
-  return (
-    process.env.INVOICE_FROM_EMAIL?.trim() ||
-    process.env.RESEND_FROM_EMAIL?.trim() ||
-    organization.email
-  )
-}
 
 export async function sendInvoiceEmail({
   invoice,
@@ -28,10 +16,9 @@ export async function sendInvoiceEmail({
   to: string
   message?: string
 }) {
-  const resend = getResendClient()
-  if (!resend) {
+  if (!isTransactionalEmailConfigured()) {
     throw new Error(
-      "Email is not configured. Add RESEND_API_KEY to your environment variables."
+      "Email is not configured. Add ZEPTOMAIL_TOKEN and ZEPTOMAIL_FROM_EMAIL to your environment variables."
     )
   }
 
@@ -44,9 +31,9 @@ export async function sendInvoiceEmail({
     message?.trim() ||
     `Please find attached ${invoice.document_type === "quote" ? "quote" : "invoice"} ${invoice.invoice_number} for ${invoice.title}.`
 
-  const { error } = await resend.emails.send({
-    from: getFromEmail(),
-    to: [to],
+  await sendTransactionalEmail({
+    to,
+    toName: invoice.client_name || undefined,
     subject,
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f1b3d;">
@@ -67,13 +54,10 @@ export async function sendInvoiceEmail({
     `,
     attachments: [
       {
-        filename: `${invoice.invoice_number}.pdf`,
+        name: `${invoice.invoice_number}.pdf`,
+        mimeType: "application/pdf",
         content: pdf,
       },
     ],
   })
-
-  if (error) {
-    throw new Error(error.message || "Unable to send invoice email.")
-  }
 }

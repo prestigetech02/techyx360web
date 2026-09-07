@@ -1245,6 +1245,8 @@ export type Database = {
           status: string
           priority: string
           scheduled_on: string | null
+          start_time: string | null
+          end_time: string | null
           sort_order: number
           created_by: string
           created_at: string
@@ -1258,6 +1260,8 @@ export type Database = {
           status?: string
           priority?: string
           scheduled_on?: string | null
+          start_time?: string | null
+          end_time?: string | null
           sort_order?: number
           created_by?: string
           created_at?: string
@@ -1271,10 +1275,39 @@ export type Database = {
           status?: string
           priority?: string
           scheduled_on?: string | null
+          start_time?: string | null
+          end_time?: string | null
           sort_order?: number
           created_by?: string
           created_at?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      staff_task_reminders: {
+        Row: {
+          id: string
+          member_id: string
+          task_id: string | null
+          kind: string
+          sent_for_date: string
+          sent_at: string
+        }
+        Insert: {
+          id?: string
+          member_id: string
+          task_id?: string | null
+          kind: string
+          sent_for_date: string
+          sent_at?: string
+        }
+        Update: {
+          id?: string
+          member_id?: string
+          task_id?: string | null
+          kind?: string
+          sent_for_date?: string
+          sent_at?: string
         }
         Relationships: []
       }

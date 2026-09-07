@@ -144,6 +144,10 @@ export default async function AdminWorkPage({
           <code className="rounded bg-red-100 px-1.5 py-0.5 text-xs">
             supabase/staff-tasks.sql
           </code>{" "}
+          and{" "}
+          <code className="rounded bg-red-100 px-1.5 py-0.5 text-xs">
+            supabase/staff-tasks-time-migration.sql
+          </code>{" "}
           in Supabase.
         </div>
       </WorkPageShell>

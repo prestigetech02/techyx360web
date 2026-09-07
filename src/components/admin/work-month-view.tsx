@@ -3,7 +3,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
+  compareStartTime,
   formatMonthYear,
+  formatTimeOfDay,
   isOverdueTask,
   monthCells,
   startOfMonth,
@@ -85,7 +87,9 @@ export function WorkMonthView({
             </div>
           ))}
           {cells.map((cell) => {
-            const dayTasks = tasks.filter((task) => task.scheduledOn === cell.iso)
+            const dayTasks = tasks
+              .filter((task) => task.scheduledOn === cell.iso)
+              .sort((a, b) => compareStartTime(a.startTime, b.startTime))
             const isToday = cell.iso === today
             const isSelected = cell.iso === selectedDate
             return (
@@ -121,7 +125,9 @@ export function WorkMonthView({
                         onClick={() => onOpenTask(task)}
                         className="truncate rounded-lg bg-muted/70 px-1.5 py-1 text-left text-[11px] font-medium text-foreground hover:bg-muted"
                       >
-                        {task.title}
+                        {task.startTime
+                          ? `${formatTimeOfDay(task.startTime)} ${task.title}`
+                          : task.title}
                         {overdue ? (
                           <Badge className="ml-1 border-0 bg-rose-500/10 px-1 py-0 text-[9px] text-rose-700 dark:text-rose-300">
                             Overdue

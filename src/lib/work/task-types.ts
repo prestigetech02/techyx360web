@@ -22,6 +22,9 @@ export type StaffTaskView = {
   status: StaffTaskStatus
   priority: StaffTaskPriority
   scheduledOn: string | null
+  startTime: string | null
+  endTime: string | null
+  durationMinutes: number | null
   sortOrder: number
   assigneeId: string | null
   assignee: WorkAssignee | null

@@ -117,3 +117,77 @@ export function isOverdueTask(task: {
   if (!task.scheduledOn || task.status === "done") return false
   return task.scheduledOn < todayIso()
 }
+
+export function parseTimeOfDay(value: string | null | undefined) {
+  if (!value) return null
+  const match = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(value.trim())
+  if (!match) return null
+  const hours = Number(match[1])
+  const minutes = Number(match[2])
+  if (hours > 23 || minutes > 59) return null
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`
+}
+
+export function toDbTime(value: string | null) {
+  const parsed = parseTimeOfDay(value)
+  return parsed ? `${parsed}:00` : null
+}
+
+export function minutesBetweenTimes(
+  startTime: string | null | undefined,
+  endTime: string | null | undefined
+) {
+  const start = parseTimeOfDay(startTime)
+  const end = parseTimeOfDay(endTime)
+  if (!start || !end) return null
+  const [startHours, startMinutes] = start.split(":").map(Number)
+  const [endHours, endMinutes] = end.split(":").map(Number)
+  const startTotal = startHours * 60 + startMinutes
+  const endTotal = endHours * 60 + endMinutes
+  if (endTotal <= startTotal) return null
+  return endTotal - startTotal
+}
+
+export function formatDurationMinutes(minutes: number | null | undefined) {
+  if (minutes == null || minutes <= 0) return "—"
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  if (hours > 0 && rest > 0) return `${hours}h ${rest}m`
+  if (hours > 0) return `${hours}h`
+  return `${rest}m`
+}
+
+export function formatTimeOfDay(value: string | null | undefined) {
+  const parsed = parseTimeOfDay(value)
+  if (!parsed) return "—"
+  const [hoursRaw, minutes] = parsed.split(":")
+  const hours = Number(hoursRaw)
+  const suffix = hours >= 12 ? "PM" : "AM"
+  const hour12 = hours % 12 || 12
+  return `${hour12}:${minutes} ${suffix}`
+}
+
+export function formatTaskTimeRange(
+  startTime: string | null | undefined,
+  endTime: string | null | undefined
+) {
+  const start = parseTimeOfDay(startTime)
+  const end = parseTimeOfDay(endTime)
+  if (!start || !end) return null
+  const minutes = minutesBetweenTimes(start, end)
+  const range = `${formatTimeOfDay(start)} – ${formatTimeOfDay(end)}`
+  if (minutes == null) return range
+  return `${range} · ${formatDurationMinutes(minutes)}`
+}
+
+export function compareStartTime(
+  a: string | null | undefined,
+  b: string | null | undefined
+) {
+  const startA = parseTimeOfDay(a)
+  const startB = parseTimeOfDay(b)
+  if (!startA && !startB) return 0
+  if (!startA) return 1
+  if (!startB) return -1
+  return startA.localeCompare(startB)
+}

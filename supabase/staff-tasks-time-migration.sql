@@ -10,15 +10,4 @@ alter table public.staff_tasks
 alter table public.staff_tasks
   drop constraint if exists staff_tasks_time_range_check;
 
-alter table public.staff_tasks
-  add constraint staff_tasks_time_range_check
-  check (
-    (start_time is null and end_time is null)
-    or (
-      start_time is not null
-      and end_time is not null
-      and end_time > start_time
-    )
-  );
-
 notify pgrst, 'reload schema';

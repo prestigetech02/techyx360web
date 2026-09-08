@@ -1245,6 +1245,8 @@ export type Database = {
           status: string
           priority: string
           scheduled_on: string | null
+          starts_on: string | null
+          ends_on: string | null
           start_time: string | null
           end_time: string | null
           sort_order: number
@@ -1260,6 +1262,8 @@ export type Database = {
           status?: string
           priority?: string
           scheduled_on?: string | null
+          starts_on?: string | null
+          ends_on?: string | null
           start_time?: string | null
           end_time?: string | null
           sort_order?: number
@@ -1275,6 +1279,8 @@ export type Database = {
           status?: string
           priority?: string
           scheduled_on?: string | null
+          starts_on?: string | null
+          ends_on?: string | null
           start_time?: string | null
           end_time?: string | null
           sort_order?: number

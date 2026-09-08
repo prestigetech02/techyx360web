@@ -46,11 +46,13 @@ import {
   addMonthsIso,
   formatDurationMinutes,
   formatTaskDate,
-  formatTaskTimeRange,
+  formatTaskSchedule,
+  formatTimeOfDay,
   isIsoDate,
   isOverdueTask,
-  minutesBetweenTimes,
+  minutesBetweenDateTimes,
   parseTimeOfDay,
+  shiftDateRange,
   startOfMonth,
   startOfWeekMonday,
   todayIso,
@@ -76,7 +78,8 @@ type TaskFormState = {
   assigneeId: string
   status: StaffTaskStatus
   priority: StaffTaskPriority
-  scheduledOn: string
+  startsOn: string
+  endsOn: string
   startTime: string
   endTime: string
 }
@@ -121,7 +124,7 @@ const PRIORITY_BADGE: Record<StaffTaskPriority, string> = {
 }
 
 function emptyFormState(
-  scheduledOn = "",
+  startsOn = "",
   assigneeId = ""
 ): TaskFormState {
   return {
@@ -130,7 +133,8 @@ function emptyFormState(
     assigneeId,
     status: "todo",
     priority: "medium",
-    scheduledOn,
+    startsOn,
+    endsOn: startsOn,
     startTime: "",
     endTime: "",
   }
@@ -143,7 +147,8 @@ function formStateFromTask(task: StaffTaskView): TaskFormState {
     assigneeId: task.assigneeId ?? "",
     status: task.status,
     priority: task.priority,
-    scheduledOn: task.scheduledOn ?? "",
+    startsOn: task.startsOn ?? task.scheduledOn ?? "",
+    endsOn: task.endsOn ?? task.startsOn ?? task.scheduledOn ?? "",
     startTime: parseTimeOfDay(task.startTime) ?? "",
     endTime: parseTimeOfDay(task.endTime) ?? "",
   }
@@ -267,14 +272,21 @@ function TaskFormFields({
           </select>
         </div>
         <div>
-          <label htmlFor={`${idPrefix}-scheduled`} className={labelClassName}>
-            Scheduled
+          <label htmlFor={`${idPrefix}-starts-on`} className={labelClassName}>
+            Start date
           </label>
           <Input
-            id={`${idPrefix}-scheduled`}
+            id={`${idPrefix}-starts-on`}
             type="date"
-            value={form.scheduledOn}
-            onChange={(event) => onChange({ scheduledOn: event.target.value })}
+            value={form.startsOn}
+            onChange={(event) => {
+              const startsOn = event.target.value
+              const endsOn =
+                !form.endsOn || (form.startsOn && form.endsOn < startsOn)
+                  ? startsOn
+                  : form.endsOn
+              onChange({ startsOn, endsOn })
+            }}
             className={fieldClassName}
             disabled={disabled}
           />
@@ -288,6 +300,20 @@ function TaskFormFields({
             type="time"
             value={form.startTime}
             onChange={(event) => onChange({ startTime: event.target.value })}
+            className={fieldClassName}
+            disabled={disabled}
+          />
+        </div>
+        <div>
+          <label htmlFor={`${idPrefix}-ends-on`} className={labelClassName}>
+            End date
+          </label>
+          <Input
+            id={`${idPrefix}-ends-on`}
+            type="date"
+            value={form.endsOn}
+            min={form.startsOn || undefined}
+            onChange={(event) => onChange({ endsOn: event.target.value })}
             className={fieldClassName}
             disabled={disabled}
           />
@@ -308,13 +334,23 @@ function TaskFormFields({
         <div>
           <p className={labelClassName}>Duration</p>
           <p className="flex h-10 items-center rounded-xl border border-dashed border-border/70 px-3 text-sm text-muted-foreground">
-            {form.startTime && form.endTime
-              ? minutesBetweenTimes(form.startTime, form.endTime) != null
+            {form.startsOn && form.endsOn && form.startTime && form.endTime
+              ? minutesBetweenDateTimes(
+                  form.startsOn,
+                  form.startTime,
+                  form.endsOn,
+                  form.endTime
+                ) != null
                 ? formatDurationMinutes(
-                    minutesBetweenTimes(form.startTime, form.endTime)
+                    minutesBetweenDateTimes(
+                      form.startsOn,
+                      form.startTime,
+                      form.endsOn,
+                      form.endTime
+                    )
                   )
                 : "End must be after start"
-              : "Set start and end time"}
+              : "Set start and end date and time"}
           </p>
         </div>
         <div>
@@ -425,10 +461,12 @@ function TaskCard({
             )}
           >
             {overdue ? "Overdue · " : ""}
-            {formatTaskDate(task.scheduledOn)}
-            {formatTaskTimeRange(task.startTime, task.endTime)
-              ? ` · ${formatTaskTimeRange(task.startTime, task.endTime)}`
-              : ""}
+            {formatTaskSchedule(
+              task.startsOn,
+              task.startTime,
+              task.endsOn,
+              task.endTime
+            ) ?? "No dates"}
           </span>
         </div>
       </button>
@@ -613,9 +651,9 @@ export function WorkDashboard({
       : assigneeFilter !== "all" && assigneeFilter !== "unassigned"
         ? assigneeFilter
         : ""
-    const scheduledOn =
+    const startsOn =
       view === "week" || view === "day" || view === "month" ? selectedDate : ""
-    setCreateForm(emptyFormState(scheduledOn, assigneeId))
+    setCreateForm(emptyFormState(startsOn, assigneeId))
     setCreateOpen(true)
   }
 
@@ -651,7 +689,8 @@ export function WorkDashboard({
           assignee_id: createForm.assigneeId || null,
           status: createForm.status,
           priority: createForm.priority,
-          scheduled_on: createForm.scheduledOn || null,
+          starts_on: createForm.startsOn || null,
+          ends_on: createForm.endsOn || createForm.startsOn || null,
           start_time: createForm.startTime || null,
           end_time: createForm.endTime || null,
           sort_order: nextSortOrder(tasks, createForm.status),
@@ -693,7 +732,8 @@ export function WorkDashboard({
           assignee_id: editForm.assigneeId || null,
           status: editForm.status,
           priority: editForm.priority,
-          scheduled_on: editForm.scheduledOn || null,
+          starts_on: editForm.startsOn || null,
+          ends_on: editForm.endsOn || editForm.startsOn || null,
           start_time: editForm.startTime || null,
           end_time: editForm.endTime || null,
         }),
@@ -782,21 +822,37 @@ export function WorkDashboard({
     void updateStatus(taskId, status)
   }
 
-  async function rescheduleTask(taskId: string, scheduledOn: string) {
+  async function rescheduleTask(taskId: string, startsOn: string) {
     const current = tasks.find((task) => task.id === taskId)
-    if (!current || current.scheduledOn === scheduledOn) return
+    if (!current) return
+    const next = shiftDateRange(current.startsOn, current.endsOn, startsOn)
+    if (current.startsOn === next.startsOn && current.endsOn === next.endsOn) {
+      return
+    }
 
     const previous = tasks
     setTasks((currentTasks) =>
       currentTasks.map((task) =>
-        task.id === taskId ? { ...task, scheduledOn } : task
+        task.id === taskId
+          ? {
+              ...task,
+              startsOn: next.startsOn,
+              endsOn: next.endsOn,
+              scheduledOn: next.startsOn,
+            }
+          : task
       )
     )
 
     const response = await fetch(`/api/admin/staff-tasks/${taskId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scheduled_on: scheduledOn }),
+      body: JSON.stringify({
+        starts_on: next.startsOn,
+        ends_on: next.endsOn,
+        start_time: current.startTime,
+        end_time: current.endTime,
+      }),
     })
     const payload = await readTaskPayload(response)
 
@@ -1117,8 +1173,8 @@ export function WorkDashboard({
                 <th className="px-4 py-3 font-semibold">Assignee</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold">Priority</th>
-                <th className="px-4 py-3 font-semibold">Scheduled</th>
-                <th className="px-4 py-3 font-semibold">Time</th>
+                <th className="px-4 py-3 font-semibold">Start</th>
+                <th className="px-4 py-3 font-semibold">End</th>
               </tr>
             </thead>
             <tbody>
@@ -1165,10 +1221,24 @@ export function WorkDashboard({
                           : "text-muted-foreground"
                       )}
                     >
-                      {formatTaskDate(task.scheduledOn)}
+                      {task.startsOn
+                        ? [
+                            formatTaskDate(task.startsOn),
+                            task.startTime ? formatTimeOfDay(task.startTime) : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")
+                        : "—"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {formatTaskTimeRange(task.startTime, task.endTime) ?? "—"}
+                      {task.endsOn
+                        ? [
+                            formatTaskDate(task.endsOn),
+                            task.endTime ? formatTimeOfDay(task.endTime) : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")
+                        : "—"}
                     </td>
                   </tr>
                 ))

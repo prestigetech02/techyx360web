@@ -1,5 +1,5 @@
 import { hasLoggedWork, type StaffDailyLogView } from "@/lib/work/log-types"
-import { isOverdueTask } from "@/lib/work/dates"
+import { isOverdueTask, taskTouchesDate } from "@/lib/work/dates"
 import type { StaffTaskView, WorkAssignee } from "@/lib/work/task-types"
 import { cn } from "@/lib/utils"
 
@@ -21,7 +21,7 @@ export function buildWorkPulse(
 
   return members.map((member) => {
     const todaysTasks = tasks.filter(
-      (task) => task.assigneeId === member.id && task.scheduledOn === today
+      (task) => task.assigneeId === member.id && taskTouchesDate(task, today)
     )
     const overdueCount = tasks.filter(
       (task) => task.assigneeId === member.id && isOverdueTask(task)

@@ -1,5 +1,5 @@
 import {
-  minutesBetweenTimes,
+  minutesBetweenDateTimes,
   parseTimeOfDay,
   toDbTime,
 } from "@/lib/work/dates"
@@ -20,6 +20,8 @@ export type CreateStaffTaskInput = {
   status: StaffTaskStatus
   priority: StaffTaskPriority
   scheduled_on: string | null
+  starts_on: string | null
+  ends_on: string | null
   start_time: string | null
   end_time: string | null
   sort_order: number
@@ -32,6 +34,8 @@ export type UpdateStaffTaskInput = Partial<{
   status: StaffTaskStatus
   priority: StaffTaskPriority
   scheduled_on: string | null
+  starts_on: string | null
+  ends_on: string | null
   start_time: string | null
   end_time: string | null
   sort_order: number
@@ -66,42 +70,105 @@ function parseIsoDate(value: unknown): string | null | undefined {
   return raw
 }
 
-function parseTimePair(
-  startRaw: unknown,
-  endRaw: unknown
+function parseTimeValue(
+  value: unknown,
+  label: string
+): { ok: true; time: string | null } | { ok: false; error: string } {
+  if (value === null || value === undefined) {
+    return { ok: true, time: null }
+  }
+  const raw = asTrimmedString(value)
+  if (!raw) return { ok: true, time: null }
+  const parsed = parseTimeOfDay(raw)
+  if (!parsed) {
+    return { ok: false, error: `${label} must be a valid time.` }
+  }
+  return { ok: true, time: parsed }
+}
+
+function parseSchedule(
+  body: Record<string, unknown>,
+  options?: { allowOmittedTimes?: boolean }
 ):
-  | { ok: true; start_time: string | null; end_time: string | null }
+  | {
+      ok: true
+      starts_on: string | null
+      ends_on: string | null
+      start_time: string | null | undefined
+      end_time: string | null | undefined
+    }
   | { ok: false; error: string } {
-  const startInput =
-    startRaw === null || startRaw === undefined
-      ? null
-      : asTrimmedString(startRaw)
-  const endInput =
-    endRaw === null || endRaw === undefined ? null : asTrimmedString(endRaw)
-
-  const startTime = startInput ? parseTimeOfDay(startInput) : null
-  const endTime = endInput ? parseTimeOfDay(endInput) : null
-
-  if (startInput && !startTime) {
-    return { ok: false, error: "Start time must be a valid time." }
+  const startsOn = parseIsoDate(
+    body.starts_on !== undefined ? body.starts_on : body.scheduled_on
+  )
+  const endsOn = parseIsoDate(
+    body.ends_on !== undefined
+      ? body.ends_on
+      : body.starts_on !== undefined
+        ? body.starts_on
+        : body.scheduled_on
+  )
+  if (startsOn === undefined) {
+    return { ok: false, error: "Start date must be YYYY-MM-DD." }
   }
-  if (endInput && !endTime) {
-    return { ok: false, error: "End time must be a valid time." }
+  if (endsOn === undefined) {
+    return { ok: false, error: "End date must be YYYY-MM-DD." }
   }
-  if ((startTime && !endTime) || (!startTime && endTime)) {
+
+  const timesInBody =
+    body.start_time !== undefined || body.end_time !== undefined
+  const startDate = startsOn
+  const endDate = endsOn ?? startsOn
+
+  if ((startDate && !endDate) || (!startDate && endDate)) {
+    return { ok: false, error: "Add both start and end date, or leave both empty." }
+  }
+  if (startDate && endDate && endDate < startDate) {
+    return { ok: false, error: "End date must be on or after the start date." }
+  }
+
+  if (!timesInBody && options?.allowOmittedTimes) {
+    return {
+      ok: true,
+      starts_on: startDate,
+      ends_on: endDate,
+      start_time: undefined,
+      end_time: undefined,
+    }
+  }
+
+  const startTime = parseTimeValue(body.start_time, "Start time")
+  if (!startTime.ok) return startTime
+  const endTime = parseTimeValue(body.end_time, "End time")
+  if (!endTime.ok) return endTime
+
+  if ((startTime.time && !endTime.time) || (!startTime.time && endTime.time)) {
     return {
       ok: false,
       error: "Add both start and end time, or leave both empty.",
     }
   }
-  if (startTime && endTime && minutesBetweenTimes(startTime, endTime) == null) {
-    return { ok: false, error: "End time must be after start time." }
+  if ((startTime.time || endTime.time) && !startDate) {
+    return { ok: false, error: "Add start and end dates when setting times." }
+  }
+  if (startDate && endDate && startTime.time && endTime.time) {
+    if (
+      minutesBetweenDateTimes(startDate, startTime.time, endDate, endTime.time) ==
+      null
+    ) {
+      return {
+        ok: false,
+        error: "End date and time must be after start date and time.",
+      }
+    }
   }
 
   return {
     ok: true,
-    start_time: toDbTime(startTime),
-    end_time: toDbTime(endTime),
+    starts_on: startDate,
+    ends_on: endDate,
+    start_time: toDbTime(startTime.time),
+    end_time: toDbTime(endTime.time),
   }
 }
 
@@ -127,6 +194,16 @@ function parseOptionalAssigneeId(
   const id = parseUuid(raw)
   if (!id) return { ok: false }
   return { ok: true, id }
+}
+
+function withLegacySchedule<T extends {
+  starts_on: string | null
+  ends_on: string | null
+}>(data: T) {
+  return {
+    ...data,
+    scheduled_on: data.starts_on,
+  }
 }
 
 export function parseCreateStaffTaskBody(
@@ -168,31 +245,27 @@ export function parseCreateStaffTaskBody(
     return { ok: false, error: "Select a valid priority.", status: 400 }
   }
 
-  const scheduledOn = parseIsoDate(body.scheduled_on)
-  if (scheduledOn === undefined) {
-    return { ok: false, error: "Scheduled date must be YYYY-MM-DD.", status: 400 }
-  }
-
-  const times = parseTimePair(body.start_time, body.end_time)
-  if (!times.ok) {
-    return { ok: false, error: times.error, status: 400 }
+  const schedule = parseSchedule(body)
+  if (!schedule.ok) {
+    return { ok: false, error: schedule.error, status: 400 }
   }
 
   const sortOrder = parseSortOrder(body.sort_order)
 
   return {
     ok: true,
-    data: {
+    data: withLegacySchedule({
       title,
       notes,
       assignee_id: assignee.id,
       status: statusRaw,
       priority: priorityRaw,
-      scheduled_on: scheduledOn,
-      start_time: times.start_time,
-      end_time: times.end_time,
+      starts_on: schedule.starts_on,
+      ends_on: schedule.ends_on,
+      start_time: schedule.start_time,
+      end_time: schedule.end_time,
       sort_order: sortOrder ?? 0,
-    },
+    }),
   }
 }
 
@@ -252,28 +325,25 @@ export function parseUpdateStaffTaskBody(
     data.priority = priorityRaw
   }
 
-  if (body.scheduled_on !== undefined) {
-    const scheduledOn = parseIsoDate(body.scheduled_on)
-    if (scheduledOn === undefined) {
-      return {
-        ok: false,
-        error: "Scheduled date must be YYYY-MM-DD.",
-        status: 400,
-      }
-    }
-    data.scheduled_on = scheduledOn
-  }
+  const scheduleTouched =
+    body.starts_on !== undefined ||
+    body.ends_on !== undefined ||
+    body.scheduled_on !== undefined ||
+    body.start_time !== undefined ||
+    body.end_time !== undefined
 
-  if (body.start_time !== undefined || body.end_time !== undefined) {
-    const times = parseTimePair(
-      body.start_time !== undefined ? body.start_time : "",
-      body.end_time !== undefined ? body.end_time : ""
-    )
-    if (!times.ok) {
-      return { ok: false, error: times.error, status: 400 }
+  if (scheduleTouched) {
+    const schedule = parseSchedule(body, { allowOmittedTimes: true })
+    if (!schedule.ok) {
+      return { ok: false, error: schedule.error, status: 400 }
     }
-    data.start_time = times.start_time
-    data.end_time = times.end_time
+    data.starts_on = schedule.starts_on
+    data.ends_on = schedule.ends_on
+    data.scheduled_on = schedule.starts_on
+    if (schedule.start_time !== undefined) {
+      data.start_time = schedule.start_time
+      data.end_time = schedule.end_time
+    }
   }
 
   if (body.sort_order !== undefined) {

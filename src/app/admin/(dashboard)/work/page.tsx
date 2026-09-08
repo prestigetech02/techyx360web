@@ -146,7 +146,7 @@ export default async function AdminWorkPage({
           </code>{" "}
           and{" "}
           <code className="rounded bg-red-100 px-1.5 py-0.5 text-xs">
-            supabase/staff-tasks-time-migration.sql
+            supabase/staff-tasks-date-range-migration.sql
           </code>{" "}
           in Supabase.
         </div>

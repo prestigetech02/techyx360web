@@ -111,11 +111,124 @@ export function monthCells(monthStart: string) {
 }
 
 export function isOverdueTask(task: {
-  scheduledOn: string | null
+  startsOn?: string | null
+  endsOn?: string | null
+  scheduledOn?: string | null
   status: string
 }) {
-  if (!task.scheduledOn || task.status === "done") return false
-  return task.scheduledOn < todayIso()
+  if (task.status === "done") return false
+  const end = task.endsOn || task.startsOn || task.scheduledOn
+  if (!end) return false
+  return end < todayIso()
+}
+
+export function taskTouchesDate(
+  task: {
+    startsOn?: string | null
+    endsOn?: string | null
+    scheduledOn?: string | null
+  },
+  iso: string
+) {
+  const start = task.startsOn || task.scheduledOn
+  if (!start) return false
+  const end = task.endsOn || start
+  return iso >= start && iso <= end
+}
+
+export function shiftDateRange(
+  startsOn: string | null,
+  endsOn: string | null,
+  toIso: string
+) {
+  if (!isIsoDate(toIso)) return { startsOn: toIso, endsOn: toIso }
+  if (!startsOn) {
+    return { startsOn: toIso, endsOn: endsOn && endsOn > toIso ? endsOn : toIso }
+  }
+  const spanDays = endsOn
+    ? Math.round(
+        (parseLocalDate(endsOn).getTime() - parseLocalDate(startsOn).getTime()) /
+          86400000
+      )
+    : 0
+  return {
+    startsOn: toIso,
+    endsOn: addDaysIso(toIso, Math.max(0, spanDays)),
+  }
+}
+
+export function minutesBetweenDateTimes(
+  startsOn: string | null | undefined,
+  startTime: string | null | undefined,
+  endsOn: string | null | undefined,
+  endTime: string | null | undefined
+) {
+  if (!startsOn || !endsOn) return null
+  const start = parseTimeOfDay(startTime)
+  const end = parseTimeOfDay(endTime)
+  if (!start || !end) return null
+  const startAt = new Date(`${startsOn}T${start}:00`)
+  const endAt = new Date(`${endsOn}T${end}:00`)
+  if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
+    return null
+  }
+  const minutes = Math.round((endAt.getTime() - startAt.getTime()) / 60000)
+  return minutes > 0 ? minutes : null
+}
+
+export function formatTaskSchedule(
+  startsOn: string | null | undefined,
+  startTime: string | null | undefined,
+  endsOn: string | null | undefined,
+  endTime: string | null | undefined
+) {
+  if (!startsOn) return null
+  const endDate = endsOn || startsOn
+  const startLabel = [
+    formatTaskDate(startsOn),
+    parseTimeOfDay(startTime) ? formatTimeOfDay(startTime) : "",
+  ]
+    .filter(Boolean)
+    .join(", ")
+  if (startsOn === endDate) {
+    const range = formatTaskTimeRange(startTime, endTime)
+    return range ? `${formatTaskDate(startsOn)} · ${range}` : startLabel
+  }
+  const endLabel = [
+    formatTaskDate(endDate),
+    parseTimeOfDay(endTime) ? formatTimeOfDay(endTime) : "",
+  ]
+    .filter(Boolean)
+    .join(", ")
+  const minutes = minutesBetweenDateTimes(startsOn, startTime, endDate, endTime)
+  return minutes
+    ? `${startLabel} → ${endLabel} · ${formatDurationMinutes(minutes)}`
+    : `${startLabel} → ${endLabel}`
+}
+
+export function formatTaskTimeOnDay(
+  task: {
+    startsOn?: string | null
+    endsOn?: string | null
+    scheduledOn?: string | null
+    startTime: string | null
+    endTime: string | null
+  },
+  iso: string
+) {
+  const start = task.startsOn || task.scheduledOn
+  const end = task.endsOn || start
+  if (!start) return null
+  if (start === end) {
+    return formatTaskTimeRange(task.startTime, task.endTime)
+  }
+  if (iso === start) {
+    return task.startTime ? `${formatTimeOfDay(task.startTime)} start` : "Starts"
+  }
+  if (iso === end) {
+    return task.endTime ? `${formatTimeOfDay(task.endTime)} end` : "Ends"
+  }
+  return "Continues"
 }
 
 export function parseTimeOfDay(value: string | null | undefined) {

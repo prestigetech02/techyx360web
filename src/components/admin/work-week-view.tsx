@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button"
 import {
   compareStartTime,
   formatDayHeading,
-  formatTaskTimeRange,
+  formatTaskTimeOnDay,
   formatWeekRange,
   isOverdueTask,
+  taskTouchesDate,
   weekDates,
 } from "@/lib/work/dates"
 import { hasLoggedWork, type StaffDailyLogView } from "@/lib/work/log-types"
@@ -91,7 +92,7 @@ export function WorkWeekView({
       <div className="grid auto-cols-[minmax(14rem,1fr)] grid-flow-col gap-3 overflow-x-auto pb-2 lg:auto-cols-fr lg:grid-cols-7">
         {days.map((iso) => {
           const dayTasks = tasks
-            .filter((task) => task.scheduledOn === iso)
+            .filter((task) => taskTouchesDate(task, iso))
             .sort((a, b) => compareStartTime(a.startTime, b.startTime) || a.sortOrder - b.sortOrder)
           const loggedCount = logs.filter(
             (log) => log.logDate === iso && hasLoggedWork(log)
@@ -158,9 +159,9 @@ export function WorkWeekView({
                           <p className="text-sm font-medium text-foreground">
                             {task.title}
                           </p>
-                          {formatTaskTimeRange(task.startTime, task.endTime) ? (
+                          {formatTaskTimeOnDay(task, iso) ? (
                             <p className="mt-1 text-[11px] text-muted-foreground">
-                              {formatTaskTimeRange(task.startTime, task.endTime)}
+                              {formatTaskTimeOnDay(task, iso)}
                             </p>
                           ) : null}
                           <div className="mt-2 flex items-center justify-between gap-2">

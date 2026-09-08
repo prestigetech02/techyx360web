@@ -7,9 +7,9 @@ import {
 } from "@/lib/email/zeptomail"
 import { createAdminClient } from "@/lib/supabase/admin"
 import {
-  formatTaskDate,
-  formatTaskTimeRange,
+  formatTaskSchedule,
   parseTimeOfDay,
+  taskTouchesDate,
 } from "@/lib/work/dates"
 import { getAllStaffTasks } from "@/lib/work/tasks"
 import {
@@ -67,9 +67,14 @@ function lagosNow() {
 }
 
 function taskStartAt(task: StaffTaskView) {
-  if (!task.scheduledOn) return null
+  const startDate = task.startsOn || task.scheduledOn
+  if (!startDate) return null
   const time = parseTimeOfDay(task.startTime) ?? DEFAULT_START
-  return new Date(`${task.scheduledOn}T${time}:00+01:00`)
+  return new Date(`${startDate}T${time}:00+01:00`)
+}
+
+function taskEndDate(task: StaffTaskView) {
+  return task.endsOn || task.startsOn || task.scheduledOn
 }
 
 function isOpenTask(task: StaffTaskView) {
@@ -77,12 +82,15 @@ function isOpenTask(task: StaffTaskView) {
 }
 
 function isOverdueNow(task: StaffTaskView, today: string) {
-  if (!isOpenTask(task) || !task.scheduledOn) return false
-  return task.scheduledOn < today
+  const end = taskEndDate(task)
+  if (!isOpenTask(task) || !end) return false
+  return end < today
 }
 
 function isUpcomingNow(task: StaffTaskView, now: Date) {
-  if (!isOpenTask(task) || !task.startTime || !task.scheduledOn) return false
+  if (!isOpenTask(task) || !task.startTime || !(task.startsOn || task.scheduledOn)) {
+    return false
+  }
   const startAt = taskStartAt(task)
   if (!startAt) return false
   const remindAt = new Date(startAt.getTime() - UPCOMING_HOURS * 60 * 60 * 1000)
@@ -91,7 +99,8 @@ function isUpcomingNow(task: StaffTaskView, now: Date) {
 
 function isPendingNow(task: StaffTaskView, today: string) {
   if (!isOpenTask(task)) return false
-  return !task.scheduledOn || task.scheduledOn === today
+  if (!(task.startsOn || task.scheduledOn)) return true
+  return taskTouchesDate(task, today)
 }
 
 function reminderKey(row: ReminderRow) {
@@ -134,12 +143,13 @@ async function recordReminders(rows: ReminderRow[]) {
 }
 
 function taskLine(task: StaffTaskView) {
-  const when = [
-    formatTaskDate(task.scheduledOn),
-    formatTaskTimeRange(task.startTime, task.endTime),
-  ]
-    .filter(Boolean)
-    .join(" · ")
+  const when =
+    formatTaskSchedule(
+      task.startsOn,
+      task.startTime,
+      task.endsOn,
+      task.endTime
+    ) || "No date"
   const meta = [
     STAFF_TASK_STATUS_LABELS[task.status],
     STAFF_TASK_PRIORITY_LABELS[task.priority],
@@ -294,7 +304,7 @@ export async function runTaskReminders() {
         member_id: task.assigneeId,
         task_id: task.id,
         kind: "upcoming",
-        sent_for_date: task.scheduledOn ?? today,
+        sent_for_date: task.startsOn ?? task.scheduledOn ?? today,
       }
       if (!sent.has(reminderKey(row))) {
         group.upcoming.push(task)

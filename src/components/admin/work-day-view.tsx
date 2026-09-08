@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { compareStartTime, formatLongDate, formatTaskTimeRange, isOverdueTask } from "@/lib/work/dates"
+import { compareStartTime, formatLongDate, formatTaskTimeOnDay, isOverdueTask, taskTouchesDate } from "@/lib/work/dates"
 import { hasLoggedWork, type StaffDailyLogView } from "@/lib/work/log-types"
 import {
   STAFF_TASK_PRIORITY_LABELS,
@@ -70,9 +70,9 @@ export function WorkDayView({
   const isToday = date === today
   const overdueHere = tasks.filter((task) => isOverdueTask(task) && isToday)
   const scheduled = tasks
-    .filter((task) => task.scheduledOn === date)
+    .filter((task) => taskTouchesDate(task, date))
     .sort((a, b) => compareStartTime(a.startTime, b.startTime))
-  const extraOverdue = overdueHere.filter((task) => task.scheduledOn !== date)
+  const extraOverdue = overdueHere.filter((task) => !taskTouchesDate(task, date))
   const dayTasks = [...scheduled, ...extraOverdue]
   const loggedPeople = logsForDate.filter((item) => hasLoggedWork(item))
 
@@ -165,8 +165,8 @@ export function WorkDayView({
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {task.assignee?.fullName ?? "Unassigned"}
-                        {formatTaskTimeRange(task.startTime, task.endTime)
-                          ? ` · ${formatTaskTimeRange(task.startTime, task.endTime)}`
+                        {formatTaskTimeOnDay(task, date)
+                          ? ` · ${formatTaskTimeOnDay(task, date)}`
                           : ""}
                         {overdue ? " · Overdue" : ""}
                       </p>

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 
 import { requireAdmin } from "@/lib/admin/require-admin"
-import { siteUrl } from "@/config/site"
+import { StaffAuthEmailError, sendStaffInviteLink } from "@/lib/auth/staff-auth-email"
+import { isTransactionalEmailConfigured } from "@/lib/email/zeptomail"
 import { getTeamMemberById } from "@/lib/team/members"
-import { createAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 
 type RouteContext = {
@@ -52,32 +52,31 @@ export async function POST(_request: Request, context: RouteContext) {
       )
     }
 
-    const supabase = createAdminClient()
-    const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${siteUrl}/admin/accept-invite`,
-      data: {
-        full_name: member.fullName,
-        team_member_id: member.id,
-      },
-    })
-
-    if (error) {
-      const alreadyRegistered = /already been registered|already registered/i.test(
-        error.message
+    if (!isTransactionalEmailConfigured()) {
+      return NextResponse.json(
+        {
+          error:
+            "Email is not configured. Add ZEPTOMAIL_TOKEN and ZEPTOMAIL_FROM_EMAIL.",
+        },
+        { status: 500 }
       )
-      if (alreadyRegistered) {
+    }
+
+    try {
+      await sendStaffInviteLink({
+        email,
+        fullName: member.fullName,
+        memberId: member.id,
+      })
+    } catch (error) {
+      if (error instanceof StaffAuthEmailError && error.alreadyRegistered) {
         return NextResponse.json({
           success: true,
           alreadyRegistered: true,
-          message: `${email} already has a login. They can sign in at /admin/login.`,
+          message: error.message,
         })
       }
-
-      console.error("Failed to invite team member", error)
-      return NextResponse.json(
-        { error: error.message || "Unable to send login invite." },
-        { status: 500 }
-      )
+      throw error
     }
 
     return NextResponse.json({

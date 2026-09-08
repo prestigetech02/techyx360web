@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import { sendPasswordResetLink } from "@/lib/auth/send-password-reset"
+import { sendPasswordResetLink } from "@/lib/auth/staff-auth-email"
 import { isTransactionalEmailConfigured } from "@/lib/email/zeptomail"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 

@@ -1,8 +1,17 @@
-import { NextResponse } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 import type { EmailOtpType } from "@supabase/supabase-js"
+import { createServerClient } from "@supabase/ssr"
 
-import { createClient } from "@/lib/supabase/server"
-import { isSupabaseConfigured } from "@/lib/supabase/env"
+import type { Database } from "@/types/database"
+import { isSupabaseConfigured, getSupabasePublicEnv } from "@/lib/supabase/env"
+
+const OTP_TYPES: EmailOtpType[] = [
+  "recovery",
+  "invite",
+  "email",
+  "magiclink",
+  "signup",
+]
 
 function safeNextPath(value: string | null, type: string | null) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
@@ -11,35 +20,79 @@ function safeNextPath(value: string | null, type: string | null) {
   return value
 }
 
-export async function GET(request: Request) {
+function fallbackPath(type: string | null, next: string) {
+  if (type === "recovery" || next.includes("reset-password")) {
+    return "/admin/reset-password"
+  }
+  return "/admin/accept-invite"
+}
+
+function otpTypesToTry(type: string | null): EmailOtpType[] {
+  const preferred = OTP_TYPES.find((item) => item === type) ?? "recovery"
+  return preferred === "recovery" ? ["recovery"] : [preferred, "recovery"]
+}
+
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
-  const type = searchParams.get("type") as EmailOtpType | null
+  const type = searchParams.get("type")
   const next = safeNextPath(searchParams.get("next"), type)
-  const fallbackPath =
-    type === "recovery" ? "/admin/reset-password" : "/admin/accept-invite"
-  const acceptUrl = new URL(fallbackPath, origin)
-  acceptUrl.searchParams.set("error", "invalid")
+  const tokenHash = searchParams.get("token_hash")
+  const code = searchParams.get("code")
+  const successUrl = new URL(next, origin)
+  const failUrl = new URL(fallbackPath(type, next), origin)
+  failUrl.searchParams.set("error", "invalid")
 
   if (!isSupabaseConfigured()) {
-    return NextResponse.redirect(acceptUrl)
+    return NextResponse.redirect(failUrl)
   }
 
-  const token_hash = searchParams.get("token_hash")
+  const { url, anonKey } = getSupabasePublicEnv()
+  let response = NextResponse.redirect(successUrl)
 
-  if (!token_hash || !type) {
-    return NextResponse.redirect(acceptUrl)
-  }
-
-  const supabase = await createClient()
-  const { error } = await supabase.auth.verifyOtp({
-    type,
-    token_hash,
+  const supabase = createServerClient<Database>(url, anonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => {
+          request.cookies.set(name, value)
+        })
+        response = NextResponse.redirect(successUrl)
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options)
+        })
+      },
+    },
   })
 
-  if (error) {
-    console.error("Failed to verify auth invite", error)
-    return NextResponse.redirect(acceptUrl)
+  if (tokenHash) {
+    let verified = false
+    for (const otpType of otpTypesToTry(type)) {
+      const { error } = await supabase.auth.verifyOtp({
+        type: otpType,
+        token_hash: tokenHash,
+      })
+      if (!error) {
+        verified = true
+        break
+      }
+    }
+
+    if (!verified) {
+      return NextResponse.redirect(failUrl)
+    }
+
+    return response
   }
 
-  return NextResponse.redirect(new URL(next, origin))
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) {
+      return NextResponse.redirect(failUrl)
+    }
+    return response
+  }
+
+  return NextResponse.redirect(failUrl)
 }

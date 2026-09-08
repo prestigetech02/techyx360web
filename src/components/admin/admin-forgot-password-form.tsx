@@ -8,8 +8,6 @@ import { BrandCtaButton } from "@/components/ui/brand-cta-button"
 import { Input } from "@/components/ui/input"
 import { brand } from "@/config/brand"
 import { testimonials } from "@/config/testimonials"
-import { ADMIN_RESET_PASSWORD_PATH } from "@/lib/admin/auth-callback"
-import { createClient } from "@/lib/supabase/client"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -53,17 +51,20 @@ export function AdminForgotPasswordForm() {
     setIsSubmitting(true)
 
     try {
-      const supabase = createClient()
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        address,
-        {
-          redirectTo: `${window.location.origin}${ADMIN_RESET_PASSWORD_PATH}`,
-        }
-      )
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: address }),
+      })
+      const data = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null
 
-      if (resetError) {
-        setError(resetError.message)
-        notify.error(resetError.message)
+      if (!response.ok) {
+        const message =
+          data?.error || "Unable to send reset email right now. Please try again."
+        setError(message)
+        notify.error(message)
         return
       }
 

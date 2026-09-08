@@ -21,17 +21,19 @@ const fieldClassName =
 
 const featuredTestimonial = testimonials[0]
 
-function resolveOtpType(value: string, mode: "invite" | "reset"): EmailOtpType {
-  if (
-    value === "recovery" ||
-    value === "invite" ||
-    value === "email" ||
-    value === "magiclink" ||
-    value === "signup"
-  ) {
-    return value
-  }
-  return mode === "reset" ? "recovery" : "invite"
+const OTP_TYPES: EmailOtpType[] = [
+  "recovery",
+  "invite",
+  "email",
+  "magiclink",
+  "signup",
+]
+
+function resolveOtpTypes(value: string, mode: "invite" | "reset"): EmailOtpType[] {
+  const preferred =
+    OTP_TYPES.find((item) => item === value) ??
+    (mode === "reset" ? "recovery" : "invite")
+  return [preferred, ...OTP_TYPES.filter((item) => item !== preferred)]
 }
 
 export function AdminAcceptInviteForm({
@@ -63,7 +65,7 @@ export function AdminAcceptInviteForm({
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""))
     const code = search.get("code")
     const tokenHash = search.get("token_hash") || hash.get("token_hash")
-    const otpType = resolveOtpType(
+    const otpTypes = resolveOtpTypes(
       search.get("type") || hash.get("type") || "",
       mode
     )
@@ -79,17 +81,19 @@ export function AdminAcceptInviteForm({
       null
 
     async function establishSession() {
-      if (urlError && urlError !== "invalid") {
-        setInviteError(urlError.replace(/\+/g, " "))
-        setChecking(false)
-        return
-      }
-
       if (tokenHash) {
-        const { error: otpError } = await supabase.auth.verifyOtp({
-          type: otpType,
-          token_hash: tokenHash,
-        })
+        let otpError: { message?: string } | null = null
+        for (const otpType of otpTypes) {
+          const result = await supabase.auth.verifyOtp({
+            type: otpType,
+            token_hash: tokenHash,
+          })
+          if (!result.error) {
+            otpError = null
+            break
+          }
+          otpError = result.error
+        }
         if (otpError) {
           setInviteError(otpError.message || expiredMessage)
           setChecking(false)
@@ -129,7 +133,7 @@ export function AdminAcceptInviteForm({
           window.setTimeout(() => {
             subscription.unsubscribe()
             resolve(null)
-          }, 1200)
+          }, 2500)
         })
       }
 
@@ -146,7 +150,11 @@ export function AdminAcceptInviteForm({
 
       setHasSession(Boolean(session))
       if (!session) {
-        setInviteError(expiredMessage)
+        setInviteError(
+          urlError && urlError !== "invalid"
+            ? urlError.replace(/\+/g, " ")
+            : expiredMessage
+        )
       }
       setChecking(false)
     }
@@ -285,12 +293,19 @@ export function AdminAcceptInviteForm({
                     ? "This reset link is invalid or has expired."
                     : "This invite link is invalid or has expired.")}
               </p>
-              <Link
-                href="/admin/login"
-                className="inline-flex font-medium text-brand transition-colors hover:text-[#eaaa33]"
-              >
-                Go to sign in
-              </Link>
+              <div className="flex flex-col items-center gap-3">
+                {mode === "reset" ? (
+                  <BrandCtaButton href="/admin/forgot-password" className="w-full">
+                    Request a new reset link
+                  </BrandCtaButton>
+                ) : null}
+                <Link
+                  href="/admin/login"
+                  className="inline-flex font-medium text-brand transition-colors hover:text-[#eaaa33]"
+                >
+                  Go to sign in
+                </Link>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">

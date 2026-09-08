@@ -262,8 +262,8 @@ export function parseCreateStaffTaskBody(
       priority: priorityRaw,
       starts_on: schedule.starts_on,
       ends_on: schedule.ends_on,
-      start_time: schedule.start_time,
-      end_time: schedule.end_time,
+      start_time: schedule.start_time ?? null,
+      end_time: schedule.end_time ?? null,
       sort_order: sortOrder ?? 0,
     }),
   }

@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { ChevronLeft } from "lucide-react"
 
 import { contactDetails } from "@/config/contact"
 import {
@@ -176,10 +177,28 @@ export function InboxDashboard({
 
   const composerEnabled =
     selected && selected.status !== "closed" && selected.status !== "bot"
+  const threadOpen = Boolean(selectedId)
+
+  function openConversation(id: string) {
+    setSelectedId(id)
+    router.replace(`/admin/inbox?c=${id}`, { scroll: false })
+  }
+
+  function backToList() {
+    setSelectedId(null)
+    setSelected(null)
+    setMessages([])
+    router.replace("/admin/inbox", { scroll: false })
+  }
 
   return (
     <div className="grid h-full min-h-0 flex-1 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm lg:grid-cols-[20rem_minmax(0,1fr)]">
-      <div className="flex max-h-64 min-h-0 flex-col overflow-hidden border-b border-border/60 lg:max-h-none lg:border-r lg:border-b-0">
+      <div
+        className={cn(
+          "min-h-0 flex-col overflow-hidden border-border/60 lg:border-r",
+          threadOpen ? "hidden lg:flex" : "flex"
+        )}
+      >
         <div className="flex shrink-0 flex-wrap gap-1 border-b border-border/60 bg-card p-3">
           {FILTERS.map((item) => (
             <button
@@ -216,7 +235,7 @@ export function InboxDashboard({
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setSelectedId(item.id)}
+                  onClick={() => openConversation(item.id)}
                   className={cn(
                     "block w-full border-b border-border/50 px-4 py-3 text-left transition-colors",
                     active ? "bg-brand/10" : "hover:bg-muted/60"
@@ -252,7 +271,12 @@ export function InboxDashboard({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-col overflow-hidden">
+      <div
+        className={cn(
+          "min-h-0 flex-col overflow-hidden",
+          threadOpen ? "flex" : "hidden lg:flex"
+        )}
+      >
         {!selected ? (
           <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
             Select a conversation.
@@ -260,11 +284,20 @@ export function InboxDashboard({
         ) : (
           <>
             <div className="shrink-0 border-b border-border/60 bg-card px-4 py-3">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">
-                    {visitorLabel(selected)}
-                  </h2>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start gap-2">
+                  <button
+                    type="button"
+                    onClick={backToList}
+                    className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
+                    aria-label="Back to chats"
+                  >
+                    <ChevronLeft className="size-5" aria-hidden />
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-lg font-semibold text-foreground">
+                      {visitorLabel(selected)}
+                    </h2>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {selected.visitorEmail || "No email"} ·{" "}
                     {selected.visitorPhone || "No phone"} · From {selected.pagePath}
@@ -279,8 +312,9 @@ export function InboxDashboard({
                       Claimed by {selected.assigneeName}
                     </p>
                   ) : null}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 lg:justify-end">
                   {selected.status === "waiting" || selected.status === "bot" ? (
                     <button
                       type="button"

@@ -4,6 +4,7 @@ import {
   FolderKanban,
   GraduationCap,
   LayoutDashboard,
+  MessageCircle,
   Megaphone,
   Rocket,
   Settings,
@@ -19,6 +20,7 @@ export type AdminNavBadgeKey =
   | "registration"
   | "pif"
   | "career"
+  | "inbox"
 
 export type AdminNavLeafItem = {
   label: string
@@ -112,6 +114,12 @@ export const adminNavItems: AdminNavItem[] = [
     label: "Tasks",
     href: "/admin/work",
     icon: ClipboardList,
+  },
+  {
+    label: "Inbox",
+    href: "/admin/inbox",
+    icon: MessageCircle,
+    badgeKey: "inbox",
   },
   {
     label: "Recruitment",

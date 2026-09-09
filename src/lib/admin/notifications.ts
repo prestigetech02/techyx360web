@@ -16,9 +16,12 @@ export type PifApplicationRow =
 export type CareerApplicationRow =
   Database["public"]["Tables"]["career_applications"]["Row"]
 
+export type ChatConversationRow =
+  Database["public"]["Tables"]["chat_conversations"]["Row"]
+
 export type AdminNotification = {
   id: string
-  type: "contact" | "registration" | "pif" | "career"
+  type: "contact" | "registration" | "pif" | "career" | "inbox"
   firstName: string
   lastName: string
   email: string
@@ -129,6 +132,33 @@ export function mapCareerApplicationToNotification(
     createdAt: row.created_at,
     href: careerApplicationsAdminPath,
     label: "Career application",
+  }
+}
+
+export function mapChatHandoffToNotification(
+  row: Pick<
+    ChatConversationRow,
+    | "id"
+    | "visitor_name"
+    | "visitor_email"
+    | "handoff_reason"
+    | "updated_at"
+    | "created_at"
+  >
+): AdminNotification {
+  const name = row.visitor_name.trim() || "Site visitor"
+  const [firstName, ...rest] = name.split(/\s+/)
+
+  return {
+    id: `inbox:${row.id}`,
+    type: "inbox",
+    firstName: firstName || "Site",
+    lastName: rest.join(" "),
+    email: row.visitor_email.trim() || "No email yet",
+    message: row.handoff_reason.trim() || "Asked to talk to a person",
+    createdAt: row.updated_at || row.created_at,
+    href: `/admin/inbox?c=${row.id}`,
+    label: "Live chat handoff",
   }
 }
 

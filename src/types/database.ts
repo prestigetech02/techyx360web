@@ -46,6 +46,78 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_conversations: {
+        Row: {
+          id: string
+          visitor_token_hash: string
+          status: string
+          assignee_id: string | null
+          visitor_name: string
+          visitor_email: string
+          visitor_phone: string
+          page_path: string
+          handoff_reason: string
+          last_message_at: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          visitor_token_hash: string
+          status?: string
+          assignee_id?: string | null
+          visitor_name?: string
+          visitor_email?: string
+          visitor_phone?: string
+          page_path?: string
+          handoff_reason?: string
+          last_message_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          visitor_token_hash?: string
+          status?: string
+          assignee_id?: string | null
+          visitor_name?: string
+          visitor_email?: string
+          visitor_phone?: string
+          page_path?: string
+          handoff_reason?: string
+          last_message_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          id: string
+          conversation_id: string
+          role: string
+          content: string
+          staff_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          conversation_id: string
+          role: string
+          content: string
+          staff_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          conversation_id?: string
+          role?: string
+          content?: string
+          staff_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       course_registrations: {
         Row: {
           id: string

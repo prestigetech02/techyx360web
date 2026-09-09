@@ -15,12 +15,14 @@ import {
 import {
   formatNotificationTime,
   mapCareerApplicationToNotification,
+  mapChatHandoffToNotification,
   mapPifApplicationToNotification,
   mapRegistrationToNotification,
   mapSubmissionToNotification,
   truncateNotificationMessage,
   type AdminNotification,
   type CareerApplicationRow,
+  type ChatConversationRow,
   type ContactSubmissionRow,
   type CourseRegistrationRow,
   type PifApplicationRow,
@@ -35,6 +37,7 @@ type AdminNotificationsContextValue = {
   registrationCount: number
   pifCount: number
   careerCount: number
+  inboxCount: number
   notifications: AdminNotification[]
   isLoading: boolean
   refresh: () => Promise<void>
@@ -152,6 +155,23 @@ async function fetchNewNotifications() {
   } else {
     notifications.push(
       ...(careerResult.data ?? []).map(mapCareerApplicationToNotification)
+    )
+  }
+
+  const inboxResult = await supabase
+    .from("chat_conversations")
+    .select(
+      "id, visitor_name, visitor_email, handoff_reason, status, updated_at, created_at"
+    )
+    .eq("status", "waiting")
+    .order("updated_at", { ascending: false })
+    .limit(20)
+
+  if (inboxResult.error) {
+    console.warn("Inbox notifications unavailable:", inboxResult.error.message)
+  } else {
+    notifications.push(
+      ...(inboxResult.data ?? []).map(mapChatHandoffToNotification)
     )
   }
 
@@ -492,6 +512,58 @@ export function AdminNotificationsProvider({
           router.refresh()
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_conversations",
+        },
+        (payload) => {
+          const row = payload.new as ChatConversationRow
+          if (row.status !== "waiting") return
+
+          const notification = mapChatHandoffToNotification(row)
+          setNotifications((current) => {
+            if (current.some((item) => item.id === notification.id)) {
+              return current
+            }
+            return sortNotifications([notification, ...current]).slice(0, 20)
+          })
+          notify.info("A website visitor asked to talk to a person")
+          router.refresh()
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "chat_conversations",
+        },
+        (payload) => {
+          const row = payload.new as ChatConversationRow
+          const previous = payload.old as Pick<ChatConversationRow, "status">
+          const notificationId = `inbox:${row.id}`
+
+          if (row.status === "waiting" && previous.status !== "waiting") {
+            const notification = mapChatHandoffToNotification(row)
+            setNotifications((current) => {
+              if (current.some((item) => item.id === notification.id)) {
+                return current
+              }
+              return sortNotifications([notification, ...current]).slice(0, 20)
+            })
+            notify.info("A website visitor asked to talk to a person")
+          } else if (row.status !== "waiting") {
+            setNotifications((current) =>
+              current.filter((item) => item.id !== notificationId)
+            )
+          }
+
+          router.refresh()
+        }
+      )
       .subscribe()
 
     return () => {
@@ -510,6 +582,9 @@ export function AdminNotificationsProvider({
     const careerCount = notifications.filter(
       (item) => item.type === "career"
     ).length
+    const inboxCount = notifications.filter(
+      (item) => item.type === "inbox"
+    ).length
 
     return {
       newCount: notifications.length,
@@ -517,6 +592,7 @@ export function AdminNotificationsProvider({
       registrationCount,
       pifCount,
       careerCount,
+      inboxCount,
       notifications,
       isLoading,
       refresh,

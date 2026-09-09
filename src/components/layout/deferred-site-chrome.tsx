@@ -8,10 +8,10 @@ const BackToTop = dynamic(
   { ssr: false }
 )
 
-const WhatsAppChatWidget = dynamic(
+const SiteChatWidget = dynamic(
   () =>
-    import("@/components/layout/whatsapp-chat-widget").then(
-      (mod) => mod.WhatsAppChatWidget
+    import("@/components/layout/site-chat-widget").then(
+      (mod) => mod.SiteChatWidget
     ),
   { ssr: false }
 )
@@ -74,7 +74,7 @@ export function DeferredSiteChrome() {
   return (
     <>
       <BackToTop />
-      <WhatsAppChatWidget />
+      <SiteChatWidget />
       <CookieNotice />
       {loadCursor ? <CursorFollower /> : null}
     </>

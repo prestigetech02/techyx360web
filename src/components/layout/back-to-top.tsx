@@ -55,7 +55,7 @@ export function BackToTop({ className }: BackToTopProps) {
       aria-label="Back to top"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       className={cn(
-        "fixed right-5 bottom-5 z-[9999] inline-flex size-[52px] items-center justify-center sm:right-6 sm:bottom-6",
+        "fixed left-5 bottom-5 z-[9999] inline-flex size-[52px] items-center justify-center sm:left-6 sm:bottom-6",
         className
       )}
     >

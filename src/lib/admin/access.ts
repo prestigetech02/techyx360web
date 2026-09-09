@@ -12,6 +12,7 @@ export type AdminModuleKey =
   | "academy"
   | "team"
   | "work"
+  | "inbox"
   | "recruitment"
   | "finance"
   | "orders"
@@ -37,6 +38,7 @@ export const ADMIN_MODULE_OPTIONS: {
   { key: "academy", label: "Academy" },
   { key: "team", label: "Team" },
   { key: "work", label: "Tasks" },
+  { key: "inbox", label: "Inbox" },
   { key: "recruitment", label: "Recruitment" },
   { key: "finance", label: "Finance" },
   { key: "orders", label: "Orders" },
@@ -79,6 +81,7 @@ const PAGE_PREFIXES: Array<{ prefix: string; module: AdminModuleKey }> = [
   { prefix: "/admin/students", module: "academy" },
   { prefix: "/admin/team", module: "team" },
   { prefix: "/admin/work", module: "work" },
+  { prefix: "/admin/inbox", module: "inbox" },
   { prefix: "/admin/job-listings", module: "recruitment" },
   { prefix: "/admin/job-applications", module: "recruitment" },
   { prefix: "/admin/talent-pool", module: "recruitment" },
@@ -100,6 +103,7 @@ const API_PREFIXES: Array<{ prefix: string; module: AdminModuleKey | "any" }> =
     { prefix: "/api/admin/search", module: "any" },
     { prefix: "/api/admin/staff-tasks", module: "work" },
     { prefix: "/api/admin/staff-daily-logs", module: "work" },
+    { prefix: "/api/admin/inbox", module: "inbox" },
     { prefix: "/api/admin/leads", module: "crm" },
     { prefix: "/api/admin/clients", module: "crm" },
     { prefix: "/api/admin/contact-submissions", module: "crm" },
@@ -132,6 +136,7 @@ const NAV_MODULE_BY_LABEL: Record<string, AdminModuleKey> = {
   Academy: "academy",
   Team: "team",
   Tasks: "work",
+  Inbox: "inbox",
   Recruitment: "recruitment",
   Finance: "finance",
   Orders: "orders",
@@ -193,6 +198,7 @@ export function firstAllowedPath(access: DashboardAccess) {
     if (!hasModule(access, module)) continue
     if (module === "dashboard") return "/admin"
     if (module === "work") return "/admin/work"
+    if (module === "inbox") return "/admin/inbox"
     if (module === "crm") return "/admin/leads"
     if (module === "projects") return "/admin/projects"
     if (module === "academy") return "/admin/registrations"

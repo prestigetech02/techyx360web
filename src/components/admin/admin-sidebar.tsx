@@ -292,7 +292,7 @@ function AdminNavGroup({
 
 export function AdminSidebar({ onNavigate, className, access }: AdminSidebarProps) {
   const pathname = usePathname()
-  const { contactCount, registrationCount, pifCount, careerCount } =
+  const { contactCount, registrationCount, pifCount, careerCount, inboxCount } =
     useAdminNotifications()
 
   const counts = useMemo<BadgeCounts>(
@@ -301,8 +301,9 @@ export function AdminSidebar({ onNavigate, className, access }: AdminSidebarProp
       registration: registrationCount,
       pif: pifCount,
       career: careerCount,
+      inbox: inboxCount,
     }),
-    [contactCount, registrationCount, pifCount, careerCount]
+    [contactCount, registrationCount, pifCount, careerCount, inboxCount]
   )
 
   const items = useMemo(

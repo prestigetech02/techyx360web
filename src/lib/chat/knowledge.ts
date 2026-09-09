@@ -7,7 +7,11 @@ import { services } from "@/config/services"
 import { siteUrl } from "@/config/site"
 import { getCoursePath, trainingSchools } from "@/config/training-schools"
 
-export function buildChatSystemPrompt() {
+export function buildChatSystemPrompt(lead?: {
+  visitor_name: string
+  visitor_email: string
+  visitor_phone: string
+}) {
   const serviceLines = services
     .map((item) => `- ${item.title}: ${item.description} Path: ${item.href}`)
     .join("\n")
@@ -32,6 +36,10 @@ export function buildChatSystemPrompt() {
     pifFaqs.find((item) => item.question.toLowerCase().includes("what is"))
       ?.answer ??
     "PIF is a 12-week product innovation fellowship. Apply at /trainings/product-innovation-fellowship/apply."
+
+  const leadName = lead?.visitor_name.trim() || "not shared yet"
+  const leadEmail = lead?.visitor_email.trim() || "not shared yet"
+  const leadPhone = lead?.visitor_phone.trim() || "not shared yet"
 
   return `You are the website assistant for ${brand.name} (${brand.tagline}).
 You chat with visitors on ${siteUrl}. Be concise, warm, and practical. Use short paragraphs. Prefer Nigerian English that is professional, not slangy.
@@ -60,12 +68,21 @@ Published PIF fee: ${pifPricing.currentPrice} (regular ${pifPricing.regularPrice
 
 SIWES: students can apply through the training registration flow. If they need a placement letter or custom arrangement, collect contact details and escalate.
 
+Lead details already on file for this visitor:
+- Full name: ${leadName}
+- Email: ${leadEmail}
+- Phone: ${leadPhone}
+
 Rules:
 - Do not invent prices, discounts, start dates, class sizes, visa help, guaranteed jobs, or unpublished tuition. For course fees other than the published PIF fee, say the team confirms pricing and offer to connect them with a person or point them to the registration page.
 - Do not collect payment details or ask for BVN/OTP/passwords.
 - Give specific page paths when useful (start with /).
-- If the visitor asks to speak to a person, is angry, needs a custom quote, billing help, hiring/outsourcing staffing, or you cannot fully answer, call offerTalkToPerson. Then briefly explain that a teammate can take over. Do not pretend the handoff already happened.
-- If they share a name, email, or phone, call saveVisitorContact.
+- Handoff protocol: when the visitor asks to speak to a person, is angry, needs a custom quote, billing help, hiring/outsourcing staffing, or you cannot fully answer:
+  1. Do not call offerTalkToPerson yet.
+  2. Ask for their full name (first and last), email, and phone number if any of those are missing on file. You can collect them in one message.
+  3. When they share any of those details, call saveVisitorContact immediately.
+  4. Only after full name, email, and phone are all saved, call offerTalkToPerson. That starts the handoff. Then tell them a teammate will join.
+- If they share a name, email, or phone at any time, call saveVisitorContact.
 - When listing programs, you may call listOfferings, then answer in plain language.
 - After a human has joined, do not keep answering as if you were still handling the case.`
 }

@@ -9,11 +9,13 @@ import {
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
+import { applyContactPatch, missingLeadFields } from "@/lib/chat/contact"
 import { getChatOfferings, buildChatSystemPrompt } from "@/lib/chat/knowledge"
 import { dbMessagesToUiMessages, extractChatText } from "@/lib/chat/message-utils"
 import { resolveVisitorConversation } from "@/lib/chat/request"
 import {
   countRecentUserMessages,
+  getConversationById,
   insertMessage,
   listMessages,
   updateConversation,
@@ -105,7 +107,7 @@ export async function POST(request: Request) {
 
     const result = streamText({
       model: openai("gpt-4.1-mini"),
-      system: buildChatSystemPrompt(),
+      system: buildChatSystemPrompt(conversation),
       messages: await convertToModelMessages(uiHistory),
       stopWhen: isStepCount(5),
       tools: {
@@ -126,31 +128,40 @@ export async function POST(request: Request) {
         }),
         saveVisitorContact: tool({
           description:
-            "Save the visitor's name, email, or phone on this conversation when they share it.",
+            "Save the visitor's full name, email, or phone when they share it. Call this before starting a handoff.",
           inputSchema: z.object({
-            name: z.string().optional(),
+            name: z.string().optional().describe("Full name, first and last."),
             email: z.string().optional(),
             phone: z.string().optional(),
           }),
           execute: async ({ name, email, phone }) => {
-            const patch: {
-              visitor_name?: string
-              visitor_email?: string
-              visitor_phone?: string
-            } = {}
-            if (name?.trim()) patch.visitor_name = name.trim().slice(0, 120)
-            if (email?.trim()) patch.visitor_email = email.trim().slice(0, 200)
-            if (phone?.trim()) patch.visitor_phone = phone.trim().slice(0, 40)
-            if (Object.keys(patch).length === 0) {
-              return { saved: false, reason: "No contact fields provided." }
+            const current =
+              (await getConversationById(conversation.id)) ?? conversation
+            const next = applyContactPatch(current, { name, email, phone })
+            if (
+              next.visitor_name === current.visitor_name &&
+              next.visitor_email === current.visitor_email &&
+              next.visitor_phone === current.visitor_phone
+            ) {
+              return {
+                saved: false,
+                complete: missingLeadFields(current).length === 0,
+                missing: missingLeadFields(current),
+                reason: "No new contact fields provided.",
+              }
             }
-            await updateConversation(conversation.id, patch)
-            return { saved: true }
+            await updateConversation(conversation.id, next)
+            const missing = missingLeadFields(next)
+            return {
+              saved: true,
+              complete: missing.length === 0,
+              missing,
+            }
           },
         }),
         offerTalkToPerson: tool({
           description:
-            "Show a Talk to a person button when you cannot complete the request, the visitor asks for a human, or a teammate should take over. Do not use this for ordinary answered questions.",
+            "Start a human handoff after the visitor's full name, email, and phone are saved. Do not call this until those three fields are complete.",
           inputSchema: z.object({
             reason: z
               .string()
@@ -158,15 +169,30 @@ export async function POST(request: Request) {
               .max(400),
           }),
           execute: async ({ reason }) => {
+            const current =
+              (await getConversationById(conversation.id)) ?? conversation
+            const missing = missingLeadFields(current)
+            if (missing.length > 0) {
+              return {
+                handedOff: false,
+                missing,
+                message: `Ask for: ${missing.join(", ")}. Then call saveVisitorContact, then call this tool again.`,
+              }
+            }
+
+            await updateConversation(conversation.id, {
+              status: "waiting",
+              handoff_reason: reason.trim().slice(0, 400),
+            })
             await insertMessage({
               conversationId: conversation.id,
               role: "system",
-              content: `OFFER_HUMAN_HANDOFF:${reason.trim()}`,
+              content: `Handoff requested: ${reason.trim()}`,
             })
             return {
-              offered: true,
+              handedOff: true,
               message:
-                "A Talk to a person button is now visible. Tell the visitor they can tap it to reach a teammate.",
+                "A teammate will join this chat. Confirm that to the visitor briefly.",
             }
           },
         }),

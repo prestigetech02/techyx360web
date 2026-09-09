@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import { missingLeadFields } from "@/lib/chat/contact"
 import { resolveVisitorConversation } from "@/lib/chat/request"
 import {
   insertMessage,
@@ -54,6 +55,17 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "This chat is closed. Start a new one." },
         { status: 409 }
+      )
+    }
+
+    const missing = missingLeadFields(resolved.conversation)
+    if (missing.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Please share your ${missing.join(", ")} first so we can reach you.`,
+          missing,
+        },
+        { status: 400 }
       )
     }
 

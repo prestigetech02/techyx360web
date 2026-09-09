@@ -21,8 +21,8 @@ export default async function AdminInboxPage({
     typeof params.c === "string" && params.c.trim() ? params.c.trim() : null
 
   return (
-    <div className="min-w-0 space-y-5">
-      <div>
+    <div className="flex min-h-0 flex-1 flex-col gap-5">
+      <div className="shrink-0">
         <p className="text-xs font-semibold tracking-[0.28em] text-brand uppercase">
           Inbox
         </p>
@@ -34,7 +34,9 @@ export default async function AdminInboxPage({
           same thread.
         </p>
       </div>
-      <InboxDashboard initialConversationId={initialConversationId} />
+      <div className="flex min-h-0 flex-1 flex-col">
+        <InboxDashboard initialConversationId={initialConversationId} />
+      </div>
     </div>
   )
 }

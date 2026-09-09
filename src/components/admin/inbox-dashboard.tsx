@@ -178,9 +178,9 @@ export function InboxDashboard({
     selected && selected.status !== "closed" && selected.status !== "bot"
 
   return (
-    <div className="grid min-h-[calc(100dvh-12rem)] overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm lg:grid-cols-[20rem_minmax(0,1fr)]">
-      <div className="flex min-h-0 flex-col border-b border-border/60 lg:border-r lg:border-b-0">
-        <div className="flex flex-wrap gap-1 border-b border-border/60 p-3">
+    <div className="grid h-full min-h-0 flex-1 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm lg:grid-cols-[20rem_minmax(0,1fr)]">
+      <div className="flex max-h-64 min-h-0 flex-col overflow-hidden border-b border-border/60 lg:max-h-none lg:border-r lg:border-b-0">
+        <div className="flex shrink-0 flex-wrap gap-1 border-b border-border/60 bg-card p-3">
           {FILTERS.map((item) => (
             <button
               key={item.id}
@@ -200,7 +200,7 @@ export function InboxDashboard({
             </button>
           ))}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {loadError ? (
             <p className="p-4 text-sm text-red-600 dark:text-red-400">
               {loadError}
@@ -252,14 +252,14 @@ export function InboxDashboard({
         </div>
       </div>
 
-      <div className="flex min-h-[28rem] flex-col">
+      <div className="flex min-h-0 flex-col overflow-hidden">
         {!selected ? (
           <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
             Select a conversation.
           </div>
         ) : (
           <>
-            <div className="border-b border-border/60 px-4 py-3">
+            <div className="shrink-0 border-b border-border/60 bg-card px-4 py-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">
@@ -323,7 +323,7 @@ export function InboxDashboard({
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-muted/30 px-4 py-4">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-muted/30 px-4 py-4">
               {messages
                 .filter(
                   (message) =>
@@ -371,7 +371,7 @@ export function InboxDashboard({
 
             <form
               onSubmit={sendReply}
-              className="border-t border-border/60 p-3"
+              className="shrink-0 border-t border-border/60 bg-card p-3"
             >
               {selected.status === "bot" ? (
                 <p className="text-xs text-muted-foreground">

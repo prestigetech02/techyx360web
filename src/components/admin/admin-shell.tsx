@@ -46,7 +46,7 @@ export function AdminShell({ children, userEmail, access }: AdminShellProps) {
                 }
               />
             </div>
-            <main className="@container min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-4 sm:p-6 print:h-auto print:overflow-visible print:p-0">
+            <main className="@container flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-contain p-4 sm:p-6 print:h-auto print:overflow-visible print:p-0">
               {children}
             </main>
           </div>

@@ -244,6 +244,165 @@ export type Database = {
         }
         Relationships: []
       }
+      pif_attendance_settings: {
+        Row: {
+          id: number
+          is_open: boolean
+          session_label: string
+          opened_at: string | null
+          closed_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          is_open?: boolean
+          session_label?: string
+          opened_at?: string | null
+          closed_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          is_open?: boolean
+          session_label?: string
+          opened_at?: string | null
+          closed_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pif_attendance_records: {
+        Row: {
+          id: string
+          fellow_id: string
+          team_id: string | null
+          week_number: number | null
+          day_number: number | null
+          attendance_date: string
+          marked_at: string
+          notes: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          fellow_id: string
+          team_id?: string | null
+          week_number?: number | null
+          day_number?: number | null
+          attendance_date?: string
+          marked_at?: string
+          notes?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          fellow_id?: string
+          team_id?: string | null
+          week_number?: number | null
+          day_number?: number | null
+          attendance_date?: string
+          marked_at?: string
+          notes?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      pif_teams: {
+        Row: {
+          id: string
+          name: string
+          cohort_label: string
+          description: string
+          status: string
+          attendance_open: boolean
+          current_week: number
+          current_day: number
+          attendance_opened_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          cohort_label?: string
+          description?: string
+          status?: string
+          attendance_open?: boolean
+          current_week?: number
+          current_day?: number
+          attendance_opened_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          cohort_label?: string
+          description?: string
+          status?: string
+          attendance_open?: boolean
+          current_week?: number
+          current_day?: number
+          attendance_opened_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pif_fellows: {
+        Row: {
+          id: string
+          first_name: string
+          last_name: string
+          email: string
+          phone: string
+          status: string
+          cohort_label: string
+          preferred_track: string
+          team_id: string | null
+          pif_application_id: string | null
+          auth_user_id: string | null
+          notes: string
+          invited_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          first_name: string
+          last_name: string
+          email: string
+          phone?: string
+          status?: string
+          cohort_label?: string
+          preferred_track?: string
+          team_id?: string | null
+          pif_application_id?: string | null
+          auth_user_id?: string | null
+          notes?: string
+          invited_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          first_name?: string
+          last_name?: string
+          email?: string
+          phone?: string
+          status?: string
+          cohort_label?: string
+          preferred_track?: string
+          team_id?: string | null
+          pif_application_id?: string | null
+          auth_user_id?: string | null
+          notes?: string
+          invited_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           id: string

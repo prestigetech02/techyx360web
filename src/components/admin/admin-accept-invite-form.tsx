@@ -38,8 +38,16 @@ function resolveOtpTypes(value: string, mode: "invite" | "reset"): EmailOtpType[
 
 export function AdminAcceptInviteForm({
   mode = "invite",
+  successPath = "/admin",
+  loginPath = "/admin/login",
+  forgotPasswordPath = "/admin/forgot-password",
+  portalLabel = "Staff workspace",
 }: {
   mode?: "invite" | "reset"
+  successPath?: string
+  loginPath?: string
+  forgotPasswordPath?: string
+  portalLabel?: string
 }) {
   const router = useRouter()
   const [checking, setChecking] = useState(true)
@@ -196,7 +204,7 @@ export function AdminAcceptInviteForm({
       notify.success(
         mode === "reset" ? "Password updated. You are signed in." : "Password saved. Welcome in."
       )
-      router.push("/admin")
+      router.push(successPath)
       router.refresh()
     } catch {
       const message = "Unable to save your password right now. Please try again."
@@ -267,7 +275,7 @@ export function AdminAcceptInviteForm({
 
           <div className="text-center">
             <p className="text-xs font-semibold tracking-[0.28em] text-brand uppercase">
-              Staff workspace
+              {portalLabel}
             </p>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-[#0b2c66] dark:text-white">
               {mode === "reset" ? "Reset your password" : "Set your password"}
@@ -295,12 +303,12 @@ export function AdminAcceptInviteForm({
               </p>
               <div className="flex flex-col items-center gap-3">
                 {mode === "reset" ? (
-                  <BrandCtaButton href="/admin/forgot-password" className="w-full">
+                  <BrandCtaButton href={forgotPasswordPath} className="w-full">
                     Request a new reset link
                   </BrandCtaButton>
                 ) : null}
                 <Link
-                  href="/admin/login"
+                  href={loginPath}
                   className="inline-flex font-medium text-brand transition-colors hover:text-[#eaaa33]"
                 >
                   Go to sign in
@@ -386,7 +394,7 @@ export function AdminAcceptInviteForm({
           <p className="mt-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
             Already have an account?{" "}
             <Link
-              href="/admin/login"
+              href={loginPath}
               className="font-medium text-brand transition-colors hover:text-[#eaaa33]"
             >
               Sign in

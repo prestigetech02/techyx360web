@@ -15,9 +15,10 @@ export function ConditionalSiteShell({
   children,
 }: ConditionalSiteShellProps) {
   const pathname = usePathname()
-  const isAdminRoute = pathname?.startsWith("/admin")
+  const hideSiteChrome =
+    pathname?.startsWith("/admin") || pathname?.startsWith("/pifattendance")
 
-  if (isAdminRoute) {
+  if (hideSiteChrome) {
     return children
   }
 

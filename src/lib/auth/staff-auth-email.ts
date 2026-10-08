@@ -205,3 +205,133 @@ export async function sendStaffInviteLink({
     }),
   })
 }
+
+export async function sendPifFellowInviteLink({
+  email,
+  fullName,
+  fellowId,
+}: {
+  email: string
+  fullName: string
+  fellowId: string
+}) {
+  const address = email.trim().toLowerCase()
+  if (!address.includes("@")) {
+    throw new StaffAuthEmailError(
+      "This fellow needs a valid email before they can log in."
+    )
+  }
+
+  requireZeptoMail()
+
+  const supabase = createAdminClient()
+  let hashedToken = ""
+  let linkType: "invite" | "recovery" = "invite"
+
+  const invite = await supabase.auth.admin.generateLink({
+    type: "invite",
+    email: address,
+    options: {
+      redirectTo: `${siteUrl}/pifattendance/accept-invite`,
+      data: {
+        full_name: fullName,
+        pif_fellow_id: fellowId,
+        portal: "pifattendance",
+      },
+    },
+  })
+
+  if (invite.data?.properties?.hashed_token) {
+    hashedToken = invite.data.properties.hashed_token
+  } else {
+    const alreadyRegistered = /already been registered|already registered/i.test(
+      invite.error?.message ?? ""
+    )
+    if (!alreadyRegistered) {
+      throw new StaffAuthEmailError(
+        invite.error?.message || "Unable to send fellow invite."
+      )
+    }
+
+    const recovery = await supabase.auth.admin.generateLink({
+      type: "recovery",
+      email: address,
+      options: {
+        redirectTo: `${siteUrl}/pifattendance/accept-invite`,
+      },
+    })
+
+    if (recovery.error || !recovery.data.properties?.hashed_token) {
+      throw new StaffAuthEmailError(
+        `${address} already has a login. Ask them to use Forgot password on /pifattendance/login.`,
+        true
+      )
+    }
+
+    hashedToken = recovery.data.properties.hashed_token
+    linkType = "recovery"
+  }
+
+  const firstName = fullName.trim().split(/\s+/)[0] || "there"
+  const inviteUrl = `${siteUrl}/auth/confirm?token_hash=${encodeURIComponent(
+    hashedToken
+  )}&type=${linkType}&next=/pifattendance/accept-invite`
+
+  await sendTransactionalEmail({
+    to: address,
+    toName: fullName,
+    subject: "Set your Techyx360 PIF attendance password",
+    html: authEmailHtml({
+      title: "Set your password",
+      intro: `Hi ${escapeHtml(firstName)}, you have been invited to the Techyx360 PIF attendance portal.`,
+      detail:
+        "Click the button below to create your password and sign in. This link expires soon and can be used once.",
+      buttonLabel: "Set your password",
+      url: inviteUrl,
+      footer: "If you were not expecting this invite, you can ignore this email.",
+    }),
+  })
+}
+
+export async function sendPifPasswordResetLink(email: string) {
+  const address = email.trim().toLowerCase()
+  if (!address.includes("@")) {
+    throw new Error("Enter a valid email address.")
+  }
+
+  requireZeptoMail()
+
+  const supabase = createAdminClient()
+  const { data, error } = await supabase.auth.admin.generateLink({
+    type: "recovery",
+    email: address,
+    options: {
+      redirectTo: `${siteUrl}/pifattendance/reset-password`,
+    },
+  })
+
+  if (error || !data.properties?.hashed_token) {
+    if (error && /unable to find user|user not found/i.test(error.message)) {
+      return
+    }
+    throw new Error(error?.message || "Unable to create a password reset link.")
+  }
+
+  const resetUrl = `${siteUrl}/auth/confirm?token_hash=${encodeURIComponent(
+    data.properties.hashed_token
+  )}&type=recovery&next=/pifattendance/reset-password`
+
+  await sendTransactionalEmail({
+    to: address,
+    subject: "Reset your Techyx360 PIF password",
+    html: authEmailHtml({
+      title: "Reset your password",
+      intro: `We received a request to reset the password for ${escapeHtml(address)}.`,
+      detail:
+        "Click the button below to choose a new password. This link expires soon and can be used once.",
+      buttonLabel: "Choose a new password",
+      url: resetUrl,
+      footer: "If you did not request this, you can ignore this email.",
+    }),
+  })
+}

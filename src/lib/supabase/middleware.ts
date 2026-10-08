@@ -5,6 +5,7 @@ import type { Database } from "@/types/database"
 import { canAccessPath, firstAllowedPath } from "@/lib/admin/access"
 import { isPublicAdminAuthPath } from "@/lib/admin/auth-callback"
 import { resolveStaffAccess } from "@/lib/admin/resolve-access"
+import { isPifAttendancePath } from "@/lib/pifattendance/auth-paths"
 import { getSupabasePublicEnv } from "@/lib/supabase/env"
 
 export async function updateSession(request: NextRequest) {
@@ -40,6 +41,12 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname
   const isAdminPage = path === "/admin" || path.startsWith("/admin/")
   const isAdminApi = path.startsWith("/api/admin")
+  const isPifPortal = isPifAttendancePath(path)
+
+  // PIF attendance uses its own fellow gate in route layouts (not staff modules).
+  if (isPifPortal) {
+    return supabaseResponse
+  }
 
   if (!isAdminPage && !isAdminApi) {
     return supabaseResponse

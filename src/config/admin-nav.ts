@@ -93,7 +93,20 @@ export const adminNavItems: AdminNavItem[] = [
     children: [
       {
         label: "Product Innovation Fellowship",
-        comingSoon: true,
+        children: [
+          {
+            label: "Fellows",
+            href: "/admin/programs/pif/fellows",
+          },
+          {
+            label: "Teams",
+            href: "/admin/programs/pif/teams",
+          },
+          {
+            label: "Attendance",
+            href: "/admin/programs/pif/attendance",
+          },
+        ],
       },
       {
         label: "Bootcamps",

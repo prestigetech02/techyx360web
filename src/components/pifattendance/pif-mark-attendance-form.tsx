@@ -23,10 +23,28 @@ type Props = {
   reason?: AttendanceReason
 }
 
+function formatClockDate(value: Date) {
+  return value.toLocaleDateString("en-US", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+}
+
+function formatClockTime(value: Date) {
+  return value.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+}
+
 function useLiveClock() {
-  const [now, setNow] = useState(() => new Date())
+  const [now, setNow] = useState<Date | null>(null)
 
   useEffect(() => {
+    setNow(new Date())
     const id = window.setInterval(() => setNow(new Date()), 1000)
     return () => window.clearInterval(id)
   }, [])
@@ -58,17 +76,8 @@ export function PifMarkAttendanceForm({
   const [done, setDone] = useState(alreadyMarked)
   const [doneAt, setDoneAt] = useState(markedAt)
 
-  const dateLabel = now.toLocaleDateString(undefined, {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  })
-  const timeLabel = now.toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  })
+  const dateLabel = now ? formatClockDate(now) : "—"
+  const timeLabel = now ? formatClockTime(now) : "—"
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()

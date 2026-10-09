@@ -3,7 +3,6 @@ import { redirect } from "next/navigation"
 
 import { brand } from "@/config/brand"
 import { createPageMetadata } from "@/lib/seo"
-import { isPifAttendanceOpen } from "@/lib/pif/attendance"
 import { PIF_ATTENDANCE_LOGIN_PATH } from "@/lib/pifattendance/auth-paths"
 import { getOptionalPifFellowSession } from "@/lib/pifattendance/require-fellow"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
@@ -17,11 +16,6 @@ export const metadata: Metadata = createPageMetadata({
 
 export default async function PifAttendanceIndexPage() {
   if (!isSupabaseConfigured()) {
-    redirect(PIF_ATTENDANCE_LOGIN_PATH)
-  }
-
-  const isOpen = await isPifAttendanceOpen()
-  if (!isOpen) {
     redirect(PIF_ATTENDANCE_LOGIN_PATH)
   }
 

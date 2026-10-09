@@ -54,7 +54,7 @@ export type PifSessionRoster = {
 export function formatAttendanceDate(value: string) {
   const date = new Date(`${value}T00:00:00`)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString(undefined, {
+  return date.toLocaleDateString("en-US", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -65,7 +65,7 @@ export function formatAttendanceDate(value: string) {
 export function formatAttendanceDateTime(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString(undefined, {
+  return date.toLocaleString("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
   })

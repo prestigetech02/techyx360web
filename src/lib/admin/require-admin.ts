@@ -29,7 +29,20 @@ export async function requireAdmin(module?: AdminModuleKey | "any") {
 
   const email =
     typeof data.claims.email === "string" ? data.claims.email.trim() : ""
+  if (!email) {
+    return {
+      authorized: false as const,
+      response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    }
+  }
+
   const access = await resolveStaffAccess(email)
+  if (!access) {
+    return {
+      authorized: false as const,
+      response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+    }
+  }
 
   if (module && !hasModule(access, module)) {
     return {

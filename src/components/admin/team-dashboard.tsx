@@ -1615,12 +1615,12 @@ export function TeamDashboard({ members }: TeamDashboardProps) {
       }
 
       const data = (await response.json()) as { member?: TeamMemberView }
-      setAddOpen(false)
-      resetAddForm()
+    setAddOpen(false)
+    resetAddForm()
       if (data.member?.id) {
         setSelectedId(data.member.id)
       }
-      notify.success("Team member added.")
+    notify.success("Team member added.")
       refreshMembers()
     } finally {
       setCreating(false)
@@ -1641,9 +1641,9 @@ export function TeamDashboard({ members }: TeamDashboardProps) {
         return
       }
 
-      setDeleteTarget(null)
+    setDeleteTarget(null)
       if (selectedId === id) setSelectedId(null)
-      notify.success("Team member removed.")
+    notify.success("Team member removed.")
       refreshMembers()
     } finally {
       setDeleting(false)
@@ -1901,7 +1901,7 @@ export function TeamDashboard({ members }: TeamDashboardProps) {
                 {creating ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden />
                 ) : (
-                  <BriefcaseBusiness className="size-4" aria-hidden />
+                <BriefcaseBusiness className="size-4" aria-hidden />
                 )}
                 {creating ? "Saving..." : "Save member"}
               </Button>

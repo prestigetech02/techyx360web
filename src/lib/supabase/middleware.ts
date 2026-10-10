@@ -4,7 +4,11 @@ import { NextResponse, type NextRequest } from "next/server"
 import type { Database } from "@/types/database"
 import { canAccessPath, firstAllowedPath } from "@/lib/admin/access"
 import { isPublicAdminAuthPath } from "@/lib/admin/auth-callback"
-import { resolveStaffAccess } from "@/lib/admin/resolve-access"
+import {
+  destinationForAccountPortal,
+  resolveAccountPortal,
+  resolveStaffAccess,
+} from "@/lib/admin/resolve-access"
 import { isPifAttendancePath } from "@/lib/pifattendance/auth-paths"
 import { getSupabasePublicEnv } from "@/lib/supabase/env"
 
@@ -52,7 +56,28 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse
   }
 
+  // Session probe used by admin login — must reach the route for fellows too.
+  if (path === "/api/admin/session" || path.startsWith("/api/admin/session/")) {
+    return supabaseResponse
+  }
+
   if (isPublicAdminAuthPath(path)) {
+    // Logged-in PIF fellows should not sit on admin auth pages.
+    const email =
+      typeof data?.claims?.email === "string" ? data.claims.email.trim() : ""
+    if (email && (path === "/admin/login" || path.startsWith("/admin/login/"))) {
+      const portal = await resolveAccountPortal(email)
+      if (portal.kind === "pif_fellow") {
+        return NextResponse.redirect(
+          new URL(destinationForAccountPortal(portal), request.url)
+        )
+      }
+      if (portal.kind === "staff") {
+        return NextResponse.redirect(
+          new URL(firstAllowedPath(portal.access), request.url)
+        )
+      }
+    }
     return supabaseResponse
   }
 
@@ -60,11 +85,14 @@ export async function updateSession(request: NextRequest) {
     typeof data?.claims?.email === "string" ? data.claims.email.trim() : ""
 
   if (!data?.claims || !email) {
-    return supabaseResponse
+    if (isAdminApi) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    return NextResponse.redirect(new URL("/admin/login", request.url))
   }
 
   const access = await resolveStaffAccess(email)
-  if (canAccessPath(access, path)) {
+  if (access && canAccessPath(access, path)) {
     return supabaseResponse
   }
 
@@ -72,10 +100,17 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const destination = firstAllowedPath(access)
-  if (destination === path) {
-    return supabaseResponse
+  // Authenticated but not staff (e.g. PIF fellow) — keep them out of admin.
+  const portal = await resolveAccountPortal(email)
+  if (portal.kind === "staff") {
+    const destination = firstAllowedPath(portal.access)
+    if (destination === path) {
+      return supabaseResponse
+    }
+    return NextResponse.redirect(new URL(destination, request.url))
   }
 
-  return NextResponse.redirect(new URL(destination, request.url))
+  return NextResponse.redirect(
+    new URL(destinationForAccountPortal(portal), request.url)
+  )
 }

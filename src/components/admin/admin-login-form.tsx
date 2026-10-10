@@ -67,8 +67,35 @@ export function AdminLoginForm() {
         return
       }
 
+      const verify = await fetch("/api/admin/session", { method: "GET" })
+      const verifyData = (await verify.json().catch(() => null)) as {
+        error?: string
+        kind?: string
+        destination?: string
+      } | null
+
+      if (!verify.ok) {
+        if (verifyData?.kind === "pif_fellow") {
+          notify.error(
+            verifyData.error ??
+              "This is a PIF fellow account. Redirecting to attendance."
+          )
+          router.push(verifyData.destination || "/pifattendance")
+          router.refresh()
+          return
+        }
+
+        await supabase.auth.signOut()
+        const message =
+          verifyData?.error ??
+          "This account is not authorized for the staff dashboard."
+        setError(message)
+        notify.error(message)
+        return
+      }
+
       notify.success("Signed in successfully.")
-      router.push("/admin")
+      router.push(verifyData?.destination || "/admin")
       router.refresh()
     } catch {
       const message = "Unable to sign in right now. Please try again."

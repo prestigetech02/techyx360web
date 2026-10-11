@@ -20,8 +20,12 @@ export type AccountPortal =
   | { kind: "none" }
 
 /**
- * Staff dashboard access only. Fail-closed: unknown emails get no access.
- * PIF fellows are not team members and must never receive admin access here.
+ * Role-based portal access (no env allowlist):
+ * - Admin/staff dashboard: active/on_leave row in team_members
+ * - PIF attendance: invited/active row in pif_fellows
+ * - Otherwise: no access
+ *
+ * If an email is both staff and fellow, staff wins for /admin.
  */
 export async function resolveStaffAccess(
   email: string
@@ -43,7 +47,6 @@ export async function resolveStaffAccess(
       return null
     }
 
-    // Inactive staff cannot use the admin dashboard.
     if (data.status === "inactive") {
       return null
     }
@@ -72,7 +75,6 @@ export async function resolveStaffAccess(
   }
 }
 
-/** Resolve whether this auth email is staff, a PIF fellow, or neither. */
 export async function resolveAccountPortal(
   email: string
 ): Promise<AccountPortal> {
@@ -82,8 +84,6 @@ export async function resolveAccountPortal(
   }
 
   try {
-    // Inline lookup so this module stays usable from middleware
-    // (avoids importing server-only fellow helpers).
     const supabase = createAdminClient()
     const { data: fellow } = await supabase
       .from("pif_fellows")

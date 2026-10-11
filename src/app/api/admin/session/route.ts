@@ -54,7 +54,8 @@ export async function GET() {
     // Not staff — sign them out of this admin attempt path at the client.
     return NextResponse.json(
       {
-        error: "This account is not authorized for the staff dashboard.",
+        error:
+          "This account is not authorized for the staff dashboard. Add this email under Admin → Team as an active admin/staff member.",
         kind: "none",
         destination: "/admin/login",
       },
